@@ -1,0 +1,11 @@
+/* Breakpoints matching project design */
+
+/* Min-width breakpoints */
+@custom-media --md-up (width >= 768px);
+@custom-media --xl-up (width >= 1280px);
+
+/* Max-width breakpoints */
+@custom-media --xs-down (width <= 400px);
+@custom-media --sm-down (width <= 640px);
+@custom-media --mobile-lge (width <= 448px);
+@custom-media --md-down (width <= 768px);

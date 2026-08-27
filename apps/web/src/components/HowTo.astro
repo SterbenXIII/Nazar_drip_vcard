@@ -1,0 +1,271 @@
+---
+import type { HowToStep } from '../utils/schema'
+
+interface Props {
+  heading: string
+  steps: readonly HowToStep[]
+  /** ISO 8601 duration string e.g. "PT60M" */
+  totalDuration?: string
+}
+
+const { heading, steps, totalDuration } = Astro.props
+---
+
+{
+  steps && steps.length > 0 && (
+    <section class="how-to-section" itemscope itemtype="https://schema.org/HowTo">
+      <div class="how-to-header">
+        <div class="how-to-icon-wrapper">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+            <path d="M9 14h6" />
+            <path d="M9 18h6" />
+            <path d="M9 10h6" />
+          </svg>
+        </div>
+        <h2 class="how-to-title" itemprop="name">
+          {heading}
+        </h2>
+      </div>
+
+      {totalDuration && <meta itemprop="totalTime" content={totalDuration} />}
+
+      <ol class="how-to-steps">
+        {steps.map((step, index) => (
+          <li class="how-to-step" itemprop="step" itemscope itemtype="https://schema.org/HowToStep">
+            <meta itemprop="position" content={String(index + 1)} />
+
+            <div class="step-number-wrapper">
+              <span class="step-number">{index + 1}</span>
+            </div>
+
+            <div class="step-content">
+              <h3 class="step-title" itemprop="name">
+                {step.name}
+              </h3>
+              <p class="step-text" itemprop="text">
+                {step.text}
+              </p>
+              {step.duration && <meta itemprop="timeRequired" content={step.duration} />}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
+<style>
+  .how-to-section {
+    margin: 3rem 0;
+    padding: 1.5rem;
+    background: color-mix(in srgb, var(--md-blue-grey) 40%, transparent);
+    border-radius: 1.5rem;
+    border: 1px solid var(--md-border);
+  }
+
+  :global(.dark) .how-to-section {
+    background: color-mix(in srgb, var(--md-secondary-bg) 50%, transparent);
+    border-color: color-mix(in srgb, var(--md-border) 20%, transparent);
+  }
+
+  @media (width >= 48rem) {
+    .how-to-section {
+      padding: 2rem;
+    }
+  }
+
+  .how-to-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .how-to-icon-wrapper {
+    padding: 0.5rem;
+    background: color-mix(in srgb, var(--md-teal) 15%, transparent);
+    border-radius: 0.5rem;
+    color: var(--md-teal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .how-to-icon-wrapper svg {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .how-to-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--md-navy);
+    margin: 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  @media (width >= 48rem) {
+    .how-to-title {
+      font-size: 1.875rem;
+    }
+  }
+
+  .how-to-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+  }
+
+  @media (width >= 48rem) {
+    .how-to-steps {
+      gap: 2rem;
+    }
+
+    .how-to-steps::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 2px;
+      background: linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--md-teal) 50%, transparent),
+        color-mix(in srgb, var(--md-teal) 20%, transparent),
+        transparent
+      );
+      transform: translateX(-50%);
+    }
+  }
+
+  /* Mobile line */
+  @media (width <= 47.99rem) {
+    .how-to-steps::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 1.4rem;
+      width: 2px;
+      background: linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--md-teal) 50%, transparent),
+        color-mix(in srgb, var(--md-teal) 20%, transparent),
+        transparent
+      );
+      transform: translateX(-1px);
+    }
+  }
+
+  .how-to-step {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+  }
+
+  @media (width >= 48rem) {
+    .how-to-step:nth-child(even) {
+      flex-direction: row-reverse;
+    }
+  }
+
+  .step-number-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    border: 4px solid var(--md-white);
+    background: var(--md-teal);
+    color: #fff;
+    box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--md-teal) 20%, transparent);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  :global(.dark) .step-number-wrapper {
+    border-color: var(--md-secondary-bg);
+  }
+
+  @media (width >= 48rem) {
+    .step-number-wrapper {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+  }
+
+  .step-number {
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+
+  .step-content {
+    width: calc(100% - 4rem);
+    background: color-mix(in srgb, var(--md-white) 80%, transparent);
+    padding: 1.25rem;
+    border-radius: 1rem;
+    border: 1px solid var(--md-border);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 5%);
+    transition: transform 0.3s ease;
+  }
+
+  :global(.dark) .step-content {
+    background: color-mix(in srgb, var(--md-secondary-bg) 80%, transparent);
+    border-color: color-mix(in srgb, var(--md-border) 50%, transparent);
+  }
+
+  .step-content:hover {
+    transform: translateY(-4px);
+  }
+
+  @media (width >= 48rem) {
+    .step-content {
+      width: calc(50% - 2.5rem);
+      padding: 1.5rem;
+    }
+  }
+
+  .step-title {
+    margin: 0 0 0.5rem;
+    font-weight: 700;
+    color: var(--md-navy);
+    font-size: 1.125rem;
+  }
+
+  @media (width >= 48rem) {
+    .step-title {
+      font-size: 1.25rem;
+    }
+  }
+
+  .step-text {
+    color: var(--md-text);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  @media (width >= 48rem) {
+    .step-text {
+      font-size: 1rem;
+    }
+  }
+</style>

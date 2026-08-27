@@ -1,0 +1,44 @@
+---
+// Conditional PWA imports
+let pwaAssetsHead: typeof import('virtual:pwa-assets/head').pwaAssetsHead | null = null
+let pwaInfo: typeof import('virtual:pwa-info').pwaInfo | null = null
+
+try {
+  const assets = await import('virtual:pwa-assets/head')
+  pwaAssetsHead = assets.pwaAssetsHead
+  const info = await import('virtual:pwa-info')
+  pwaInfo = info.pwaInfo
+} catch (e) {
+  // PWA disabled or virtual modules not found
+}
+---
+
+<!--
+  PWA: theme-color + all icon/favicon links are injected automatically
+  from virtual:pwa-assets/head (uses pwa-assets.config.ts + Preset Minimal 2023).
+-->{
+  pwaAssetsHead && pwaAssetsHead.themeColor && (
+    <meta name="theme-color" content={pwaAssetsHead.themeColor.content} />
+  )
+}
+{pwaAssetsHead && pwaAssetsHead.links.map((link) => <link {...link} />)}
+{pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
+
+<!--
+  PWA capability detection guard:
+  Sets data-pwa="supported"|"unsupported" on <html> for conditional UI.
+  Logs warnings in dev if SW or manifest is unavailable.
+-->
+<script is:inline>
+  ;(function () {
+    var hasSW = 'serviceWorker' in navigator
+    var hasManifest = !!document.querySelector('link[rel="manifest"]')
+    var supported = hasSW && hasManifest
+    document.documentElement.setAttribute('data-pwa', supported ? 'supported' : 'unsupported')
+    if (!hasSW) console.warn('[PWA] ServiceWorker not supported')
+    if (!hasManifest) console.warn('[PWA] manifest link not found — install prompt disabled')
+  })()
+</script>
+
+<!-- PWA SW registration via virtual module (official approach) -->
+<script src="/src/pwa.ts"></script>

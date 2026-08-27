@@ -1,0 +1,37 @@
+# 1. Dependencies - Завжди ігноруємо
+node_modules
+**/node_modules
+.pnpm-store
+
+# 2. Build outputs - Тільки готові білди
+dist/
+.astro/
+.next/
+out/
+bin/
+obj/
+
+# 3. Secrets & Env - НІКОЛИ не пушимо в образ
+.env
+.env.*
+!.env.example
+certbot/conf/*
+certbot/www/*
+certs/local/*
+ssh/
+
+# 4. Debug & Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.eslintcache
+
+# 5. OS & IDE
+.DS_Store
+.vscode/
+.idea/
+.git/
+
+README.md
+AGENTS.md
+.cursorrules

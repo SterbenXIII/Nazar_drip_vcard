@@ -1,0 +1,2 @@
+*/15 * * * * {{ ansible_user }} {{ project_dir }}/scripts/monitor.sh >> {{ project_dir }}/logs/monitor.log 2>&1
+0 9 * * * {{ ansible_user }} {{ project_dir }}/scripts/daily_report.sh >> {{ project_dir }}/logs/daily_report.log 2>&1

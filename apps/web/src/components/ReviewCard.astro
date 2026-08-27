@@ -1,0 +1,89 @@
+---
+import type { ReviewData } from '../types/seo'
+import { formatDateUk, formatDateRu } from '../utils/date'
+import type { Locale } from '../i18n/ui'
+
+interface Props {
+  review: ReviewData
+  locale: Locale
+}
+
+const { review, locale } = Astro.props
+const formatDate = locale === 'uk' ? formatDateUk : formatDateRu
+
+const stars = Array(5)
+  .fill(0)
+  .map((_, i) => i < review.ratingValue)
+---
+
+<div class="review-card">
+  <div class="review-header">
+    <div class="stars">
+      {stars.map((filled) => <span class={filled ? 'star filled' : 'star'}>★</span>)}
+    </div>
+    <span class="author">
+      <span>{review.author}</span>
+    </span>
+  </div>
+
+  <time class="date" datetime={review.datePublished}>
+    {formatDate(review.datePublished)}
+  </time>
+
+  <div class="body">
+    {review.reviewBody[locale]}
+  </div>
+</div>
+
+<style>
+  .review-card {
+    background: var(--md-blue-grey);
+    border: 1px solid var(--md-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s ease;
+  }
+
+  .review-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--md-accent);
+  }
+
+  .review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .stars {
+    color: #fbbf24;
+    font-size: 1.25rem;
+  }
+
+  .star:not(.filled) {
+    color: var(--md-border);
+  }
+
+  .author {
+    font-weight: 600;
+    color: var(--md-navy);
+  }
+
+  .date {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--md-text);
+    opacity: 0.6;
+    margin-bottom: 1rem;
+  }
+
+  .body {
+    line-height: 1.6;
+    color: var(--md-text);
+    opacity: 0.8;
+    font-style: italic;
+  }
+</style>

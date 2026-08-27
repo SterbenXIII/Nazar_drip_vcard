@@ -1,0 +1,15 @@
+{
+    # Global options for local dev
+    auto_https off
+}
+
+http://{$DOMAIN_NAME:localhost}:80 {
+    # Frontend (Astro dev server)
+    handle_path /api/* {
+        reverse_proxy api:5678
+    }
+
+    handle {
+        reverse_proxy web:4321
+    }
+}

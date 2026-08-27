@@ -1,0 +1,70 @@
+---
+import SeoHead from '../components/SeoHead.astro'
+import Analytics from '../components/Analytics.astro'
+import ThemeScript from '../components/layout/ThemeScript.astro'
+import PwaHead from '../components/layout/PwaHead.astro'
+import SecurityMeta from '../components/layout/SecurityMeta.astro'
+import { ClientRouter } from 'astro:transitions'
+import Search from '../components/Search.astro'
+import '../styles/global.css'
+
+import type { Locale } from '../i18n/ui'
+import { useTranslations } from '../i18n/ui'
+
+export interface Props {
+  title?: string
+  description?: string
+  canonical?: string
+  ogImage?: string
+  locale?: Locale
+  alternateLinks?: Array<{ hreflang: string; href: string }>
+  surzhykAlt?: string
+  noindex?: boolean
+}
+
+const {
+  title,
+  description,
+  canonical,
+  ogImage,
+  locale = 'uk',
+  alternateLinks,
+  surzhykAlt,
+  noindex = false,
+} = Astro.props
+
+const uiT = useTranslations(locale)
+---
+
+<!doctype html>
+<html lang={locale}>
+  <Analytics />
+  <ThemeScript />
+  <ClientRouter fallback="swap" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <PwaHead />
+
+  <SeoHead
+    title={title ?? ''}
+    description={description ?? ''}
+    canonicalUrl={canonical}
+    image={ogImage}
+    alternateLinks={alternateLinks}
+    surzhykAlt={surzhykAlt}
+    noindex={noindex}
+  />
+
+  <SecurityMeta />
+
+  <body>
+    <div class="app-wrapper">
+      <a href="#order" class="skip-link">
+        {uiT('a11y.skipToOrder')}
+      </a>
+      <Search />
+      <slot />
+    </div>
+  </body>
+</html>

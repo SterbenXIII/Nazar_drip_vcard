@@ -1,0 +1,1067 @@
+## System Info
+
+* Code: 1.109.3 (b6a47e94e326b5c209d118cf0f994d6065585705)
+* OS: darwin(25.2.0)
+* CPUs: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz(12 x 2600)
+* Memory(System): 16.00 GB(2.95GB free)
+* Memory(Process): NaN MB working set(284.47MB private, 11.28MB shared)
+* VM(likelihood): 0%
+* Initial Startup: true
+* Has 0 other windows
+* Screen Reader Active: false
+* Empty Workspace: false
+
+## Performance Marks
+
+| What                                                           | Duration | Process                   | Info                                                        |
+| -------------------------------------------------------------- | -------- | ------------------------- | ----------------------------------------------------------- |
+| import(main.js)                                                | 390      | [main]                    | initial startup: true                                       |
+| start => app.isReady                                           | 181      | [main]                    | initial startup: true                                       |
+| nls:start => nls:end                                           | 140      | [main]                    | initial startup: true                                       |
+| run main.js                                                    | 381      | [main]                    | initial startup: true                                       |
+| start crash reporter                                           | 67       | [main]                    | initial startup: true                                       |
+| serve main IPC handle                                          | 0        | [main]                    | initial startup: true                                       |
+| create window                                                  | 108      | [main]                    | initial startup: true, state: 0ms, widget: 105ms, show: 0ms |
+| app.isReady => window.loadUrl()                                | 366      | [main]                    | initial startup: true                                       |
+| window.loadUrl() => begin to import(workbench.desktop.main.js) | 236      | [main->renderer]          | NewWindow                                                   |
+| import(workbench.desktop.main.js)                              | 283      | [renderer]                | cached data: YES                                            |
+| wait for window config                                         | 4        | [renderer]                | -                                                           |
+| init storage (global & workspace)                              | 87       | [renderer]                | -                                                           |
+| init workspace service                                         | 124      | [renderer]                | -                                                           |
+| register extensions & spawn extension host                     | 1112     | [renderer]                | -                                                           |
+| restore primary viewlet                                        | 216      | [renderer]                | workbench.view.explorer                                     |
+| restore secondary viewlet                                      | 168      | [renderer]                | workbench.panel.chat                                        |
+| restore panel                                                  | 203      | [renderer]                | workbench.panel.output                                      |
+| restore & resolve visible editors                              | 446      | [renderer]                | 1: workbench.editors.files.fileEditorInput                  |
+| create workbench contributions                                 | 48       | [renderer]                | 82 blocking startup                                         |
+| overall workbench load                                         | 797      | [renderer]                | -                                                           |
+| workbench ready                                                | 1996     | [main->renderer]          | -                                                           |
+| renderer ready                                                 | 1218     | [renderer]                | -                                                           |
+| shared process connection ready                                | 0        | [renderer->sharedprocess] | -                                                           |
+| extensions registered                                          | 2979     | [renderer]                | -                                                           |
+
+## Extension Activation Stats
+
+| Extension                               | Eager | Load Code | Call Activate | Finish Activate | Event                                                          | By                                      |
+| --------------------------------------- | ----- | --------- | ------------- | --------------- | -------------------------------------------------------------- | --------------------------------------- |
+| vscode.git                              | true  | 52        | 3             | 304             | *                                                              | vscode.git                              |
+| vscode.git-base                         | true  | 3         | 0             | 0               | *                                                              | vscode.git                              |
+| vscode.github                           | true  | 320       | 2             | 8               | *                                                              | vscode.github                           |
+| vscode.npm                              | true  | 27        | 1             | 392             | workspaceContains:package.json                                 | vscode.npm                              |
+| howardzuo.vscode-git-tags               | true  | 50        | 2             | 0               | *                                                              | howardzuo.vscode-git-tags               |
+| mhutchie.git-graph                      | true  | 19        | 2             | 168             | *                                                              | mhutchie.git-graph                      |
+| p1c2u.docker-compose                    | true  | 139       | 1             | 0               | workspaceContains:**/docker-compose.yml,**/docker-compose.yaml | p1c2u.docker-compose                    |
+| WakaTime.vscode-wakatime                | true  | 54        | 1             | 0               | *                                                              | WakaTime.vscode-wakatime                |
+| wayou.vscode-todo-highlight             | true  | 2         | 1             | 0               | *                                                              | wayou.vscode-todo-highlight             |
+| xshrim.txt-syntax                       | true  | 7         | 4             | 0               | *                                                              | xshrim.txt-syntax                       |
+| vscode.configuration-editing            | false | 9         | 0             | 0               | onLanguage:jsonc                                               | vscode.configuration-editing            |
+| vscode.debug-auto-launch                | false | 2         | 0             | 0               | onStartupFinished                                              | vscode.debug-auto-launch                |
+| vscode.emmet                            | false | 22        | 12            | 0               | onLanguage                                                     | vscode.emmet                            |
+| vscode.extension-editing                | false | 14        | 1             | 0               | onLanguage:json                                                | vscode.extension-editing                |
+| vscode.github-authentication            | false | 33        | 3             | 4               | onAuthenticationRequest:github                                 | vscode.github-authentication            |
+| vscode.json-language-features           | false | 59        | 0             | 1452            | onLanguage:jsonc                                               | vscode.json-language-features           |
+| vscode.markdown-language-features       | false | 87        | 8             | 327             | onLanguage:markdown                                            | vscode.markdown-language-features       |
+| vscode.markdown-math                    | false | 8         | 0             | 0               | api                                                            | vscode.markdown-language-features       |
+| vscode.merge-conflict                   | false | 21        | 2             | 4               | onStartupFinished                                              | vscode.merge-conflict                   |
+| vscode.microsoft-authentication         | false | 131       | 1             | 500             | onAuthenticationRequest:microsoft                              | vscode.microsoft-authentication         |
+| vscode.typescript-language-features     | false | 55        | 11            | 8               | onLanguage:jsonc                                               | vscode.typescript-language-features     |
+| antfu.unocss                            | false | 119       | 3             | 302             | onStartupFinished                                              | antfu.unocss                            |
+| artdiniz.quitcontrol-vscode             | false | 5         | 0             | 0               | onStartupFinished                                              | artdiniz.quitcontrol-vscode             |
+| dbaeumer.vscode-eslint                  | false | 43        | 1             | 0               | onStartupFinished                                              | dbaeumer.vscode-eslint                  |
+| deque-systems.vscode-axe-linter         | false | 43        | 5             | 0               | onStartupFinished                                              | deque-systems.vscode-axe-linter         |
+| eamodio.gitlens                         | false | 125       | 40            | 39              | onStartupFinished                                              | eamodio.gitlens                         |
+| EditorConfig.EditorConfig               | false | 43        | 1             | 1               | onStartupFinished                                              | EditorConfig.EditorConfig               |
+| GitHub.copilot-chat                     | false | 1316      | 23            | 5512            | onChatParticipant:github.copilot.editsAgent                    | GitHub.copilot-chat                     |
+| github.vscode-github-actions            | false | 71        | 1             | 4206            | onLanguage:github-actions-workflow                             | github.vscode-github-actions            |
+| me-dutour-mathieu.vscode-github-actions | false | 27        | 4             | 0               | onLanguage:yaml                                                | me-dutour-mathieu.vscode-github-actions |
+| ms-vscode-remote.remote-containers      | false | 158       | 1             | 90              | onStartupFinished                                              | ms-vscode-remote.remote-containers      |
+| ms-windows-ai-studio.windows-ai-studio  | false | 1281      | 5             | 3117            | onLanguageModelChatProvider:aitk-github                        | ms-windows-ai-studio.windows-ai-studio  |
+| oxc.oxc-vscode                          | false | 22        | 4             | 2079            | onLanguage:yaml                                                | oxc.oxc-vscode                          |
+| pflannery.vscode-versionlens            | false | 67        | 1             | 1485            | onLanguage:yaml                                                | pflannery.vscode-versionlens            |
+| PKief.material-icon-theme               | false | 15        | 1             | 4               | onStartupFinished                                              | PKief.material-icon-theme               |
+| redhat.vscode-yaml                      | false | 88        | 1             | 12              | onLanguage:yaml                                                | me-dutour-mathieu.vscode-github-actions |
+| SanjulaGanepola.github-local-actions    | false | 29        | 3             | 0               | onStartupFinished                                              | SanjulaGanepola.github-local-actions    |
+| usernamehw.errorlens                    | false | 7         | 4             | 0               | onStartupFinished                                              | usernamehw.errorlens                    |
+
+## Terminal Stats
+
+| Name                                    | Timestamp     | Delta | Total |
+| --------------------------------------- | ------------- | ----- | ----- |
+| code/terminal/willGetTerminalBackend    | 1771241929569 | 0     | 0     |
+| code/terminal/didGetTerminalBackend     | 1771241929569 | 0     | 0     |
+| code/terminal/willReconnect             | 1771241929569 | 0     | 0     |
+| code/terminal/willGetTerminalLayoutInfo | 1771241929569 | 0     | 0     |
+| code/terminal/didGetTerminalLayoutInfo  | 1771241929588 | 19    | 19    |
+| code/terminal/didReconnect              | 1771241929588 | 0     | 19    |
+| code/terminal/willReplay                | 1771241929588 | 0     | 19    |
+| code/terminal/didReplay                 | 1771241929588 | 0     | 19    |
+| code/terminal/willGetPerformanceMarks   | 1771241929588 | 0     | 19    |
+| code/terminal/didGetPerformanceMarks    | 1771241929603 | 15    | 34    |
+
+## Workbench Contributions Blocking Restore
+
+* Total (LifecyclePhase.Starting): 41 (20ms)
+* Total (LifecyclePhase.Ready): 52 (29ms)
+
+| Name                                                                                                | Timestamp     | Delta | Total |
+| --------------------------------------------------------------------------------------------------- | ------------- | ----- | ----- |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.navigableContainerManager                  | 1771241928507 | 0     | 0     |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.navigableContainerManager                   | 1771241928507 | 0     | 0     |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.extensionPoints                            | 1771241928507 | 0     | 0     |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.extensionPoints                             | 1771241928508 | 1     | 1     |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.viewsExtensionHandler                      | 1771241928508 | 0     | 1     |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.viewsExtensionHandler                       | 1771241928508 | 0     | 1     |
+| code/willCreateWorkbenchContribution/1/workbench.contributions.defaultAccountProvider               | 1771241928508 | 0     | 1     |
+| code/didCreateWorkbenchContribution/1/workbench.contributions.defaultAccountProvider                | 1771241928508 | 0     | 1     |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.preferencesActions                         | 1771241928508 | 0     | 1     |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.preferencesActions                          | 1771241928512 | 4     | 5     |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.preferences                                | 1771241928512 | 0     | 5     |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.preferences                                 | 1771241928513 | 1     | 6     |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.notebook                                   | 1771241928513 | 0     | 6     |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.notebook                                    | 1771241928514 | 1     | 7     |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.cellContentProvider                        | 1771241928514 | 0     | 7     |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.cellContentProvider                         | 1771241928514 | 0     | 7     |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.cellInfoContentProvider                    | 1771241928514 | 0     | 7     |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.cellInfoContentProvider                     | 1771241928515 | 1     | 8     |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.notebookMetadataContentProvider            | 1771241928515 | 0     | 8     |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.notebookMetadataContentProvider             | 1771241928515 | 0     | 8     |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.registerCellSchemas                        | 1771241928515 | 0     | 8     |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.registerCellSchemas                         | 1771241928516 | 1     | 9     |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.chatResolver                               | 1771241928516 | 0     | 9     |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.chatResolver                                | 1771241928517 | 1     | 10    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.chatExtensionPointHandler                  | 1771241928517 | 0     | 10    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.chatExtensionPointHandler                   | 1771241928517 | 0     | 10    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.chatViewsWelcomeHandler                    | 1771241928517 | 0     | 10    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.chatViewsWelcomeHandler                     | 1771241928517 | 0     | 10    |
+| code/willCreateWorkbenchContribution/1/chatEditingNotebookFileSystemProviderContribution            | 1771241928517 | 0     | 10    |
+| code/didCreateWorkbenchContribution/1/chatEditingNotebookFileSystemProviderContribution             | 1771241928517 | 0     | 10    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.explorerViewletViews                       | 1771241928517 | 0     | 10    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.explorerViewletViews                        | 1771241928519 | 2     | 12    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.textFileEditorTracker                      | 1771241928519 | 0     | 12    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.textFileEditorTracker                       | 1771241928520 | 1     | 13    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.textFileSaveErrorHandler                   | 1771241928520 | 0     | 13    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.textFileSaveErrorHandler                    | 1771241928520 | 0     | 13    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.fileUriLabel                               | 1771241928520 | 0     | 13    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.fileUriLabel                                | 1771241928520 | 0     | 13    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.dirtyFilesIndicator                        | 1771241928520 | 0     | 13    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.dirtyFilesIndicator                         | 1771241928520 | 0     | 13    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.replacePreviewContentProvider              | 1771241928520 | 0     | 13    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.replacePreviewContentProvider               | 1771241928520 | 0     | 13    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.searchEditor                               | 1771241928520 | 0     | 13    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.searchEditor                                | 1771241928520 | 0     | 13    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.processExplorerEditor                      | 1771241928520 | 0     | 13    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.processExplorerEditor                       | 1771241928520 | 0     | 13    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.mergeEditorResolver                        | 1771241928520 | 0     | 13    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.mergeEditorResolver                         | 1771241928520 | 0     | 13    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.multiDiffEditorResolver                    | 1771241928520 | 0     | 13    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.multiDiffEditorResolver                     | 1771241928520 | 0     | 13    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.scmMultiDiffSourceResolver                 | 1771241928520 | 0     | 13    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.scmMultiDiffSourceResolver                  | 1771241928521 | 1     | 14    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.webviewPanel                               | 1771241928521 | 0     | 14    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.webviewPanel                                | 1771241928521 | 0     | 14    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.complexCustomWorkingCopyEditorHandler      | 1771241928521 | 0     | 14    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.complexCustomWorkingCopyEditorHandler       | 1771241928521 | 0     | 14    |
+| code/willCreateWorkbenchContribution/1/terminalMain                                                 | 1771241928521 | 0     | 14    |
+| code/didCreateWorkbenchContribution/1/terminalMain                                                  | 1771241928521 | 0     | 14    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.remoteLabel                                | 1771241928521 | 0     | 14    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.remoteLabel                                 | 1771241928522 | 1     | 15    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.remoteInvalidWorkspaceDetector             | 1771241928522 | 0     | 15    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.remoteInvalidWorkspaceDetector              | 1771241928522 | 0     | 15    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.remoteStatusIndicator                      | 1771241928522 | 0     | 15    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.remoteStatusIndicator                       | 1771241928525 | 3     | 18    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.agentSessionsWelcomeEditorResolver         | 1771241928525 | 0     | 18    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.agentSessionsWelcomeEditorResolver          | 1771241928525 | 0     | 18    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.listContext                                | 1771241928525 | 0     | 18    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.listContext                                 | 1771241928525 | 0     | 18    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.dialogHandler                              | 1771241928525 | 0     | 18    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.dialogHandler                               | 1771241928525 | 0     | 18    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.nativeWorkingCopyBackupTracker             | 1771241928525 | 0     | 18    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.nativeWorkingCopyBackupTracker              | 1771241928525 | 0     | 18    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.localTerminalBackend                       | 1771241928525 | 0     | 18    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.localTerminalBackend                        | 1771241928526 | 1     | 19    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.userDataSyncServices                       | 1771241928526 | 0     | 19    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.userDataSyncServices                        | 1771241928526 | 0     | 19    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.browserEditorResolver                      | 1771241928526 | 0     | 19    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.browserEditorResolver                       | 1771241928526 | 0     | 19    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.localhostLinkOpener                        | 1771241928526 | 0     | 19    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.localhostLinkOpener                         | 1771241928526 | 0     | 19    |
+| code/willCreateWorkbenchContribution/1/workbench.contrib.partsSplash                                | 1771241928526 | 0     | 19    |
+| code/didCreateWorkbenchContribution/1/workbench.contrib.partsSplash                                 | 1771241928526 | 0     | 19    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.extensionUrlBootstrapHandler               | 1771241928526 | 0     | 19    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.extensionUrlBootstrapHandler                | 1771241928527 | 1     | 20    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.textInputActionsProvider                   | 1771241928527 | 0     | 20    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.textInputActionsProvider                    | 1771241928527 | 0     | 20    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.editorAutoSave                             | 1771241928527 | 0     | 20    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.editorAutoSave                              | 1771241928527 | 0     | 20    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.editorStatus                               | 1771241928527 | 0     | 20    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.editorStatus                                | 1771241928528 | 1     | 21    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.untitledTextEditorWorkingCopyEditorHandler | 1771241928528 | 0     | 21    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.untitledTextEditorWorkingCopyEditorHandler  | 1771241928528 | 0     | 21    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.dynamicEditorConfigurations                | 1771241928528 | 0     | 21    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.dynamicEditorConfigurations                 | 1771241928528 | 0     | 21    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.textMateTokenizationInstantiator           | 1771241928528 | 0     | 21    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.textMateTokenizationInstantiator            | 1771241928529 | 1     | 22    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.notebookChatContribution                   | 1771241928529 | 0     | 22    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.notebookChatContribution                    | 1771241928530 | 1     | 23    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.notebookClipboard                          | 1771241928530 | 0     | 23    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.notebookClipboard                           | 1771241928530 | 0     | 23    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.notebook.multiCursorUndoRedo               | 1771241928530 | 0     | 23    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.notebook.multiCursorUndoRedo                | 1771241928530 | 0     | 23    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.markerListProvider                         | 1771241928530 | 0     | 23    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.markerListProvider                          | 1771241928531 | 1     | 24    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.notebookUndoRedo                           | 1771241928531 | 0     | 24    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.notebookUndoRedo                            | 1771241928531 | 0     | 24    |
+| code/willCreateWorkbenchContribution/2/workbench.contribution.notebookOutputEditorContribution      | 1771241928531 | 0     | 24    |
+| code/didCreateWorkbenchContribution/2/workbench.contribution.notebookOutputEditorContribution       | 1771241928531 | 0     | 24    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.notebookEditorManager                      | 1771241928531 | 0     | 24    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.notebookEditorManager                       | 1771241928531 | 0     | 24    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.notebookLanguageSelectorScoreRefine        | 1771241928531 | 0     | 24    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.notebookLanguageSelectorScoreRefine         | 1771241928531 | 0     | 24    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.simpleNotebookWorkingCopyEditorHandler     | 1771241928531 | 0     | 24    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.simpleNotebookWorkingCopyEditorHandler      | 1771241928531 | 0     | 24    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.chatLanguageModelsData                     | 1771241928531 | 0     | 24    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.chatLanguageModelsData                      | 1771241928532 | 1     | 25    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.toolsExtensionPointHandler                 | 1771241928532 | 0     | 25    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.toolsExtensionPointHandler                  | 1771241928532 | 0     | 25    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.chatPromptFilesExtensionPointHandler       | 1771241928532 | 0     | 25    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.chatPromptFilesExtensionPointHandler        | 1771241928532 | 0     | 25    |
+| code/willCreateWorkbenchContribution/2/chat.codeBlockActionRendering                                | 1771241928532 | 0     | 25    |
+| code/didCreateWorkbenchContribution/2/chat.codeBlockActionRendering                                 | 1771241928533 | 1     | 26    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.chatSetup                                  | 1771241928533 | 0     | 26    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.chatSetup                                   | 1771241928537 | 4     | 30    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.chatStatusBarEntry                         | 1771241928537 | 0     | 30    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.chatStatusBarEntry                          | 1771241928537 | 0     | 30    |
+| code/willCreateWorkbenchContribution/2/chat.queuePickerRendering                                    | 1771241928537 | 0     | 30    |
+| code/didCreateWorkbenchContribution/2/chat.queuePickerRendering                                     | 1771241928537 | 0     | 30    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.chatTransfer                               | 1771241928537 | 0     | 30    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.chatTransfer                                | 1771241928538 | 1     | 31    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.promptUrlHandler                           | 1771241928538 | 0     | 31    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.promptUrlHandler                            | 1771241928538 | 0     | 31    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.inlineChatDefaultModel                     | 1771241928538 | 0     | 31    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.inlineChatDefaultModel                      | 1771241928538 | 0     | 31    |
+| code/willCreateWorkbenchContribution/2/mcpContextKeys                                               | 1771241928538 | 0     | 31    |
+| code/didCreateWorkbenchContribution/2/mcpContextKeys                                                | 1771241928543 | 5     | 36    |
+| code/willCreateWorkbenchContribution/2/mcpResourceFilesystem                                        | 1771241928543 | 0     | 36    |
+| code/didCreateWorkbenchContribution/2/mcpResourceFilesystem                                         | 1771241928543 | 0     | 36    |
+| code/willCreateWorkbenchContribution/2/mcpActionRendering                                           | 1771241928543 | 0     | 36    |
+| code/didCreateWorkbenchContribution/2/mcpActionRendering                                            | 1771241928544 | 1     | 37    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.interactiveDocument                        | 1771241928544 | 0     | 37    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.interactiveDocument                         | 1771241928545 | 1     | 38    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.replWorkingCopyEditorHandler               | 1771241928545 | 0     | 38    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.replWorkingCopyEditorHandler                | 1771241928545 | 0     | 38    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.replDocument                               | 1771241928545 | 0     | 38    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.replDocument                                | 1771241928545 | 0     | 38    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.fileEditorWorkingCopyEditorHandler         | 1771241928545 | 0     | 38    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.fileEditorWorkingCopyEditorHandler          | 1771241928545 | 0     | 38    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.bulkEditPreview                            | 1771241928545 | 0     | 38    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.bulkEditPreview                             | 1771241928546 | 1     | 39    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.searchEditorWorkingCopyEditorHandler       | 1771241928546 | 0     | 39    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.searchEditorWorkingCopyEditorHandler        | 1771241928546 | 0     | 39    |
+| code/willCreateWorkbenchContribution/2/comments.input.contentProvider                               | 1771241928546 | 0     | 39    |
+| code/didCreateWorkbenchContribution/2/comments.input.contentProvider                                | 1771241928546 | 0     | 39    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.trustedDomainsFileSystemProvider           | 1771241928546 | 0     | 39    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.trustedDomainsFileSystemProvider            | 1771241928546 | 0     | 39    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.externalUriResolver                        | 1771241928546 | 0     | 39    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.externalUriResolver                         | 1771241928546 | 0     | 39    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.showPortCandidate                          | 1771241928546 | 0     | 39    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.showPortCandidate                           | 1771241928546 | 0     | 39    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.tunnelFactory                              | 1771241928546 | 0     | 39    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.tunnelFactory                               | 1771241928546 | 0     | 39    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.editorFeaturesInstantiator                 | 1771241928546 | 0     | 39    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.editorFeaturesInstantiator                  | 1771241928546 | 0     | 39    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.startupPageEditorResolver                  | 1771241928546 | 0     | 39    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.startupPageEditorResolver                   | 1771241928546 | 0     | 39    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.userDataProfiles                           | 1771241928546 | 0     | 39    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.userDataProfiles                            | 1771241928547 | 1     | 40    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.localHistoryTimeline                       | 1771241928547 | 0     | 40    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.localHistoryTimeline                        | 1771241928549 | 2     | 42    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.workspaceTrustRequestHandler               | 1771241928549 | 0     | 42    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.workspaceTrustRequestHandler                | 1771241928549 | 0     | 42    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.accessibilityStatus                        | 1771241928549 | 0     | 42    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.accessibilityStatus                         | 1771241928549 | 0     | 42    |
+| code/willCreateWorkbenchContribution/2/extensionAccessibilityHelpDialogContribution                 | 1771241928549 | 0     | 42    |
+| code/didCreateWorkbenchContribution/2/extensionAccessibilityHelpDialogContribution                  | 1771241928549 | 0     | 42    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.configurationDefaultOverridesContribution  | 1771241928549 | 0     | 42    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.configurationDefaultOverridesContribution   | 1771241928555 | 6     | 48    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.nativeRemoteConnectionFailureNotification  | 1771241928555 | 0     | 48    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.nativeRemoteConnectionFailureNotification   | 1771241928555 | 0     | 48    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.remoteTelemetryEnablementUpdater           | 1771241928555 | 0     | 48    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.remoteTelemetryEnablementUpdater            | 1771241928555 | 0     | 48    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.remoteEmptyWorkbenchPresentation           | 1771241928555 | 0     | 48    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.remoteEmptyWorkbenchPresentation            | 1771241928555 | 0     | 48    |
+| code/willCreateWorkbenchContribution/2/workbench.contrib.chatCommandLineHandler                     | 1771241928555 | 0     | 48    |
+| code/didCreateWorkbenchContribution/2/workbench.contrib.chatCommandLineHandler                      | 1771241928555 | 0     | 48    |
+
+## Raw Perf Marks: main
+
+```
+Name	Timestamp	Delta	Total
+code/timeOrigin	1771241926826.796	0	0
+code/didStartMain	1771241927216	389.2041015625	389.2041015625
+code/willLoadMainBundle	1771241926826	-390	-0.7958984375
+code/didLoadMainBundle	1771241927216	390	389.2041015625
+code/willStartCrashReporter	1771241927218	2	391.2041015625
+code/didStartCrashReporter	1771241927285	67	458.2041015625
+code/mainAppReady	1771241927397	112	570.2041015625
+code/willGenerateNls	1771241927398	1	571.2041015625
+code/didGenerateNls	1771241927538	140	711.2041015625
+code/willLoadNls	1771241927538	0	711.2041015625
+code/didLoadNls	1771241927545	7	718.2041015625
+code/registerFilesystem/file	1771241927575	30	748.2041015625
+code/registerFilesystem/vscode-userdata	1771241927577	2	750.2041015625
+code/didRunMainBundle	1771241927597	20	770.2041015625
+code/willStartMainServer	1771241927620	23	793.2041015625
+code/willStartMainServer	1771241927624	4	797.2041015625
+code/didStartMainServer	1771241927624	0	797.2041015625
+code/willCreateCodeWindow	1771241927653	29	826.2041015625
+code/willRestoreCodeWindowState	1771241927654	1	827.2041015625
+code/didRestoreCodeWindowState	1771241927654	0	827.2041015625
+code/willCreateCodeBrowserWindow	1771241927654	0	827.2041015625
+code/didCreateCodeBrowserWindow	1771241927759	105	932.2041015625
+code/didCreateCodeWindow	1771241927761	2	934.2041015625
+code/willOpenNewWindow	1771241927763	2	936.2041015625
+```
+## Raw Perf Marks: localPtyHost
+
+```
+Name	Timestamp	Delta	Total
+```
+## Raw Perf Marks: renderer
+
+```
+Name	Timestamp	Delta	Total
+code/timeOrigin	1771241927764	0	0
+code/didStartRenderer	1771241927994	230	230
+code/willWaitForWindowConfig	1771241927994	0	230
+code/didWaitForWindowConfig	1771241927998	4	234
+code/willShowPartsSplash	1771241927998	0	234
+code/didShowPartsSplash	1771241927999	1	235
+code/willLoadWorkbenchMain	1771241927999	0	235
+code/didLoadWorkbenchMain	1771241928282	283	518
+code/registerFilesystem/file	1771241928284	2	520
+code/registerFilesystem/vscode-userdata	1771241928284	0	520
+code/willInitWorkspaceService	1771241928284	0	520
+code/willInitStorage	1771241928285	1	521
+code/didInitStorage	1771241928372	87	608
+code/willInitUserConfiguration	1771241928380	8	616
+code/didInitUserConfiguration	1771241928385	5	621
+code/willInitWorkspaceConfiguration	1771241928388	3	624
+code/didInitWorkspaceConfiguration	1771241928408	20	644
+code/didInitWorkspaceService	1771241928408	0	644
+code/willStartWorkbench	1771241928415	7	651
+code/LifecyclePhase/Ready	1771241928418	3	654
+code/willCreateWorkbenchContributions/1	1771241928507	89	743
+code/willCreateWorkbenchContribution/1/workbench.contrib.navigableContainerManager	1771241928507	0	743
+code/didCreateWorkbenchContribution/1/workbench.contrib.navigableContainerManager	1771241928507	0	743
+code/willCreateWorkbenchContribution/1/workbench.contrib.extensionPoints	1771241928507	0	743
+code/didCreateWorkbenchContribution/1/workbench.contrib.extensionPoints	1771241928508	1	744
+code/willCreateWorkbenchContribution/1/workbench.contrib.viewsExtensionHandler	1771241928508	0	744
+code/didCreateWorkbenchContribution/1/workbench.contrib.viewsExtensionHandler	1771241928508	0	744
+code/willCreateWorkbenchContribution/1/workbench.contributions.defaultAccountProvider	1771241928508	0	744
+code/didCreateWorkbenchContribution/1/workbench.contributions.defaultAccountProvider	1771241928508	0	744
+code/willCreateWorkbenchContribution/1/workbench.contrib.preferencesActions	1771241928508	0	744
+code/didCreateWorkbenchContribution/1/workbench.contrib.preferencesActions	1771241928512	4	748
+code/willCreateWorkbenchContribution/1/workbench.contrib.preferences	1771241928512	0	748
+code/registerFilesystem/vscode	1771241928513	1	749
+code/didCreateWorkbenchContribution/1/workbench.contrib.preferences	1771241928513	0	749
+code/willCreateWorkbenchContribution/1/workbench.contrib.notebook	1771241928513	0	749
+code/didCreateWorkbenchContribution/1/workbench.contrib.notebook	1771241928514	1	750
+code/willCreateWorkbenchContribution/1/workbench.contrib.cellContentProvider	1771241928514	0	750
+code/didCreateWorkbenchContribution/1/workbench.contrib.cellContentProvider	1771241928514	0	750
+code/willCreateWorkbenchContribution/1/workbench.contrib.cellInfoContentProvider	1771241928514	0	750
+code/didCreateWorkbenchContribution/1/workbench.contrib.cellInfoContentProvider	1771241928515	1	751
+code/willCreateWorkbenchContribution/1/workbench.contrib.notebookMetadataContentProvider	1771241928515	0	751
+code/didCreateWorkbenchContribution/1/workbench.contrib.notebookMetadataContentProvider	1771241928515	0	751
+code/willCreateWorkbenchContribution/1/workbench.contrib.registerCellSchemas	1771241928515	0	751
+code/didCreateWorkbenchContribution/1/workbench.contrib.registerCellSchemas	1771241928516	1	752
+code/willCreateWorkbenchContribution/1/workbench.contrib.chatResolver	1771241928516	0	752
+code/didCreateWorkbenchContribution/1/workbench.contrib.chatResolver	1771241928517	1	753
+code/willCreateWorkbenchContribution/1/workbench.contrib.chatExtensionPointHandler	1771241928517	0	753
+code/didCreateWorkbenchContribution/1/workbench.contrib.chatExtensionPointHandler	1771241928517	0	753
+code/willCreateWorkbenchContribution/1/workbench.contrib.chatViewsWelcomeHandler	1771241928517	0	753
+code/didCreateWorkbenchContribution/1/workbench.contrib.chatViewsWelcomeHandler	1771241928517	0	753
+code/willCreateWorkbenchContribution/1/chatEditingNotebookFileSystemProviderContribution	1771241928517	0	753
+code/registerFilesystem/chat-editing-notebook-snapshot-model	1771241928517	0	753
+code/didCreateWorkbenchContribution/1/chatEditingNotebookFileSystemProviderContribution	1771241928517	0	753
+code/willCreateWorkbenchContribution/1/workbench.contrib.explorerViewletViews	1771241928517	0	753
+code/didCreateWorkbenchContribution/1/workbench.contrib.explorerViewletViews	1771241928519	2	755
+code/willCreateWorkbenchContribution/1/workbench.contrib.textFileEditorTracker	1771241928519	0	755
+code/didCreateWorkbenchContribution/1/workbench.contrib.textFileEditorTracker	1771241928520	1	756
+code/willCreateWorkbenchContribution/1/workbench.contrib.textFileSaveErrorHandler	1771241928520	0	756
+code/didCreateWorkbenchContribution/1/workbench.contrib.textFileSaveErrorHandler	1771241928520	0	756
+code/willCreateWorkbenchContribution/1/workbench.contrib.fileUriLabel	1771241928520	0	756
+code/didCreateWorkbenchContribution/1/workbench.contrib.fileUriLabel	1771241928520	0	756
+code/willCreateWorkbenchContribution/1/workbench.contrib.dirtyFilesIndicator	1771241928520	0	756
+code/didCreateWorkbenchContribution/1/workbench.contrib.dirtyFilesIndicator	1771241928520	0	756
+code/willCreateWorkbenchContribution/1/workbench.contrib.replacePreviewContentProvider	1771241928520	0	756
+code/didCreateWorkbenchContribution/1/workbench.contrib.replacePreviewContentProvider	1771241928520	0	756
+code/willCreateWorkbenchContribution/1/workbench.contrib.searchEditor	1771241928520	0	756
+code/didCreateWorkbenchContribution/1/workbench.contrib.searchEditor	1771241928520	0	756
+code/willCreateWorkbenchContribution/1/workbench.contrib.processExplorerEditor	1771241928520	0	756
+code/didCreateWorkbenchContribution/1/workbench.contrib.processExplorerEditor	1771241928520	0	756
+code/willCreateWorkbenchContribution/1/workbench.contrib.mergeEditorResolver	1771241928520	0	756
+code/didCreateWorkbenchContribution/1/workbench.contrib.mergeEditorResolver	1771241928520	0	756
+code/willCreateWorkbenchContribution/1/workbench.contrib.multiDiffEditorResolver	1771241928520	0	756
+code/didCreateWorkbenchContribution/1/workbench.contrib.multiDiffEditorResolver	1771241928520	0	756
+code/willCreateWorkbenchContribution/1/workbench.contrib.scmMultiDiffSourceResolver	1771241928520	0	756
+code/didCreateWorkbenchContribution/1/workbench.contrib.scmMultiDiffSourceResolver	1771241928521	1	757
+code/willCreateWorkbenchContribution/1/workbench.contrib.webviewPanel	1771241928521	0	757
+code/didCreateWorkbenchContribution/1/workbench.contrib.webviewPanel	1771241928521	0	757
+code/willCreateWorkbenchContribution/1/workbench.contrib.complexCustomWorkingCopyEditorHandler	1771241928521	0	757
+code/didCreateWorkbenchContribution/1/workbench.contrib.complexCustomWorkingCopyEditorHandler	1771241928521	0	757
+code/willCreateWorkbenchContribution/1/terminalMain	1771241928521	0	757
+code/didCreateWorkbenchContribution/1/terminalMain	1771241928521	0	757
+code/willCreateWorkbenchContribution/1/workbench.contrib.remoteLabel	1771241928521	0	757
+code/didCreateWorkbenchContribution/1/workbench.contrib.remoteLabel	1771241928522	1	758
+code/willCreateWorkbenchContribution/1/workbench.contrib.remoteInvalidWorkspaceDetector	1771241928522	0	758
+code/didCreateWorkbenchContribution/1/workbench.contrib.remoteInvalidWorkspaceDetector	1771241928522	0	758
+code/willCreateWorkbenchContribution/1/workbench.contrib.remoteStatusIndicator	1771241928522	0	758
+code/didCreateWorkbenchContribution/1/workbench.contrib.remoteStatusIndicator	1771241928525	3	761
+code/willCreateWorkbenchContribution/1/workbench.contrib.agentSessionsWelcomeEditorResolver	1771241928525	0	761
+code/didCreateWorkbenchContribution/1/workbench.contrib.agentSessionsWelcomeEditorResolver	1771241928525	0	761
+code/willCreateWorkbenchContribution/1/workbench.contrib.listContext	1771241928525	0	761
+code/didCreateWorkbenchContribution/1/workbench.contrib.listContext	1771241928525	0	761
+code/willCreateWorkbenchContribution/1/workbench.contrib.dialogHandler	1771241928525	0	761
+code/didCreateWorkbenchContribution/1/workbench.contrib.dialogHandler	1771241928525	0	761
+code/willCreateWorkbenchContribution/1/workbench.contrib.nativeWorkingCopyBackupTracker	1771241928525	0	761
+code/didCreateWorkbenchContribution/1/workbench.contrib.nativeWorkingCopyBackupTracker	1771241928525	0	761
+code/willCreateWorkbenchContribution/1/workbench.contrib.localTerminalBackend	1771241928525	0	761
+code/didCreateWorkbenchContribution/1/workbench.contrib.localTerminalBackend	1771241928526	1	762
+code/willCreateWorkbenchContribution/1/workbench.contrib.userDataSyncServices	1771241928526	0	762
+code/didCreateWorkbenchContribution/1/workbench.contrib.userDataSyncServices	1771241928526	0	762
+code/willCreateWorkbenchContribution/1/workbench.contrib.browserEditorResolver	1771241928526	0	762
+code/didCreateWorkbenchContribution/1/workbench.contrib.browserEditorResolver	1771241928526	0	762
+code/willCreateWorkbenchContribution/1/workbench.contrib.localhostLinkOpener	1771241928526	0	762
+code/didCreateWorkbenchContribution/1/workbench.contrib.localhostLinkOpener	1771241928526	0	762
+code/willCreateWorkbenchContribution/1/workbench.contrib.partsSplash	1771241928526	0	762
+code/didCreateWorkbenchContribution/1/workbench.contrib.partsSplash	1771241928526	0	762
+code/didCreateWorkbenchContributions/1	1771241928526	0	762
+code/willCreateWorkbenchContributions/2	1771241928526	0	762
+code/willCreateWorkbenchContribution/2/workbench.contrib.extensionUrlBootstrapHandler	1771241928526	0	762
+code/didCreateWorkbenchContribution/2/workbench.contrib.extensionUrlBootstrapHandler	1771241928527	1	763
+code/willCreateWorkbenchContribution/2/workbench.contrib.textInputActionsProvider	1771241928527	0	763
+code/didCreateWorkbenchContribution/2/workbench.contrib.textInputActionsProvider	1771241928527	0	763
+code/willCreateWorkbenchContribution/2/workbench.contrib.editorAutoSave	1771241928527	0	763
+code/didCreateWorkbenchContribution/2/workbench.contrib.editorAutoSave	1771241928527	0	763
+code/willCreateWorkbenchContribution/2/workbench.contrib.editorStatus	1771241928527	0	763
+code/didCreateWorkbenchContribution/2/workbench.contrib.editorStatus	1771241928528	1	764
+code/willCreateWorkbenchContribution/2/workbench.contrib.untitledTextEditorWorkingCopyEditorHandler	1771241928528	0	764
+code/didCreateWorkbenchContribution/2/workbench.contrib.untitledTextEditorWorkingCopyEditorHandler	1771241928528	0	764
+code/willCreateWorkbenchContribution/2/workbench.contrib.dynamicEditorConfigurations	1771241928528	0	764
+code/didCreateWorkbenchContribution/2/workbench.contrib.dynamicEditorConfigurations	1771241928528	0	764
+code/willCreateWorkbenchContribution/2/workbench.contrib.textMateTokenizationInstantiator	1771241928528	0	764
+code/didCreateWorkbenchContribution/2/workbench.contrib.textMateTokenizationInstantiator	1771241928529	1	765
+code/willCreateWorkbenchContribution/2/workbench.contrib.notebookChatContribution	1771241928529	0	765
+code/didCreateWorkbenchContribution/2/workbench.contrib.notebookChatContribution	1771241928530	1	766
+code/willCreateWorkbenchContribution/2/workbench.contrib.notebookClipboard	1771241928530	0	766
+code/didCreateWorkbenchContribution/2/workbench.contrib.notebookClipboard	1771241928530	0	766
+code/willCreateWorkbenchContribution/2/workbench.contrib.notebook.multiCursorUndoRedo	1771241928530	0	766
+code/didCreateWorkbenchContribution/2/workbench.contrib.notebook.multiCursorUndoRedo	1771241928530	0	766
+code/willCreateWorkbenchContribution/2/workbench.contrib.markerListProvider	1771241928530	0	766
+code/didCreateWorkbenchContribution/2/workbench.contrib.markerListProvider	1771241928531	1	767
+code/willCreateWorkbenchContribution/2/workbench.contrib.notebookUndoRedo	1771241928531	0	767
+code/didCreateWorkbenchContribution/2/workbench.contrib.notebookUndoRedo	1771241928531	0	767
+code/willCreateWorkbenchContribution/2/workbench.contribution.notebookOutputEditorContribution	1771241928531	0	767
+code/didCreateWorkbenchContribution/2/workbench.contribution.notebookOutputEditorContribution	1771241928531	0	767
+code/willCreateWorkbenchContribution/2/workbench.contrib.notebookEditorManager	1771241928531	0	767
+code/didCreateWorkbenchContribution/2/workbench.contrib.notebookEditorManager	1771241928531	0	767
+code/willCreateWorkbenchContribution/2/workbench.contrib.notebookLanguageSelectorScoreRefine	1771241928531	0	767
+code/didCreateWorkbenchContribution/2/workbench.contrib.notebookLanguageSelectorScoreRefine	1771241928531	0	767
+code/willCreateWorkbenchContribution/2/workbench.contrib.simpleNotebookWorkingCopyEditorHandler	1771241928531	0	767
+code/didCreateWorkbenchContribution/2/workbench.contrib.simpleNotebookWorkingCopyEditorHandler	1771241928531	0	767
+code/willCreateWorkbenchContribution/2/workbench.contrib.chatLanguageModelsData	1771241928531	0	767
+code/didCreateWorkbenchContribution/2/workbench.contrib.chatLanguageModelsData	1771241928532	1	768
+code/willCreateWorkbenchContribution/2/workbench.contrib.toolsExtensionPointHandler	1771241928532	0	768
+code/didCreateWorkbenchContribution/2/workbench.contrib.toolsExtensionPointHandler	1771241928532	0	768
+code/willCreateWorkbenchContribution/2/workbench.contrib.chatPromptFilesExtensionPointHandler	1771241928532	0	768
+code/didCreateWorkbenchContribution/2/workbench.contrib.chatPromptFilesExtensionPointHandler	1771241928532	0	768
+code/willCreateWorkbenchContribution/2/chat.codeBlockActionRendering	1771241928532	0	768
+code/didCreateWorkbenchContribution/2/chat.codeBlockActionRendering	1771241928533	1	769
+code/willCreateWorkbenchContribution/2/workbench.contrib.chatSetup	1771241928533	0	769
+code/didCreateWorkbenchContribution/2/workbench.contrib.chatSetup	1771241928537	4	773
+code/willCreateWorkbenchContribution/2/workbench.contrib.chatStatusBarEntry	1771241928537	0	773
+code/didCreateWorkbenchContribution/2/workbench.contrib.chatStatusBarEntry	1771241928537	0	773
+code/willCreateWorkbenchContribution/2/chat.queuePickerRendering	1771241928537	0	773
+code/didCreateWorkbenchContribution/2/chat.queuePickerRendering	1771241928537	0	773
+code/willCreateWorkbenchContribution/2/workbench.contrib.chatTransfer	1771241928537	0	773
+code/didCreateWorkbenchContribution/2/workbench.contrib.chatTransfer	1771241928538	1	774
+code/willCreateWorkbenchContribution/2/workbench.contrib.promptUrlHandler	1771241928538	0	774
+code/didCreateWorkbenchContribution/2/workbench.contrib.promptUrlHandler	1771241928538	0	774
+code/willCreateWorkbenchContribution/2/workbench.contrib.inlineChatDefaultModel	1771241928538	0	774
+code/didCreateWorkbenchContribution/2/workbench.contrib.inlineChatDefaultModel	1771241928538	0	774
+code/willCreateWorkbenchContribution/2/mcpContextKeys	1771241928538	0	774
+code/didCreateWorkbenchContribution/2/mcpContextKeys	1771241928543	5	779
+code/willCreateWorkbenchContribution/2/mcpResourceFilesystem	1771241928543	0	779
+code/registerFilesystem/mcp-resource	1771241928543	0	779
+code/didCreateWorkbenchContribution/2/mcpResourceFilesystem	1771241928543	0	779
+code/willCreateWorkbenchContribution/2/mcpActionRendering	1771241928543	0	779
+code/didCreateWorkbenchContribution/2/mcpActionRendering	1771241928544	1	780
+code/willCreateWorkbenchContribution/2/workbench.contrib.interactiveDocument	1771241928544	0	780
+code/didCreateWorkbenchContribution/2/workbench.contrib.interactiveDocument	1771241928545	1	781
+code/willCreateWorkbenchContribution/2/workbench.contrib.replWorkingCopyEditorHandler	1771241928545	0	781
+code/didCreateWorkbenchContribution/2/workbench.contrib.replWorkingCopyEditorHandler	1771241928545	0	781
+code/willCreateWorkbenchContribution/2/workbench.contrib.replDocument	1771241928545	0	781
+code/didCreateWorkbenchContribution/2/workbench.contrib.replDocument	1771241928545	0	781
+code/willCreateWorkbenchContribution/2/workbench.contrib.fileEditorWorkingCopyEditorHandler	1771241928545	0	781
+code/didCreateWorkbenchContribution/2/workbench.contrib.fileEditorWorkingCopyEditorHandler	1771241928545	0	781
+code/willCreateWorkbenchContribution/2/workbench.contrib.bulkEditPreview	1771241928545	0	781
+code/didCreateWorkbenchContribution/2/workbench.contrib.bulkEditPreview	1771241928546	1	782
+code/willCreateWorkbenchContribution/2/workbench.contrib.searchEditorWorkingCopyEditorHandler	1771241928546	0	782
+code/didCreateWorkbenchContribution/2/workbench.contrib.searchEditorWorkingCopyEditorHandler	1771241928546	0	782
+code/willCreateWorkbenchContribution/2/comments.input.contentProvider	1771241928546	0	782
+code/didCreateWorkbenchContribution/2/comments.input.contentProvider	1771241928546	0	782
+code/willCreateWorkbenchContribution/2/workbench.contrib.trustedDomainsFileSystemProvider	1771241928546	0	782
+code/registerFilesystem/trustedDomains	1771241928546	0	782
+code/didCreateWorkbenchContribution/2/workbench.contrib.trustedDomainsFileSystemProvider	1771241928546	0	782
+code/willCreateWorkbenchContribution/2/workbench.contrib.externalUriResolver	1771241928546	0	782
+code/didCreateWorkbenchContribution/2/workbench.contrib.externalUriResolver	1771241928546	0	782
+code/willCreateWorkbenchContribution/2/workbench.contrib.showPortCandidate	1771241928546	0	782
+code/didCreateWorkbenchContribution/2/workbench.contrib.showPortCandidate	1771241928546	0	782
+code/willCreateWorkbenchContribution/2/workbench.contrib.tunnelFactory	1771241928546	0	782
+code/didCreateWorkbenchContribution/2/workbench.contrib.tunnelFactory	1771241928546	0	782
+code/willCreateWorkbenchContribution/2/workbench.contrib.editorFeaturesInstantiator	1771241928546	0	782
+code/didCreateWorkbenchContribution/2/workbench.contrib.editorFeaturesInstantiator	1771241928546	0	782
+code/willCreateWorkbenchContribution/2/workbench.contrib.startupPageEditorResolver	1771241928546	0	782
+code/didCreateWorkbenchContribution/2/workbench.contrib.startupPageEditorResolver	1771241928546	0	782
+code/willCreateWorkbenchContribution/2/workbench.contrib.userDataProfiles	1771241928546	0	782
+code/didCreateWorkbenchContribution/2/workbench.contrib.userDataProfiles	1771241928547	1	783
+code/willCreateWorkbenchContribution/2/workbench.contrib.localHistoryTimeline	1771241928547	0	783
+code/registerFilesystem/vscode-local-history	1771241928548	1	784
+code/didCreateWorkbenchContribution/2/workbench.contrib.localHistoryTimeline	1771241928549	1	785
+code/willCreateWorkbenchContribution/2/workbench.contrib.workspaceTrustRequestHandler	1771241928549	0	785
+code/didCreateWorkbenchContribution/2/workbench.contrib.workspaceTrustRequestHandler	1771241928549	0	785
+code/willCreateWorkbenchContribution/2/workbench.contrib.accessibilityStatus	1771241928549	0	785
+code/didCreateWorkbenchContribution/2/workbench.contrib.accessibilityStatus	1771241928549	0	785
+code/willCreateWorkbenchContribution/2/extensionAccessibilityHelpDialogContribution	1771241928549	0	785
+code/didCreateWorkbenchContribution/2/extensionAccessibilityHelpDialogContribution	1771241928549	0	785
+code/willCreateWorkbenchContribution/2/workbench.contrib.configurationDefaultOverridesContribution	1771241928549	0	785
+code/didCreateWorkbenchContribution/2/workbench.contrib.configurationDefaultOverridesContribution	1771241928555	6	791
+code/willCreateWorkbenchContribution/2/workbench.contrib.nativeRemoteConnectionFailureNotification	1771241928555	0	791
+code/didCreateWorkbenchContribution/2/workbench.contrib.nativeRemoteConnectionFailureNotification	1771241928555	0	791
+code/willCreateWorkbenchContribution/2/workbench.contrib.remoteTelemetryEnablementUpdater	1771241928555	0	791
+code/didCreateWorkbenchContribution/2/workbench.contrib.remoteTelemetryEnablementUpdater	1771241928555	0	791
+code/willCreateWorkbenchContribution/2/workbench.contrib.remoteEmptyWorkbenchPresentation	1771241928555	0	791
+code/didCreateWorkbenchContribution/2/workbench.contrib.remoteEmptyWorkbenchPresentation	1771241928555	0	791
+code/willCreateWorkbenchContribution/2/workbench.contrib.chatCommandLineHandler	1771241928555	0	791
+code/didCreateWorkbenchContribution/2/workbench.contrib.chatCommandLineHandler	1771241928555	0	791
+code/didCreateWorkbenchContributions/2	1771241928555	0	791
+code/willCreatePart/workbench.parts.titlebar	1771241928558	3	794
+code/didCreatePart/workbench.parts.titlebar	1771241928606	48	842
+code/willCreatePart/workbench.parts.banner	1771241928606	0	842
+code/didCreatePart/workbench.parts.banner	1771241928606	0	842
+code/willCreatePart/workbench.parts.activitybar	1771241928606	0	842
+code/didCreatePart/workbench.parts.activitybar	1771241928616	10	852
+code/willCreatePart/workbench.parts.sidebar	1771241928616	0	852
+code/didCreatePart/workbench.parts.sidebar	1771241928618	2	854
+code/willCreatePart/workbench.parts.editor	1771241928618	0	854
+code/willCreateTextFileEditorControl	1771241928638	20	874
+code/didCreateTextFileEditorControl	1771241928676	38	912
+code/willSetInputToTextFileEditor	1771241928677	1	913
+code/didCreatePart/workbench.parts.editor	1771241928698	21	934
+code/willCreatePart/workbench.parts.panel	1771241928698	0	934
+code/didCreatePart/workbench.parts.panel	1771241928703	5	939
+code/willCreatePart/workbench.parts.auxiliarybar	1771241928703	0	939
+code/didCreatePart/workbench.parts.auxiliarybar	1771241928704	1	940
+code/willCreatePart/workbench.parts.statusbar	1771241928705	1	941
+code/didCreatePart/workbench.parts.statusbar	1771241928707	2	943
+code/didRemovePartsSplash	1771241928765	58	1001
+code/willRestoreEditors	1771241928766	1	1002
+code/willRestoreViewlet	1771241928770	4	1006
+code/willRestorePanel	1771241928783	13	1019
+code/willRestoreAuxiliaryBar	1771241928818	35	1054
+code/willResolveTextFileEditorModel	1771241928932	114	1168
+code/restoreEditors/editorGroupsReady	1771241928940	8	1176
+code/restoreEditors/editorsToOpenResolved	1771241928970	30	1206
+code/willRegisterExplorerViews	1771241928972	2	1208
+code/didRegisterExplorerViews	1771241928985	13	1221
+code/didRestoreViewlet	1771241928986	1	1222
+code/didRestorePanel	1771241928986	0	1222
+code/didRestoreAuxiliaryBar	1771241928986	0	1222
+code/willResolveTextFileEditorModel	1771241929070	84	1306
+code/willLoadExtensions	1771241929083	13	1319
+code/didResolveTextFileEditorModel	1771241929166	83	1402
+code/didResolveTextFileEditorModel	1771241929195	29	1431
+code/didSetInputToTextFileEditor	1771241929204	9	1440
+code/restoreEditors/editorGroupsRestored	1771241929212	8	1448
+code/didRestoreEditors	1771241929212	0	1448
+code/didStartWorkbench	1771241929212	0	1448
+code/LifecyclePhase/Restored	1771241929212	0	1448
+code/willCreateWorkbenchContributions/3	1771241929213	1	1449
+code/willConnectSharedProcess	1771241929214	1	1450
+code/terminal/willGetTerminalBackend	1771241929569	355	1805
+code/terminal/didGetTerminalBackend	1771241929569	0	1805
+code/terminal/willReconnect	1771241929569	0	1805
+code/terminal/willGetTerminalLayoutInfo	1771241929569	0	1805
+code/terminal/didGetTerminalLayoutInfo	1771241929588	19	1824
+code/terminal/didReconnect	1771241929588	0	1824
+code/terminal/willReplay	1771241929588	0	1824
+code/terminal/didReplay	1771241929588	0	1824
+code/terminal/willGetPerformanceMarks	1771241929588	0	1824
+code/terminal/didGetPerformanceMarks	1771241929603	15	1839
+code/willCreateWorkbenchContribution/3/workbench.contrib.dynamicWorkbenchSecurityConfiguration	1771241929720	117	1956
+code/didCreateWorkbenchContribution/3/workbench.contrib.dynamicWorkbenchSecurityConfiguration	1771241929720	0	1956
+code/willHandleExtensionPoints	1771241929835	115	2071
+code/willHandleExtensionPoint/jsonValidation	1771241929835	0	2071
+code/didHandleExtensionPoint/jsonValidation	1771241929835	0	2071
+code/willHandleExtensionPoint/colors	1771241929835	0	2071
+code/didHandleExtensionPoint/colors	1771241929836	1	2072
+code/willHandleExtensionPoint/icons	1771241929836	0	2072
+code/didHandleExtensionPoint/icons	1771241929838	2	2074
+code/willHandleExtensionPoint/semanticTokenTypes	1771241929838	0	2074
+code/didHandleExtensionPoint/semanticTokenTypes	1771241929838	0	2074
+code/willHandleExtensionPoint/semanticTokenScopes	1771241929838	0	2074
+code/didHandleExtensionPoint/semanticTokenScopes	1771241929838	0	2074
+code/willHandleExtensionPoint/css	1771241929838	0	2074
+code/didHandleExtensionPoint/css	1771241929838	0	2074
+code/willHandleExtensionPoint/languageModelChatProviders	1771241929838	0	2074
+code/didHandleExtensionPoint/languageModelChatProviders	1771241929839	1	2075
+code/willHandleExtensionPoint/languageModelTools	1771241929839	0	2075
+code/didHandleExtensionPoint/languageModelTools	1771241929870	31	2106
+code/willHandleExtensionPoint/languageModelToolSets	1771241929870	0	2106
+code/didHandleExtensionPoint/languageModelToolSets	1771241929873	3	2109
+code/willHandleExtensionPoint/chatOutputRenderers	1771241929873	0	2109
+code/didHandleExtensionPoint/chatOutputRenderers	1771241929873	0	2109
+code/willHandleExtensionPoint/languages	1771241929873	0	2109
+code/didHandleExtensionPoint/languages	1771241929889	16	2125
+code/willHandleExtensionPoint/snippets	1771241929889	0	2125
+code/didHandleExtensionPoint/snippets	1771241929889	0	2125
+code/willHandleExtensionPoint/taskDefinitions	1771241929889	0	2125
+code/didHandleExtensionPoint/taskDefinitions	1771241929890	1	2126
+code/willHandleExtensionPoint/remoteHelp	1771241929890	0	2126
+code/didHandleExtensionPoint/remoteHelp	1771241929890	0	2126
+code/willHandleExtensionPoint/authentication	1771241929890	0	2126
+code/didHandleExtensionPoint/authentication	1771241929890	0	2126
+code/willHandleExtensionPoint/commands	1771241929890	0	2126
+code/didHandleExtensionPoint/commands	1771241929898	8	2134
+code/willHandleExtensionPoint/submenus	1771241929898	0	2134
+code/didHandleExtensionPoint/submenus	1771241929898	0	2134
+code/willHandleExtensionPoint/menus	1771241929898	0	2134
+code/didHandleExtensionPoint/menus	1771241929926	28	2162
+code/willHandleExtensionPoint/configurationDefaults	1771241929926	0	2162
+code/didHandleExtensionPoint/configurationDefaults	1771241929927	1	2163
+code/willHandleExtensionPoint/configuration	1771241929927	0	2163
+code/didHandleExtensionPoint/configuration	1771241930001	74	2237
+code/willHandleExtensionPoint/viewsContainers	1771241930001	0	2237
+code/didHandleExtensionPoint/viewsContainers	1771241930044	43	2280
+code/willHandleExtensionPoint/views	1771241930044	0	2280
+code/didHandleExtensionPoint/views	1771241930113	69	2349
+code/willHandleExtensionPoint/keybindings	1771241930113	0	2349
+code/didHandleExtensionPoint/keybindings	1771241930121	8	2357
+code/willHandleExtensionPoint/themes	1771241930121	0	2357
+code/didHandleExtensionPoint/themes	1771241930122	1	2358
+code/willHandleExtensionPoint/iconThemes	1771241930122	0	2358
+code/didHandleExtensionPoint/iconThemes	1771241930122	0	2358
+code/willHandleExtensionPoint/resourceLabelFormatters	1771241930122	0	2358
+code/didHandleExtensionPoint/resourceLabelFormatters	1771241930122	0	2358
+code/willHandleExtensionPoint/grammars	1771241930122	0	2358
+code/didHandleExtensionPoint/grammars	1771241930138	16	2374
+code/willHandleExtensionPoint/notebooks	1771241930138	0	2374
+code/didHandleExtensionPoint/notebooks	1771241930139	1	2375
+code/willHandleExtensionPoint/notebookRenderer	1771241930139	0	2375
+code/didHandleExtensionPoint/notebookRenderer	1771241930139	0	2375
+code/willHandleExtensionPoint/chatPromptFiles	1771241930139	0	2375
+code/didHandleExtensionPoint/chatPromptFiles	1771241930150	11	2386
+code/willHandleExtensionPoint/chatAgents	1771241930150	0	2386
+code/didHandleExtensionPoint/chatAgents	1771241930155	5	2391
+code/willHandleExtensionPoint/chatSkills	1771241930155	0	2391
+code/didHandleExtensionPoint/chatSkills	1771241930155	0	2391
+code/willHandleExtensionPoint/chatParticipants	1771241930155	0	2391
+code/didHandleExtensionPoint/chatParticipants	1771241930173	18	2409
+code/willHandleExtensionPoint/chatViewsWelcome	1771241930173	0	2409
+code/didHandleExtensionPoint/chatViewsWelcome	1771241930173	0	2409
+code/willHandleExtensionPoint/mcpServerDefinitionProviders	1771241930173	0	2409
+code/didHandleExtensionPoint/mcpServerDefinitionProviders	1771241930173	0	2409
+code/willHandleExtensionPoint/chatSessions	1771241930173	0	2409
+code/didHandleExtensionPoint/chatSessions	1771241930179	6	2415
+code/willHandleExtensionPoint/debuggers	1771241930179	0	2415
+code/didHandleExtensionPoint/debuggers	1771241930183	4	2419
+code/willHandleExtensionPoint/breakpoints	1771241930183	0	2419
+code/didHandleExtensionPoint/breakpoints	1771241930183	0	2419
+code/willHandleExtensionPoint/customEditors	1771241930183	0	2419
+code/didHandleExtensionPoint/customEditors	1771241930184	1	2420
+code/willHandleExtensionPoint/terminal	1771241930184	0	2420
+code/didHandleExtensionPoint/terminal	1771241930184	0	2420
+code/willHandleExtensionPoint/terminalQuickFixes	1771241930184	0	2420
+code/didHandleExtensionPoint/terminalQuickFixes	1771241930184	0	2420
+code/willHandleExtensionPoint/problemPatterns	1771241930184	0	2420
+code/didHandleExtensionPoint/problemPatterns	1771241930184	0	2420
+code/willHandleExtensionPoint/problemMatchers	1771241930184	0	2420
+code/didHandleExtensionPoint/problemMatchers	1771241930185	1	2421
+code/willHandleExtensionPoint/walkthroughs	1771241930185	0	2421
+code/didHandleExtensionPoint/walkthroughs	1771241930185	0	2421
+code/willHandleExtensionPoint/viewsWelcome	1771241930185	0	2421
+code/didHandleExtensionPoint/viewsWelcome	1771241930185	0	2421
+code/willHandleExtensionPoint/continueEditSession	1771241930185	0	2421
+code/didHandleExtensionPoint/continueEditSession	1771241930185	0	2421
+code/didHandleExtensionPoints	1771241930185	0	2421
+code/didLoadExtensions	1771241930195	10	2431
+```
+## Raw Perf Marks: localExtHost
+
+```
+Name	Timestamp	Delta	Total
+code/timeOrigin	1771241930850.056	0	0
+code/fork/start	1771241931117	266.944091796875	266.944091796875
+code/willLoadNls	1771241931118	1	267.944091796875
+code/didLoadNls	1771241931126	8	275.944091796875
+code/extHost/willConnectToRenderer	1771241931456	330	605.944091796875
+code/extHost/didConnectToRenderer	1771241931457	1	606.944091796875
+code/extHost/didWaitForInitData	1771241931646	189	795.944091796875
+code/extHost/didCreateServices	1771241931648	2	797.944091796875
+code/extHost/willWaitForConfig	1771241931664	16	813.944091796875
+code/extHost/didWaitForConfig	1771241931762	98	911.944091796875
+code/extHost/willWaitForConfig	1771241931787	25	936.944091796875
+code/extHost/didWaitForConfig	1771241931787	0	936.944091796875
+code/extHost/didInitAPI	1771241931787	0	936.944091796875
+code/extHost/didInitProxyResolver	1771241931797	10	946.944091796875
+code/extHost/ready	1771241931824	27	973.944091796875
+code/extHost/willLoadExtensionCode/vscode.github-authentication	1771241931863	39	1012.944091796875
+code/extHost/didLoadExtensionCode/vscode.github-authentication	1771241931896	33	1045.944091796875
+code/extHost/willLoadExtensionCode/vscode.emmet	1771241931897	1	1046.944091796875
+code/extHost/didLoadExtensionCode/vscode.emmet	1771241931918	21	1067.944091796875
+code/extHost/willLoadExtensionCode/GitHub.copilot-chat	1771241931919	1	1068.944091796875
+code/extHost/didLoadExtensionCode/GitHub.copilot-chat	1771241933234	1315	2383.944091796875
+code/extHost/willLoadExtensionCode/ms-windows-ai-studio.windows-ai-studio	1771241933236	2	2385.944091796875
+code/extHost/didLoadExtensionCode/ms-windows-ai-studio.windows-ai-studio	1771241934516	1280	3665.944091796875
+code/extHost/willLoadExtensionCode/redhat.vscode-yaml	1771241934517	1	3666.944091796875
+code/extHost/didLoadExtensionCode/redhat.vscode-yaml	1771241934604	87	3753.944091796875
+code/extHost/willLoadExtensionCode/oxc.oxc-vscode	1771241934605	1	3754.944091796875
+code/extHost/didLoadExtensionCode/oxc.oxc-vscode	1771241934626	21	3775.944091796875
+code/extHost/willLoadExtensionCode/pflannery.vscode-versionlens	1771241934627	1	3776.944091796875
+code/extHost/didLoadExtensionCode/pflannery.vscode-versionlens	1771241934694	67	3843.944091796875
+code/extHost/willLoadExtensionCode/foxundermoon.shell-format	1771241934694	0	3843.944091796875
+code/extHost/didLoadExtensionCode/foxundermoon.shell-format	1771241934707	13	3856.944091796875
+code/extHost/willLoadExtensionCode/github.vscode-github-actions	1771241934709	2	3858.944091796875
+code/extHost/didLoadExtensionCode/github.vscode-github-actions	1771241934780	71	3929.944091796875
+code/extHost/willLoadExtensionCode/vscode.configuration-editing	1771241934781	1	3930.944091796875
+code/extHost/didLoadExtensionCode/vscode.configuration-editing	1771241934790	9	3939.944091796875
+code/extHost/willLoadExtensionCode/vscode.json-language-features	1771241934790	0	3939.944091796875
+code/extHost/didLoadExtensionCode/vscode.json-language-features	1771241934849	59	3998.944091796875
+code/extHost/willLoadExtensionCode/vscode.typescript-language-features	1771241934850	1	3999.944091796875
+code/extHost/didLoadExtensionCode/vscode.typescript-language-features	1771241934904	54	4053.944091796875
+code/extHost/willActivateExtension/vscode.github-authentication	1771241934905	1	4054.944091796875
+code/extHost/didActivateExtension/vscode.github-authentication	1771241934925	20	4074.944091796875
+code/extHost/willActivateExtension/vscode.emmet	1771241934925	0	4074.944091796875
+code/extHost/didActivateExtension/vscode.emmet	1771241934937	12	4086.944091796875
+code/extHost/willActivateExtension/GitHub.copilot-chat	1771241934969	32	4118.944091796875
+code/extHost/willActivateExtension/ms-windows-ai-studio.windows-ai-studio	1771241935048	79	4197.944091796875
+code/extHost/willActivateExtension/redhat.vscode-yaml	1771241935544	496	4693.944091796875
+code/extHost/didActivateExtension/redhat.vscode-yaml	1771241935557	13	4706.944091796875
+code/extHost/willActivateExtension/oxc.oxc-vscode	1771241935558	1	4707.944091796875
+code/extHost/didActivateExtension/oxc.oxc-vscode	1771241937641	2083	6790.944091796875
+code/extHost/willActivateExtension/pflannery.vscode-versionlens	1771241937692	51	6841.944091796875
+code/extHost/willActivateExtension/github.vscode-github-actions	1771241937729	37	6878.944091796875
+code/extHost/willActivateExtension/vscode.configuration-editing	1771241937730	1	6879.944091796875
+code/extHost/didActivateExtension/vscode.configuration-editing	1771241937730	0	6879.944091796875
+code/extHost/willActivateExtension/vscode.json-language-features	1771241937731	1	6880.944091796875
+code/extHost/willActivateExtension/vscode.typescript-language-features	1771241937731	0	6880.944091796875
+code/extHost/didActivateExtension/vscode.typescript-language-features	1771241937763	32	6912.944091796875
+code/extHost/willLoadExtensionCode/vscode.git-base	1771241937766	3	6915.944091796875
+code/extHost/didLoadExtensionCode/vscode.git-base	1771241937769	3	6918.944091796875
+code/extHost/willLoadExtensionCode/howardzuo.vscode-git-tags	1771241937769	0	6918.944091796875
+code/extHost/didLoadExtensionCode/howardzuo.vscode-git-tags	1771241937819	50	6968.944091796875
+code/extHost/willLoadExtensionCode/mhutchie.git-graph	1771241937819	0	6968.944091796875
+code/extHost/didLoadExtensionCode/mhutchie.git-graph	1771241937838	19	6987.944091796875
+code/extHost/willLoadExtensionCode/WakaTime.vscode-wakatime	1771241937838	0	6987.944091796875
+code/extHost/didLoadExtensionCode/WakaTime.vscode-wakatime	1771241937892	54	7041.944091796875
+code/extHost/willLoadExtensionCode/wayou.vscode-todo-highlight	1771241937893	1	7042.944091796875
+code/extHost/didLoadExtensionCode/wayou.vscode-todo-highlight	1771241937895	2	7044.944091796875
+code/extHost/willLoadExtensionCode/xshrim.txt-syntax	1771241937895	0	7044.944091796875
+code/extHost/didLoadExtensionCode/xshrim.txt-syntax	1771241937902	7	7051.944091796875
+code/extHost/willLoadExtensionCode/vscode.microsoft-authentication	1771241937903	1	7052.944091796875
+code/extHost/didLoadExtensionCode/vscode.microsoft-authentication	1771241938034	131	7183.944091796875
+code/extHost/willLoadExtensionCode/vscode.npm	1771241938034	0	7183.944091796875
+code/extHost/didLoadExtensionCode/vscode.npm	1771241938061	27	7210.944091796875
+code/extHost/willLoadExtensionCode/me-dutour-mathieu.vscode-github-actions	1771241938072	11	7221.944091796875
+code/extHost/didLoadExtensionCode/me-dutour-mathieu.vscode-github-actions	1771241938099	27	7248.944091796875
+code/extHost/willActivateExtension/vscode.git-base	1771241938124	25	7273.944091796875
+code/extHost/didActivateExtension/vscode.git-base	1771241938124	0	7273.944091796875
+code/extHost/willActivateExtension/howardzuo.vscode-git-tags	1771241938124	0	7273.944091796875
+code/extHost/didActivateExtension/howardzuo.vscode-git-tags	1771241938126	2	7275.944091796875
+code/extHost/willActivateExtension/mhutchie.git-graph	1771241938126	0	7275.944091796875
+code/extHost/willActivateExtension/WakaTime.vscode-wakatime	1771241938128	2	7277.944091796875
+code/extHost/didActivateExtension/WakaTime.vscode-wakatime	1771241938129	1	7278.944091796875
+code/extHost/willActivateExtension/wayou.vscode-todo-highlight	1771241938130	1	7279.944091796875
+code/extHost/didActivateExtension/wayou.vscode-todo-highlight	1771241938131	1	7280.944091796875
+code/extHost/willActivateExtension/xshrim.txt-syntax	1771241938131	0	7280.944091796875
+code/extHost/didActivateExtension/xshrim.txt-syntax	1771241938135	4	7284.944091796875
+code/extHost/willActivateExtension/vscode.microsoft-authentication	1771241938135	0	7284.944091796875
+code/extHost/willActivateExtension/vscode.npm	1771241938153	18	7302.944091796875
+code/extHost/willActivateExtension/me-dutour-mathieu.vscode-github-actions	1771241938160	7	7309.944091796875
+code/extHost/didActivateExtension/me-dutour-mathieu.vscode-github-actions	1771241938164	4	7313.944091796875
+code/extHost/didActivateExtension/ms-windows-ai-studio.windows-ai-studio	1771241938170	6	7319.944091796875
+code/extHost/willLoadExtensionCode/vscode.git	1771241938176	6	7325.944091796875
+code/extHost/didLoadExtensionCode/vscode.git	1771241938228	52	7377.944091796875
+code/extHost/willLoadExtensionCode/vscode.github	1771241938229	1	7378.944091796875
+code/extHost/willActivateExtension/vscode.git	1771241938237	8	7386.944091796875
+code/extHost/didActivateExtension/mhutchie.git-graph	1771241938296	59	7445.944091796875
+code/extHost/willLoadExtensionCode/p1c2u.docker-compose	1771241938297	1	7446.944091796875
+code/extHost/didLoadExtensionCode/p1c2u.docker-compose	1771241938436	139	7585.944091796875
+code/extHost/willActivateExtension/p1c2u.docker-compose	1771241938493	57	7642.944091796875
+code/extHost/didActivateExtension/p1c2u.docker-compose	1771241938494	1	7643.944091796875
+code/extHost/didActivateExtension/vscode.git	1771241938544	50	7693.944091796875
+code/extHost/didActivateExtension/vscode.npm	1771241938546	2	7695.944091796875
+code/extHost/didLoadExtensionCode/vscode.github	1771241938549	3	7698.944091796875
+code/extHost/willActivateExtension/vscode.github	1771241938549	0	7698.944091796875
+code/extHost/didActivateExtension/vscode.github	1771241938574	25	7723.944091796875
+code/extHost/didActivateExtension/vscode.microsoft-authentication	1771241938636	62	7785.944091796875
+code/extHost/didActivateExtension/pflannery.vscode-versionlens	1771241939178	542	8327.944091796875
+code/extHost/didActivateExtension/vscode.json-language-features	1771241939184	6	8333.944091796875
+code/extHost/didActivateExtension/GitHub.copilot-chat	1771241940504	1320	9653.944091796875
+code/extHost/didActivateExtension/github.vscode-github-actions	1771241941936	1432	11085.944091796875
+```
+
+## Resource Timing Stats
+
+| Name                                                                                                                                                                                               | Duration           |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| https://default.exp-tas.com/vscode/ab                                                                                                                                                              | 398.10000000009313 |
+| https://main.vscode-cdn.net/extensions/chat.json                                                                                                                                                   | 3.8999999999068677 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/1tontech/angular-material/latest                                                                                                  | 383.60000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/4ops/terraform/latest                                                                                                             | 412.89999999990687 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/aaaaronzhou/nginx-config-formatter-vscode-extension/latest                                                                        | 415.30000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/aaron-bond/better-comments/latest                                                                                                 | 401.4000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/adam-bender/commit-message-editor/latest                                                                                          | 419.20000000018626 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ahmadalli/vscode-nginx-conf/latest                                                                                                | 411.30000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/alefragnani/project-manager/latest                                                                                                | 417.19999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/alexandernanberg/horizon-theme-vscode/latest                                                                                      | 415.80000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/alexiv/vscode-angular2-files/latest                                                                                               | 421                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/amazonwebservices/aws-toolkit-vscode/latest                                                                                       | 379.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ameenahsanma/poetry-monorepo/latest                                                                                               | 379.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/analogjs/vscode-analog/latest                                                                                                     | 405.30000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/angular/ng-template/latest                                                                                                        | 396                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/antfu/unocss/latest                                                                                                               | 400.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/artdiniz/quitcontrol-vscode/latest                                                                                                | 414.29999999981374 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/astro-build/astro-vscode/latest                                                                                                   | 429.89999999990687 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/austenc/tailwind-docs/latest                                                                                                      | 412.89999999990687 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/bbenoist/vagrant/latest                                                                                                           | 416.80000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/berublan/vscode-log-viewer/latest                                                                                                 | 414.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/bierner/github-markdown-preview/latest                                                                                            | 421.19999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/bierner/markdown-checkbox/latest                                                                                                  | 415.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/bierner/markdown-footnotes/latest                                                                                                 | 427.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/bierner/markdown-mermaid/latest                                                                                                   | 425.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/bierner/markdown-preview-github-styles/latest                                                                                     | 412.10000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/bierner/markdown-yaml-preamble/latest                                                                                             | 374.89999999990687 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/bmewburn/vscode-intelephense-client/latest                                                                                        | 421.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/bourhaouta/tailwindshades/latest                                                                                                  | 409.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/bradlc/vscode-tailwindcss/latest                                                                                                  | 421.19999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/charliermarsh/ruff/latest                                                                                                         | 427.60000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/chouzz/vscode-better-align/latest                                                                                                 | 407.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/christian-kohler/npm-intellisense/latest                                                                                          | 414.60000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/christian-kohler/path-intellisense/latest                                                                                         | 417.29999999981374 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/chrmarti/regex/latest                                                                                                             | 415.10000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/codezombiech/gitignore/latest                                                                                                     | 404.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/cyrilletuzi/angular-schematics/latest                                                                                             | 406.89999999990687 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/darian-benam/vscode-robots-dot-txt-support/latest                                                                                 | 409.10000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/davidanson/vscode-markdownlint/latest                                                                                             | 418.30000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/dbaeumer/vscode-eslint/latest                                                                                                     | 418.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/deque-systems/vscode-axe-linter/latest                                                                                            | 409.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/devsense/composer-php-vscode/latest                                                                                               | 408.30000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/devsense/intelli-php-vscode/latest                                                                                                | 419.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/devsense/phptools-vscode/latest                                                                                                   | 424.10000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/devsense/profiler-php-vscode/latest                                                                                               | 418.39999999990687 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/docker/docker/latest                                                                                                              | 419.30000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/docsmsft/docs-article-templates/latest                                                                                            | 410                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/docsmsft/docs-authoring-pack/latest                                                                                               | 275.39999999990687 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/docsmsft/docs-images/latest                                                                                                       | 420.39999999990687 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/docsmsft/docs-markdown/latest                                                                                                     | 412                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/docsmsft/docs-scaffolding/latest                                                                                                  | 411.19999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/docsmsft/docs-yaml/latest                                                                                                         | 396                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/donjayamanne/git-extension-pack/latest                                                                                            | 397.30000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/donjayamanne/githistory/latest                                                                                                    | 411.29999999981374 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/dotenv/dotenv-vscode/latest                                                                                                       | 412.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/dotjoshjohnson/xml/latest                                                                                                         | 411.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/eamodio/gitlens/latest                                                                                                            | 414.4000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/editorconfig/editorconfig/latest                                                                                                  | 402.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/emilast/logfilehighlighter/latest                                                                                                 | 403.5999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/esbenp/prettier-vscode/latest                                                                                                     | 411.5999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/etienne-lescot/n8n-as-code/latest                                                                                                 | 373.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/exiasr/hadolint/latest                                                                                                            | 372.5999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/fill-labs/dependi/latest                                                                                                          | 378.29999999981374 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/financialforce/lana/latest                                                                                                        | 413.20000000018626 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/firsttris/vscode-jest-runner/latest                                                                                               | 409.19999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/formulahendry/docker-explorer/latest                                                                                              | 400.60000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/formulahendry/docker-extension-pack/latest                                                                                        | 414.5999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/foxundermoon/shell-format/latest                                                                                                  | 399.19999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/github/codespaces/latest                                                                                                          | 404.30000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/github/copilot-chat/latest                                                                                                        | 366.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/github/remotehub/latest                                                                                                           | 365.80000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/github/vscode-github-actions/latest                                                                                               | 413.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/graphql/vscode-graphql/latest                                                                                                     | 410.20000000018626 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/graphql/vscode-graphql-syntax/latest                                                                                              | 376.29999999981374 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/gruntfuggly/todo-tree/latest                                                                                                      | 366.80000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/hangxingliu/vscode-nginx-conf-hint/latest                                                                                         | 371.10000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/hashicorp/terraform/latest                                                                                                        | 362.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/hediet/debug-visualizer/latest                                                                                                    | 553.8999999999069  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/henriiik/docker-linter/latest                                                                                                     | 411                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/howardzuo/vscode-git-tags/latest                                                                                                  | 376.89999999990687 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ibm/output-colorizer/latest                                                                                                       | 554.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/imgildev/vscode-auto-barrel/latest                                                                                                | 558.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/imgildev/vscode-json-flow/latest                                                                                                  | 400.0999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/imgildev/vscode-nestjs-snippets-extension/latest                                                                                  | 379.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/infinity1207/angular2-switcher/latest                                                                                             | 556.5999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/irongeek/vscode-env/latest                                                                                                        | 400.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ivov/n8n-utils/latest                                                                                                             | 359.0999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/jeff-hykin/better-dockerfile-syntax/latest                                                                                        | 552.7999999998137  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/jmkrivocapich/drawfolderstructure/latest                                                                                          | 545.5999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/john-crowson/angular-file-changer/latest                                                                                          | 555.8999999999069  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/johnbillion/vscode-wordpress-hooks/latest                                                                                         | 382.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/johnpapa/angular-essentials/latest                                                                                                | 364.19999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/johnpapa/angular2/latest                                                                                                          | 386.19999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/karyfoundation/comment/latest                                                                                                     | 552.5999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/kevinrose/vsc-python-indent/latest                                                                                                | 566.7000000001863  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/kingleo/quickdraw/latest                                                                                                          | 556.3000000000466  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/kumar-harsh/graphql-for-vscode/latest                                                                                             | 563.1000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/leetcode/vscode-leetcode/latest                                                                                                   | 555.3000000000466  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/leodevbro/blockman/latest                                                                                                         | 370.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/localstack/localstack/latest                                                                                                      | 559.3999999999069  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/loiane/angular-extension-pack/latest                                                                                              | 556.3000000000466  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/lokalise/i18n-ally/latest                                                                                                         | 551.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/marabesi/php-import-checker/latest                                                                                                | 443.19999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/marcostazi/vs-code-vagrantfile/latest                                                                                             | 446.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/marp-team/marp-vscode/latest                                                                                                      | 448.0999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/me-dutour-mathieu/vscode-github-actions/latest                                                                                    | 407.10000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/mechatroner/rainbow-csv/latest                                                                                                    | 575.3000000000466  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/mehedidracula/php-namespace-resolver/latest                                                                                       | 439.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/mgesbert/python-path/latest                                                                                                       | 440.0999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/mgmcdermott/vscode-language-babel/latest                                                                                          | 441.89999999990687 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/mhutchie/git-graph/latest                                                                                                         | 433.70000000018626 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-azuretools/vscode-azureterraform/latest                                                                                        | 445                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-azuretools/vscode-containers/latest                                                                                            | 433.60000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-azuretools/vscode-docker/latest                                                                                                | 574.1000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-kubernetes-tools/vscode-kubernetes-tools/latest                                                                                | 440                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-playwright/playwright/latest                                                                                                   | 440.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-python/black-formatter/latest                                                                                                  | 442.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-python/debugpy/latest                                                                                                          | 444.80000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-python/isort/latest                                                                                                            | 443.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-python/python/latest                                                                                                           | 451.0999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-python/vscode-pylance/latest                                                                                                   | 443                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-python/vscode-python-envs/latest                                                                                               | 446.10000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-vscode-remote/remote-containers/latest                                                                                         | 516                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-vscode-remote/remote-ssh/latest                                                                                                | 502.19999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-vscode-remote/remote-ssh-edit/latest                                                                                           | 441.60000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-vscode/makefile-tools/latest                                                                                                   | 442.39999999990687 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-vscode/remote-explorer/latest                                                                                                  | 443.60000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-vscode/remote-repositories/latest                                                                                              | 533.1000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-vscode/vscode-github-issue-notebooks/latest                                                                                    | 512                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-windows-ai-studio/windows-ai-studio/latest                                                                                     | 478.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/mylesmurphy/prettify-ts/latest                                                                                                    | 518.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/njpwerner/autodocstring/latest                                                                                                    | 522.3000000000466  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/njqdev/vscode-python-typehint/latest                                                                                              | 511.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/nomicfoundation/hardhat-solidity/latest                                                                                           | 522.6999999999534  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/noorashuvo/simple-coding-time-tracker/latest                                                                                      | 519.2999999998137  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/nrwl/angular-console/latest                                                                                                       | 443.60000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/nucllear/vscode-extension-auto-import/latest                                                                                      | 517.3999999999069  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/obenjiro/arrr/latest                                                                                                              | 517.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/octref/vetur/latest                                                                                                               | 517.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/openai/chatgpt/latest                                                                                                             | 536.3999999999069  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/orta/vscode-jest/latest                                                                                                           | 517.1000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/oven/bun-vscode/latest                                                                                                            | 520.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/oxc/oxc-vscode/latest                                                                                                             | 534.7000000001863  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/p1c2u/docker-compose/latest                                                                                                       | 520.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/pandy/bun/latest                                                                                                                  | 520.3999999999069  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/parthr2031/colorful-comments/latest                                                                                               | 516.8000000000466  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/pflannery/vscode-versionlens/latest                                                                                               | 528.8999999999069  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/phiter/phpstorm-snippets/latest                                                                                                   | 520.0999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/piotrpalarz/vscode-gitignore-generator/latest                                                                                     | 519                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/pkief/material-icon-theme/latest                                                                                                  | 515.3999999999069  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/pmneo/tsimporter/latest                                                                                                           | 518                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/prisma/prisma/latest                                                                                                              | 517                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/quick-lint/quick-lint-js/latest                                                                                                   | 517                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/quicktype/quicktype/latest                                                                                                        | 518.1999999999534  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/redhat/ansible/latest                                                                                                             | 527.1000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/redhat/fabric8-analytics/latest                                                                                                   | 518.3999999999069  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/redhat/vscode-xml/latest                                                                                                          | 532.6000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/redhat/vscode-yaml/latest                                                                                                         | 529.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/redis/redis-for-vscode/latest                                                                                                     | 527.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ritwickdey/liveserver/latest                                                                                                      | 517.6000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/rogalmic/bash-debug/latest                                                                                                        | 517.5999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/rvest/vs-code-prettier-eslint/latest                                                                                              | 513.3999999999069  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/sanjulaganepola/github-local-actions/latest                                                                                       | 517.3999999999069  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/segerdekort/angular-cli/latest                                                                                                    | 520.6000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/shanoor/vscode-nginx/latest                                                                                                       | 518.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/shd101wyy/markdown-preview-enhanced/latest                                                                                        | 519.8000000000466  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/shopify/polaris-for-vscode/latest                                                                                                 | 518.6999999999534  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/shopify/theme-check-vscode/latest                                                                                                 | 518.6999999999534  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/simontest/simontest/latest                                                                                                        | 519.8999999999069  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/sonarsource/sonarlint-vscode/latest                                                                                               | 525.7000000001863  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/steoates/autoimport/latest                                                                                                        | 519.5999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/stringham/move-ts/latest                                                                                                          | 518.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/stylelint/vscode-stylelint/latest                                                                                                 | 518.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/syler/sass-indented/latest                                                                                                        | 514.7000000001863  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/tamasfe/even-better-toml/latest                                                                                                   | 519.6000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/thorclient/n8n-atom-vscode/latest                                                                                                 | 515.2000000001863  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/timonwong/shellcheck/latest                                                                                                       | 525.6000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/tomoki1207/pdf/latest                                                                                                             | 518.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/upstash/context7-mcp/latest                                                                                                       | 517.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/usernamehw/errorlens/latest                                                                                                       | 518.0999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/vinirossa/vscode-gitandgithub-pack/latest                                                                                         | 519                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/vitest/explorer/latest                                                                                                            | 516.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/vivaxy/vscode-conventional-commits/latest                                                                                         | 518.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/vue/volar/latest                                                                                                                  | 596.6000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/waderyan/gitblame/latest                                                                                                          | 431.30000000004657 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/wakatime/vscode-wakatime/latest                                                                                                   | 516                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/wallabyjs/wallaby-vscode/latest                                                                                                   | 516.4000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/wayou/vscode-todo-highlight/latest                                                                                                | 517.1000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/wholroyd/jinja/latest                                                                                                             | 516.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/william-voyek/vscode-nginx/latest                                                                                                 | 545.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/willluke/nextjs/latest                                                                                                            | 545                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/wix/vscode-import-cost/latest                                                                                                     | 542.1999999999534  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/xshrim/txt-syntax/latest                                                                                                          | 544.6999999999534  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/yandeu/five-server/latest                                                                                                         | 542.4000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/yinfei/luahelper/latest                                                                                                           | 544.3999999999069  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/yoavbls/pretty-ts-errors/latest                                                                                                   | 540.8000000000466  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/yzhang/markdown-all-in-one/latest                                                                                                 | 550.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/zainchen/json/latest                                                                                                              | 543.5              |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/zarifprogrammer/tailwind-snippets/latest                                                                                          | 543.6999999999534  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/zeshuaro/vscode-python-poetry/latest                                                                                              | 543.5999999998603  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ziyasal/vscode-open-in-github/latest                                                                                              | 548.6000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/firefox-devtools/vscode-firefox-debug/latest                                                                                      | 169                |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-edgedevtools/vscode-edge-devtools/latest                                                                                       | 182.19999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/github/copilot/latest                                                                                                             | 176.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/ms-mssql/mssql/latest                                                                                                             | 159.4000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/mtxr/sqltools/latest                                                                                                              | 159.4000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/oracle/oracledevtools/latest                                                                                                      | 291.69999999995343 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/vscodevim/vim/latest                                                                                                              | 159.10000000009313 |
+| https://marketplace.visualstudio.com/_apis/public/gallery/vscode/github/vscode-pull-request-github/latest                                                                                          | 159.69999999995343 |
+| https://marcostazi.gallerycdn.vsassets.io/extensions/marcostazi/vs-code-vagrantfile/0.0.7/1505357990397/Microsoft.VisualStudio.Code.Manifest                                                       | 753.1000000000931  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery                                                                                                                           | 278.5              |
+| https://ms-edgedevtools.gallerycdn.vsassets.io/extensions/ms-edgedevtools/vscode-edge-devtools/2.1.10/1762989527589/Microsoft.VisualStudio.Services.Icons.Default                                  | 3.0999999998603016 |
+| https://firefox-devtools.gallerycdn.vsassets.io/extensions/firefox-devtools/vscode-firefox-debug/2.15.0/1740759663623/Microsoft.VisualStudio.Services.Icons.Default                                | 3.300000000046566  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery                                                                                                                           | 199.9000000001397  |
+| https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery                                                                                                                           | 429.30000000004657 |
+| https://deque-systems.gallerycdn.vsassets.io/extensions/deque-systems/vscode-axe-linter/4.11.0/1768840736983/Microsoft.VisualStudio.Services.Icons.Default                                         | 4.399999999906868  |
+| https://johnpapa.gallerycdn.vsassets.io/extensions/johnpapa/angular-essentials/20.0.1/1762879809208/Microsoft.VisualStudio.Services.Icons.Default                                                  | 5.300000000046566  |
+| https://loiane.gallerycdn.vsassets.io/extensions/loiane/angular-extension-pack/1.2.4/1767145072771/Microsoft.VisualStudio.Services.Icons.Default                                                   | 12.699999999953434 |
+| https://mgmcdermott.gallerycdn.vsassets.io/extensions/mgmcdermott/vscode-language-babel/0.0.40/1695654875151/Microsoft.VisualStudio.Services.Icons.Default                                         | 15.800000000046566 |
+| https://ms-windows-ai-studio.gallerycdn.vsassets.io/extensions/ms-windows-ai-studio/windows-ai-studio/0.30.1/1770884017835/Microsoft.VisualStudio.Services.Icons.Default?targetPlatform=darwin-x64 | 13.099999999860302 |
+| https://njpwerner.gallerycdn.vsassets.io/extensions/njpwerner/autodocstring/0.6.1/1644940808599/Microsoft.VisualStudio.Services.Icons.Default                                                      | 14.800000000046566 |
+| https://piotrpalarz.gallerycdn.vsassets.io/extensions/piotrpalarz/vscode-gitignore-generator/1.0.4/1752316878404/Microsoft.VisualStudio.Services.Icons.Default                                     | 18.600000000093132 |
+| https://api.github.com/copilot_internal/user                                                                                                                                                       | 517.8000000000466  |
+| https://api.github.com/copilot_internal/v2/token                                                                                                                                                   | 645.6000000000931  |
+| https://api.github.com/copilot/mcp_registry                                                                                                                                                        | 363.80000000004657 |
+| https://vscode-sync.trafficmanager.net/v1/resource/editSessions/latest                                                                                                                             | 291.89999999990687 |
+| https://api.github.com/copilot/mcp_registry                                                                                                                                                        | 398.60000000009313 |
+| https://rogalmic.gallerycdn.vsassets.io/extensions/rogalmic/bash-debug/0.3.9/1592250487205/Microsoft.VisualStudio.Services.Icons.Default                                                           | 2.1000000000931323 |
+| https://adam-bender.gallerycdn.vsassets.io/extensions/adam-bender/commit-message-editor/0.25.0/1683670478859/Microsoft.VisualStudio.Services.Icons.Default                                         | 2.8999999999068677 |
+| https://jeff-hykin.gallerycdn.vsassets.io/extensions/jeff-hykin/better-dockerfile-syntax/1.0.2/1584921696369/Microsoft.VisualStudio.Services.Icons.Default                                         | 8                  |
+| https://ms-azuretools.gallerycdn.vsassets.io/extensions/ms-azuretools/vscode-containers/2.4.1/1770136658136/Microsoft.VisualStudio.Services.Icons.Default                                          | 2.5                |
+| https://upstash.gallerycdn.vsassets.io/extensions/upstash/context7-mcp/1.0.1/1754329920224/Microsoft.VisualStudio.Services.Icons.Default                                                           | 3.1000000000931323 |
+| https://ms-vscode-remote.gallerycdn.vsassets.io/extensions/ms-vscode-remote/remote-containers/0.442.0/1770284175702/Microsoft.VisualStudio.Services.Icons.Default                                  | 2.9000000001396984 |
+| https://vivaxy.gallerycdn.vsassets.io/extensions/vivaxy/vscode-conventional-commits/1.27.0/1765726248064/Microsoft.VisualStudio.Services.Icons.Default                                             | 2.5                |
+| https://ms-azuretools.gallerycdn.vsassets.io/extensions/ms-azuretools/vscode-docker/2.0.0/1748459272971/Microsoft.VisualStudio.Services.Icons.Default                                              | 4.699999999953434  |
+| https://p1c2u.gallerycdn.vsassets.io/extensions/p1c2u/docker-compose/0.5.1/1697713277530/Microsoft.VisualStudio.Services.Icons.Default                                                             | 4                  |
+| https://formulahendry.gallerycdn.vsassets.io/extensions/formulahendry/docker-explorer/0.1.7/1581754897971/Microsoft.VisualStudio.Services.Icons.Default                                            | 3.2000000001862645 |
+| https://docker.gallerycdn.vsassets.io/extensions/docker/docker/0.18.0/1760547262980/Microsoft.VisualStudio.Services.Icons.Default?targetPlatform=darwin-x64                                        | 3.3999999999068677 |
+| https://formulahendry.gallerycdn.vsassets.io/extensions/formulahendry/docker-extension-pack/0.0.1/1500087230146/Microsoft.VisualStudio.Services.Icons.Default                                      | 6.5                |
+| https://henriiik.gallerycdn.vsassets.io/extensions/henriiik/docker-linter/0.5.0/1511112618141/Microsoft.VisualStudio.Services.Icons.Default                                                        | 2.4000000001396984 |
+| https://jmkrivocapich.gallerycdn.vsassets.io/extensions/jmkrivocapich/drawfolderstructure/1.4.6/1768835589466/Microsoft.VisualStudio.Services.Icons.Default                                        | 2.6000000000931323 |
+| https://editorconfig.gallerycdn.vsassets.io/extensions/editorconfig/editorconfig/0.18.1/1769104556141/Microsoft.VisualStudio.Services.Icons.Default                                                | 2.6000000000931323 |
+| https://irongeek.gallerycdn.vsassets.io/extensions/irongeek/vscode-env/0.1.0/1602639667760/Microsoft.VisualStudio.Services.Icons.Default                                                           | 2.5999999998603016 |
+| https://usernamehw.gallerycdn.vsassets.io/extensions/usernamehw/errorlens/3.28.0/1769671423981/Microsoft.VisualStudio.Services.Icons.Default                                                       | 2.800000000046566  |
+| https://dbaeumer.gallerycdn.vsassets.io/extensions/dbaeumer/vscode-eslint/3.0.20/1765182448101/Microsoft.VisualStudio.Services.Icons.Default                                                       | 5.5                |
+| https://tamasfe.gallerycdn.vsassets.io/extensions/tamasfe/even-better-toml/0.21.2/1734716634992/Microsoft.VisualStudio.Services.Icons.Default                                                      | 2.800000000046566  |
+| https://vinirossa.gallerycdn.vsassets.io/extensions/vinirossa/vscode-gitandgithub-pack/2.0.1/1630423374425/Microsoft.VisualStudio.Services.Icons.Default                                           | 2.6000000000931323 |
+| https://mhutchie.gallerycdn.vsassets.io/extensions/mhutchie/git-graph/1.30.0/1617594001998/Microsoft.VisualStudio.Services.Icons.Default                                                           | 2.300000000046566  |
+| https://donjayamanne.gallerycdn.vsassets.io/extensions/donjayamanne/githistory/0.6.20/1678008598739/Microsoft.VisualStudio.Services.Icons.Default                                                  | 2.199999999953434  |
+| https://howardzuo.gallerycdn.vsassets.io/extensions/howardzuo/vscode-git-tags/1.4.4/1591327978713/Microsoft.VisualStudio.Services.Icons.Default                                                    | 2.1000000000931323 |

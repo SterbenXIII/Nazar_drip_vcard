@@ -1,0 +1,336 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ShareButton from '../../components/ShareButton.astro'
+import JsonLd from '../../components/JsonLd.astro'
+import ThemeToggle from '../../components/ThemeToggle.astro'
+import certImg from '../../assets/ГО_«УКРАЇНСЬКИЙ_ІНСТИТУТ_ПРАКТИЧНОЇ_АДИКТОЛОГІЇ»(1).png?url'
+import { Image } from '@unpic/astro'
+import { buildBreadcrumbSchema, buildPersonSchema, BUSINESS_ID } from '../../utils/schema'
+import {
+  useTranslations,
+  getAlternateLocale,
+  getLocalePrefix,
+  getLocalizedUrl,
+  getActiveLocale,
+} from '../../i18n/ui'
+import { siteConfig } from '../../config/site'
+
+export async function getStaticPaths() {
+  return [{ params: { locale: undefined } }, { params: { locale: 'ru' } }]
+}
+
+const { locale } = Astro.params
+const activeLocale = getActiveLocale(locale)
+
+const certNumber = 'OPK24-012'
+const personSchema = buildPersonSchema()
+const issueDate = '29.06.2025'
+const recipient = 'Любомир Костів'
+const certPdf = `/certificates/${certNumber}.pdf`
+
+const uiT = useTranslations(activeLocale)
+
+const t = {
+  title: uiT('cert.title'),
+  header: uiT('cert.header'),
+  lead: uiT('cert.lead'),
+  home: uiT('nav.home'),
+  downloadPng: uiT('action.downloadPng'),
+  downloadPdf: uiT('action.downloadPdf'),
+  print: uiT('action.print'),
+  open: uiT('action.open'),
+  certNumLabel: uiT('cert.numLabel'),
+  dateLabel: uiT('cert.dateLabel'),
+  recipientLabel: uiT('cert.recipientLabel'),
+  share: uiT('cert.share'),
+  caption: uiT('cert.caption'),
+  close: uiT('cert.close'),
+  lightboxAlt: uiT('cert.lightboxAlt'),
+  seoTitle: uiT('cert.seoTitle').replace('{certNumber}', certNumber),
+  seoDescription: uiT('cert.seoDescription')
+    .replace('{certNumber}', certNumber)
+    .replace('{issueDate}', issueDate),
+  breadcrumbHome: uiT('nav.home'),
+  breadcrumbCert: uiT('cert.title'),
+  orgName: uiT('cert.orgName'),
+}
+
+const certificateSchema = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@graph': [
+    personSchema,
+    {
+      '@type': 'WebPage',
+      '@id': `${getLocalizedUrl(activeLocale, '/certificate', siteConfig.url)}#webpage`,
+      url: getLocalizedUrl(activeLocale, '/certificate', siteConfig.url),
+      name: t.seoTitle,
+      description: t.seoDescription,
+      isPartOf: { '@id': BUSINESS_ID },
+      inLanguage: activeLocale,
+    },
+  ],
+})
+
+const certCanonical = getLocalizedUrl(activeLocale, '/certificate', siteConfig.url)
+const alternateLocale = getAlternateLocale(activeLocale)
+const alternateUrl = getLocalizedUrl(alternateLocale, '/certificate', siteConfig.url)
+
+const breadcrumbLd = buildBreadcrumbSchema([
+  {
+    name: t.breadcrumbHome,
+    url: getLocalizedUrl(activeLocale, '/', siteConfig.url),
+  },
+  { name: t.breadcrumbCert, url: certCanonical },
+])
+---
+
+<Layout
+  title={t.seoTitle}
+  description={t.seoDescription}
+  canonical={certCanonical}
+  locale={activeLocale}
+  alternateLinks={[{ hreflang: alternateLocale, href: alternateUrl }]}
+  surzhykAlt={uiT('seo.cert.surzhykAlt')}
+>
+  <main class="container" role="main">
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+      <ThemeToggle />
+    </div>
+    <header class="cert-header">
+      <h1>{t.header}</h1>
+      <p class="lead">{t.lead}</p>
+      <div class="actions">
+        <a class="btn ghost" href={getLocalePrefix(activeLocale) + '/'} aria-label={t.home}
+          >{t.home}</a
+        >
+        <a class="btn" href={certImg} download aria-label={t.downloadPng}>{t.downloadPng}</a>
+        <a class="btn" href={certPdf} download aria-label={t.downloadPdf}>{t.downloadPdf}</a>
+        <button class="btn" id="print-btn">{t.print}</button>
+        <a class="btn ghost" href={certImg} target="_blank" rel="noopener" aria-label={t.open}
+          >{t.open}</a
+        >
+      </div>
+    </header>
+
+    <section class="cert-meta">
+      <dl>
+        <div>
+          <dt>{t.certNumLabel}</dt>
+          <dd>{certNumber}</dd>
+        </div>
+        <div>
+          <dt>{t.dateLabel}</dt>
+          <dd>{issueDate}</dd>
+        </div>
+        <div>
+          <dt>{t.recipientLabel}</dt>
+          <dd>{recipient}</dd>
+        </div>
+      </dl>
+    </section>
+    <section class="share-section">
+      <h3>{t.share}</h3>
+      <div class="share-actions">
+        <ShareButton title={t.seoTitle} text={t.seoDescription} url={certCanonical} />
+      </div>
+    </section>
+
+    <figure class="cert-figure">
+      <Image
+        id="cert-img"
+        src={certImg}
+        layout="constrained"
+        width={800}
+        height={600}
+        background="auto"
+        alt={t.header}
+      />
+      <figcaption>
+        {t.caption}
+      </figcaption>
+    </figure>
+
+    <div id="lightbox" class="lightbox" aria-hidden="true">
+      <div class="lightbox-panel" role="dialog" aria-modal="true">
+        <button id="lightbox-close" class="lightbox-close" aria-label={t.close}>✕</button>
+        <img id="lightbox-img" src={certImg} alt={t.lightboxAlt} />
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script is:inline>
+  document.getElementById('print-btn')?.addEventListener('click', function () {
+    window.print()
+  })
+
+  const certImgEl = document.getElementById('cert-img')
+  const lightbox = document.getElementById('lightbox')
+  const lightboxImg = document.getElementById('lightbox-img')
+  const lightboxClose = document.getElementById('lightbox-close')
+
+  certImgEl?.addEventListener('click', () => {
+    if (!lightbox) return
+    lightboxImg.src = certImgEl.src
+    lightbox.style.display = 'flex'
+    lightbox.setAttribute('aria-hidden', 'false')
+  })
+
+  lightboxClose?.addEventListener('click', () => {
+    lightbox.style.display = 'none'
+    lightbox.setAttribute('aria-hidden', 'true')
+  })
+
+  lightbox?.addEventListener('click', (e) => {
+    if (e.target === lightbox) {
+      lightbox.style.display = 'none'
+      lightbox.setAttribute('aria-hidden', 'true')
+    }
+  })
+</script>
+
+<style>
+  .cert-header {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  .cert-header .lead {
+    color: var(--md-text);
+    margin-top: 0.25rem;
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    background: var(--md-teal);
+    color: #fff;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 700;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .btn:hover {
+    opacity: 0.85;
+  }
+
+  .btn.ghost {
+    background: transparent;
+    color: var(--md-text);
+    border: 1px solid var(--md-border);
+  }
+
+  .btn.ghost:hover {
+    background: var(--md-blue-grey);
+  }
+
+  .cert-figure {
+    margin: 1.25rem 0;
+    text-align: center;
+  }
+
+  .cert-figure img {
+    max-width: 100%;
+    height: auto;
+    border: 0.0625rem solid var(--md-border);
+    border-radius: 0.5rem;
+  }
+
+  .cert-figure figcaption {
+    font-size: 0.875rem;
+    color: var(--md-text);
+    margin-top: 0.5rem;
+  }
+
+  .cert-meta dl {
+    display: flex;
+    gap: 1.25rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+
+  .cert-meta dt {
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .cert-meta dd {
+    margin: 0 0 0.25rem;
+  }
+
+  .share-section {
+    margin-top: 1rem;
+    text-align: center;
+  }
+
+  .share-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    display: none;
+    background: rgb(2 6 23 / 70%);
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+  }
+
+  .lightbox-panel {
+    max-width: 90%;
+    max-height: 90%;
+    position: relative;
+  }
+
+  .lightbox-panel img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0.5rem;
+  }
+
+  .lightbox-close {
+    position: absolute;
+    right: -0.5rem;
+    top: -0.5rem;
+    background: var(--md-white);
+    border-radius: 999px;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+  }
+</style>
+
+<JsonLd
+  schema={{
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: t.header,
+    datePublished: issueDate,
+    identifier: certNumber,
+    creator: { '@type': 'Organization', name: t.orgName },
+    image: {
+      '@type': 'ImageObject',
+      url: new URL(certImg, siteConfig.url).toString(),
+      caption: t.title,
+    },
+  }}
+/>
+<JsonLd schema={breadcrumbLd} />
+<script is:inline type="application/ld+json" set:html={certificateSchema} />

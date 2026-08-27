@@ -1,0 +1,67 @@
+---
+import { useTranslations, type Locale } from '../../i18n/ui'
+
+export interface Props {
+  items: Array<{ name: string; url: string }>
+  locale: Locale
+}
+const { items, locale } = Astro.props
+const uiT = useTranslations(locale)
+---
+
+<section class="services-grid">
+  {
+    items.map((item) => (
+      <a href={item.url} class="service-card">
+        <span class="service-name">{item.name}</span>
+        <span class="cta">{uiT('service.details')} →</span>
+      </a>
+    ))
+  }
+</section>
+
+<style>
+  .services-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 4rem;
+  }
+
+  .service-card {
+    background: var(--md-blue-grey);
+    border: 1px solid var(--md-border);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .service-card:hover {
+    background: color-mix(in srgb, var(--md-teal) 10%, var(--md-blue-grey));
+    border-color: var(--md-teal);
+    transform: translateY(-2px);
+  }
+
+  .service-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--md-navy);
+    margin-bottom: 1rem;
+  }
+
+  .cta {
+    font-size: 0.875rem;
+    color: var(--md-teal);
+    font-weight: 500;
+  }
+
+  @media (--sm-down) {
+    .services-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,25 @@
+---
+- name: 🔐 Set permissions for SQLite data directory
+  ansible.builtin.file:
+    path: '{{ data_dir }}'
+    state: directory
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0755'
+    recurse: true
+  tags: [permissions]
+
+- name: 🔍 Check if SQLite database file exists
+  ansible.builtin.stat:
+    path: '{{ data_dir }}/leads.db'
+  register: sqlite_db
+  tags: [permissions]
+
+- name: 🔐 Set permissions for SQLite database file
+  ansible.builtin.file:
+    path: '{{ data_dir }}/leads.db'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0644'
+  when: sqlite_db.stat.exists
+  tags: [permissions]

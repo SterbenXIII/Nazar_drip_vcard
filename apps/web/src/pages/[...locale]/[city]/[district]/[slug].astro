@@ -1,0 +1,309 @@
+---
+import '../../../../styles/global.css'
+import type { MatrixPage, FaqItem } from '../../../../types/seo'
+import { generateDistrictPages } from '../../../../utils/matrix'
+import { seoPages } from '../../../../data/seo-pages'
+import SeoHead from '../../../../components/SeoHead.astro'
+import ThemeScript from '../../../../components/layout/ThemeScript.astro'
+import ThemeToggle from '../../../../components/ThemeToggle.astro'
+import { buildMatrixPageSchema } from '../../../../utils/schema'
+import DistrictCoverage from '../../../../components/DistrictCoverage.astro'
+import CoverageArea from '../../../../components/CoverageArea.astro'
+import ColloquialTerms from '../../../../components/ColloquialTerms.astro'
+import {
+  useTranslations,
+  getAlternateLocale,
+  getLocalePrefix,
+  type Locale,
+} from '../../../../i18n/ui'
+import { siteConfig } from '../../../../config/site'
+
+export async function getStaticPaths() {
+  const pages = generateDistrictPages()
+  return pages.map((page: MatrixPage) => ({
+    params: {
+      locale: page.params.locale,
+      city: page.params.city,
+      district: page.params.district,
+      slug: page.params.slug,
+    },
+    props: { page },
+  }))
+}
+
+interface Props {
+  page: MatrixPage
+}
+const { page } = Astro.props
+const locale: Locale = page.locale
+const { seo, content, location, canonicalUrl, serviceSlug, params } = page
+const { surzhykAlt } = content
+
+const schemaJson = buildMatrixPageSchema(page)
+
+const uiT = useTranslations(locale)
+
+// UI Translations
+const t = {
+  main: uiT('nav.home'),
+  service: uiT('service.name'),
+  backService: uiT('nav.backService'),
+  faqHeading: uiT('section.faq'),
+  price: uiT('service.price'),
+  duration: uiT('service.duration'),
+  telegram: uiT('action.telegram'),
+  call: uiT('action.call'),
+}
+
+// Alternate language calculation
+const alternateLocale = getAlternateLocale(locale)
+const service = seoPages.find((p) => p.slug === serviceSlug)
+const alternateServiceSlug = service ? service[alternateLocale].slug : ''
+
+const localePrefix = getLocalePrefix(alternateLocale)
+const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.district}/${alternateServiceSlug}`
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <SeoHead
+      title={seo.title}
+      description={seo.description}
+      schema={schemaJson}
+      dateModified={content.dateModified}
+      canonicalUrl={canonicalUrl}
+      alternateLinks={[{ hreflang: alternateLocale, href: alternateUrl }]}
+      surzhykAlt={surzhykAlt}
+    />
+    <ThemeScript />
+    <style>
+      .breadcrumb {
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+      }
+
+      .breadcrumb ol {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .breadcrumb li + li::before {
+        content: '/';
+        color: #999;
+        margin-right: 0.5rem;
+      }
+
+      .breadcrumb a {
+        color: var(--md-teal);
+        text-decoration: none;
+      }
+
+      .breadcrumb a:hover {
+        text-decoration: underline;
+      }
+
+      .breadcrumb span[aria-current='page'] {
+        color: var(--md-text);
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        line-height: 1.6;
+        color: var(--md-text);
+        background: var(--md-white);
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        color: var(--md-navy);
+      }
+
+      dl {
+        display: grid;
+        grid-template-columns: max-content auto;
+        gap: 0.5rem 1.5rem;
+        background: rgb(0 0 0 / 5%);
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 2rem 0;
+      }
+
+      :global(.dark) dl {
+        background: rgb(255 255 255 / 5%);
+      }
+
+      dt {
+        font-weight: bold;
+      }
+
+      dd {
+        margin: 0;
+      }
+
+      .cta-block {
+        display: flex;
+        gap: 1rem;
+        margin: 2rem 0;
+        flex-wrap: wrap;
+      }
+
+      .cta-btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .btn-phone {
+        background: var(--md-blue-grey);
+        color: var(--md-navy);
+        border: 1px solid var(--md-border);
+      }
+
+      .btn-tg {
+        background: var(--md-teal);
+        color: white;
+      }
+
+      details {
+        margin-bottom: 0.5rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--md-border);
+      }
+
+      summary {
+        font-weight: bold;
+        cursor: pointer;
+        padding: 0.5rem 0;
+        color: var(--md-navy);
+      }
+
+      details p {
+        margin: 0.5rem 0 1rem;
+        color: var(--md-text);
+      }
+
+      .back-link {
+        display: inline-block;
+        margin-top: 3rem;
+        color: var(--md-teal);
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .back-link:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+        <ThemeToggle />
+      </div>
+      <nav aria-label="Навігація" class="breadcrumb">
+        <ol itemscope itemtype="https://schema.org/BreadcrumbList">
+          <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+            <a itemprop="item" href={getLocalePrefix(locale) + '/'}>
+              <span itemprop="name">{t.main}</span>
+            </a>
+            <meta itemprop="position" content="1" />
+          </li>
+          <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+            <a itemprop="item" href={canonicalUrl}>
+              <span itemprop="name">{t.service}</span>
+            </a>
+            <meta itemprop="position" content="2" />
+          </li>
+          <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+            <span itemprop="name" aria-current="page">{location.districtName}</span>
+            <meta itemprop="item" content={Astro.url.href} />
+            <meta itemprop="position" content="3" />
+          </li>
+        </ol>
+      </nav>
+
+      <article itemscope itemtype="https://schema.org/Service" data-pagefind-body>
+        <h1 itemprop="name">{content.h1}</h1>
+
+        <div class="cta-block" aria-label="Контакти">
+          <a class="cta-btn btn-phone" href={`tel:${siteConfig.phone.raw}`}>
+            {t.call}: {siteConfig.phone.display}
+          </a>
+          <a
+            class="cta-btn btn-tg"
+            href={siteConfig.telegramUrl}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            {t.telegram}
+          </a>
+        </div>
+
+        <section aria-label="Вартість послуги">
+          <dl>
+            <dt>{t.price}</dt>
+            <dd itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+              <meta itemprop="price" content={String(content.priceNumeric)} />
+              <span>{content.price}</span>
+              <meta itemprop="priceCurrency" content="UAH" />
+              <link itemprop="availability" href="https://schema.org/InStock" />
+            </dd>
+
+            <dt>{t.duration}</dt>
+            <dd>{content.duration}</dd>
+          </dl>
+        </section>
+
+        <p itemprop="description">{content.description}</p>
+
+        {
+          location.citySlug === 'lviv' ? (
+            <div data-pagefind-ignore>
+              <DistrictCoverage
+                currentServiceSlug={serviceSlug}
+                currentDistrictSlug={location.districtSlug}
+                locale={locale}
+              />
+            </div>
+          ) : null
+        }
+
+        <div data-pagefind-ignore>
+          <CoverageArea serviceSlug={serviceSlug} locale={locale} />
+        </div>
+
+        <section aria-label="Часті запитання" itemscope itemtype="https://schema.org/FAQPage">
+          <h2>{t.faqHeading}</h2>
+          {
+            content.faq.map((item: FaqItem) => (
+              <details itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                <summary itemprop="name">{item.question}</summary>
+                <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                  <p itemprop="text">{item.answer}</p>
+                </div>
+              </details>
+            ))
+          }
+        </section>
+
+        <ColloquialTerms terms={service?.[locale]?.colloquialTerms} />
+
+        <a href={canonicalUrl} class="back-link">{t.backService}</a>
+      </article>
+    </main>
+  </body>
+</html>

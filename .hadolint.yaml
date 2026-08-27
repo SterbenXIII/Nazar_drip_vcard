@@ -1,0 +1,13 @@
+# hadolint — Dockerfile linter config
+# https://github.com/hadolint/hadolint
+
+ignored:
+  # Don't require pinning pip versions
+  - DL3013
+  # Allow using ADD for remote URLs
+  - DL3020
+  #
+  - DL4006
+
+trustedRegistries:
+  - docker.io

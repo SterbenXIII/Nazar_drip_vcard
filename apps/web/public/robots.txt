@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /certificates/
+# Allow OG images to be crawled for social previews
+Allow: /og/
+Disallow: /api/
+
+Sitemap: https://krapelnytsia.lviv.ua/sitemap-index.xml

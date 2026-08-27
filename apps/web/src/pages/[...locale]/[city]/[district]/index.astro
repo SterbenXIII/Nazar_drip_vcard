@@ -1,0 +1,144 @@
+---
+import Layout from '../../../../layouts/Layout.astro'
+import Breadcrumbs from '../../../../components/location/Breadcrumbs.astro'
+import ServiceGrid from '../../../../components/location/ServiceGrid.astro'
+import { locations } from '../../../../data/locations'
+import { seoPages } from '../../../../data/seo-pages'
+import { buildHubPageSchema } from '../../../../utils/schema'
+import { BUILD_DATE } from '../../../../utils/date'
+import {
+  useTranslations,
+  getStaticLocaleParam,
+  getLocalePrefix,
+  SUPPORTED_LOCALES,
+  type Locale,
+} from '../../../../i18n/ui'
+import { siteConfig } from '../../../../config/site'
+import type { City, District } from '../../../../data/locations'
+
+export async function getStaticPaths() {
+  const locales: Locale[] = [SUPPORTED_LOCALES.UK, SUPPORTED_LOCALES.RU]
+  const paths = []
+
+  for (const locale of locales) {
+    for (const city of locations) {
+      if (city.districts) {
+        for (const district of city.districts) {
+          paths.push({
+            params: {
+              locale: getStaticLocaleParam(locale),
+              city: city.slug,
+              district: district.slug,
+            },
+            props: {
+              cityData: city,
+              districtData: district,
+              locale,
+            },
+          })
+        }
+      }
+    }
+  }
+  return paths
+}
+
+type Props = {
+  cityData: City
+  districtData: District
+  locale: Locale
+}
+
+const { cityData, districtData, locale }: Props = Astro.props
+const uiT = useTranslations(locale)
+const localePrefix = getLocalePrefix(locale)
+
+const title =
+  locale === 'uk'
+    ? `Послуги ${districtData.nameLocative.uk} ${cityData.nameLocative.uk} | Крапельниця Львів`
+    : `Услуги ${districtData.nameLocative.ru} ${cityData.nameLocative.ru} | Крапельниця Львів`
+
+const description =
+  locale === 'uk'
+    ? `Професійна медична допомога ${districtData.nameLocative.uk} у місті ${cityData.name.uk}. Виїзд за 30-60 хв, анонімно.`
+    : `Профессиональная медицинская помощь ${districtData.nameLocative.ru} в городе ${cityData.name.ru}. Выезд за 30-60 мин, анонимно.`
+
+const h1 =
+  locale === 'uk'
+    ? `Медична допомога ${districtData.nameLocative.uk}`
+    : `Медицинская помощь ${districtData.nameLocative.ru}`
+
+const siteUrl = siteConfig.url
+const currentUrl = `${siteUrl}${localePrefix}/${cityData.slug}/${districtData.slug}`
+
+const listItems = seoPages.map((page) => ({
+  name: page[locale].h1,
+  url: `${currentUrl}/${page[locale].slug}`,
+}))
+
+const breadcrumbItems = [
+  { name: uiT('nav.home'), url: siteUrl },
+  {
+    name: cityData.name[locale],
+    url: `${siteUrl}${localePrefix}/${cityData.slug}`,
+  },
+  { name: districtData.name[locale], url: currentUrl },
+]
+
+const schema = buildHubPageSchema(title, breadcrumbItems, listItems, BUILD_DATE, locale)
+---
+
+<Layout title={title} description={description} locale={locale} noindex={true}>
+  <script is:inline type="application/ld+json" set:html={schema} />
+
+  <main class="hub-page">
+    <div class="container">
+      <Breadcrumbs items={breadcrumbItems} />
+
+      <h1 class="h1">
+        {h1}
+      </h1>
+
+      <p class="intro">
+        {
+          locale === SUPPORTED_LOCALES.UK
+            ? `Наші спеціалісти здійснюють оперативний виїзд ${districtData.nameLocative.uk} (${cityData.name.uk}) протягом 30–60 хвилин. Повна анонімність та професійне обладнання.`
+            : `Наши специалисты осуществляют оперативный выезд ${districtData.nameLocative.ru} (${cityData.name.ru}) в течение 30–60 минут. Полная анонимность и профессиональное оборудование.`
+        }
+      </p>
+
+      <ServiceGrid items={listItems} locale={locale} />
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .hub-page {
+    padding: 6rem 0;
+    min-height: 80vh;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+  }
+
+  .intro {
+    font-size: 1.25rem;
+    color: rgb(255 255 255 / 70%);
+    margin-bottom: 3rem;
+  }
+
+  @media (--sm-down) {
+    .h1 {
+      font-size: 2.25rem;
+    }
+  }
+</style>

@@ -1,0 +1,41 @@
+---
+- name: 🔍 Check if Docker is running (for cleanup)
+  ansible.builtin.command: docker info
+  register: docker_running
+  ignore_errors: true
+  changed_when: false
+  tags: [cleanup]
+
+- name: 🧹 Remove dangling Docker images
+  # CRITICAL: We DO NOT use -a or --volumes here to avoid wiping api_data volume
+  ansible.builtin.command: docker image prune -f --filter "until=168h"
+  register: image_prune_result
+  changed_when: "'Deleted' in image_prune_result.stdout or 'deleted' in image_prune_result.stdout"
+  when: docker_running.rc == 0
+  tags: [cleanup]
+
+- name: 🧹 Remove old Docker builder cache
+  ansible.builtin.command: docker builder prune -f --filter "until=24h"
+  register: builder_prune_result
+  changed_when: "'Deleted' in builder_prune_result.stdout or 'deleted' in builder_prune_result.stdout"
+  when: docker_running.rc == 0
+  tags: [cleanup]
+
+- name: 📊 Check free disk after cleanup
+  ansible.builtin.command: df -h --output=avail /
+  register: disk_free_after_cleanup
+  changed_when: false
+  when: docker_running.rc == 0
+  tags: [cleanup]
+
+- name: 🧹 Display cleanup results
+  ansible.builtin.debug:
+    msg:
+      - "Image prune: {{ image_prune_result.stdout | default('no output') }}"
+      - "Builder prune: {{ builder_prune_result.stdout | default('no output') }}"
+      - "Free disk after cleanup: {{ (disk_free_after_cleanup.stdout_lines | last | default('unknown')) ~ ' free' }}"
+  when:
+    - docker_running.rc == 0
+    - image_prune_result is defined
+    - builder_prune_result is defined
+  tags: [cleanup]

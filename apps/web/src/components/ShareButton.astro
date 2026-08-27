@@ -1,0 +1,299 @@
+---
+import { siteConfig } from '../config/site'
+
+interface Props {
+  title?: string
+  text?: string
+  url?: string
+  class?: string
+}
+
+const {
+  title = 'Медична допомога у Львові — Крапельниця',
+  text = 'Професійні послуги внутрішньовенної терапії вдома. Швидко, безпечно та конфіденційно.',
+  url = siteConfig.url,
+  class: className = '',
+} = Astro.props
+---
+
+<div class={`share-container ${className}`}>
+  <button id="share-btn" data-title={title} data-text={text} data-url={url} class="share-trigger">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <circle cx="18" cy="5" r="3"></circle>
+      <circle cx="6" cy="12" r="3"></circle>
+      <circle cx="18" cy="19" r="3"></circle>
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+    </svg>
+    <span>Поділитися</span>
+  </button>
+
+  <div id="share-modal" class="share-modal hidden">
+    <div class="share-modal-header">
+      <p>Поділитися через</p>
+    </div>
+    <div class="share-options">
+      <a
+        href={`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="share-option"
+      >
+        <svg class="icon-tg" viewBox="0 0 24 24" fill="currentColor"
+          ><path
+            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.62-.2-1.12-.31-1.09-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"
+          ></path></svg
+        >
+        <span>Telegram</span>
+      </a>
+
+      <a
+        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="share-option"
+      >
+        <svg class="icon-fb" viewBox="0 0 24 24" fill="currentColor"
+          ><path
+            d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"
+          ></path></svg
+        >
+        <span>Facebook</span>
+      </a>
+
+      <button id="copy-link-btn" class="share-option copy-btn">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path
+            d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg
+        >
+        <span>Копіювати лінк</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .share-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .share-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background: var(--md-teal);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 10%);
+  }
+
+  .share-trigger:hover {
+    background: color-mix(in srgb, var(--md-teal) 90%, black);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%);
+  }
+
+  .share-trigger:active {
+    transform: scale(0.95);
+  }
+
+  .share-modal {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.5rem;
+    width: 14rem;
+    padding: 0.5rem;
+    background: var(--md-white);
+    border-radius: 1rem;
+    box-shadow:
+      0 20px 25px -5px rgb(0 0 0 / 10%),
+      0 10px 10px -5px rgb(0 0 0 / 4%);
+    border: 1px solid var(--md-border);
+    z-index: 50;
+    transform-origin: top left;
+    transition: opacity 0.2s;
+  }
+
+  .share-modal.hidden {
+    display: none;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .share-modal-header {
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .share-modal-header p {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--md-text);
+    opacity: 0.6;
+    margin: 0;
+  }
+
+  .share-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .share-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--md-text);
+    text-decoration: none;
+    border-radius: 0.5rem;
+    transition: background 0.2s;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .share-option:hover {
+    background: color-mix(in srgb, var(--md-teal) 10%, transparent);
+    color: var(--md-teal);
+  }
+
+  .share-option svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .icon-tg {
+    color: #08c;
+  }
+
+  .icon-fb {
+    color: #1877f2;
+  }
+
+  .copy-btn {
+    border-top: 1px solid var(--md-border);
+    margin-top: 0.25rem;
+    padding-top: 0.75rem;
+    border-radius: 0;
+  }
+
+  .success-text {
+    color: var(--md-teal) !important;
+    font-weight: 700;
+  }
+
+  /* Dark mode support */
+
+  :global(.dark) .share-modal {
+    background: var(--md-white);
+    border-color: var(--md-border);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 40%);
+  }
+
+  :global(.dark) .share-option {
+    color: var(--md-text);
+  }
+
+  :global(.dark) .share-option:hover {
+    background: rgb(255 255 255 / 5%);
+  }
+
+  :global(.dark) .share-modal-header p {
+    color: var(--md-text);
+    opacity: 0.5;
+  }
+</style>
+
+<script>
+  const setupShareButton = () => {
+    const shareBtn = document.getElementById('share-btn')
+    const shareModal = document.getElementById('share-modal')
+    const copyLinkBtn = document.getElementById('copy-link-btn')
+
+    if (!shareBtn) return
+
+    shareBtn.addEventListener('click', async (e) => {
+      e.stopPropagation()
+      const title = shareBtn.getAttribute('data-title') || ''
+      const text = shareBtn.getAttribute('data-text') || ''
+      const url = shareBtn.getAttribute('data-url') || window.location.href
+
+      if (navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
+        try {
+          await navigator.share({ title, text, url })
+        } catch (err) {
+          if ((err as Error).name !== 'AbortError') {
+            console.error('Share API Error:', err)
+          }
+        }
+      } else {
+        shareModal?.classList.toggle('hidden')
+      }
+    })
+
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement
+      if (!shareModal?.contains(target)) {
+        shareModal?.classList.add('hidden')
+      }
+    })
+
+    if (copyLinkBtn) {
+      copyLinkBtn.addEventListener('click', async (e) => {
+        e.stopPropagation()
+        const url = shareBtn.getAttribute('data-url') || window.location.href
+        const textSpan = copyLinkBtn.querySelector('span')
+
+        try {
+          await navigator.clipboard.writeText(url)
+          if (textSpan) {
+            const originalText = textSpan.innerText
+            textSpan.innerText = 'Скопійовано! ✓'
+            textSpan.classList.add('success-text')
+
+            setTimeout(() => {
+              textSpan.innerText = originalText
+              textSpan.classList.remove('success-text')
+              shareModal?.classList.add('hidden')
+            }, 2000)
+          }
+        } catch (err) {
+          console.error('Clipboard Error:', err)
+        }
+      })
+    }
+  }
+
+  setupShareButton()
+  document.addEventListener('astro:page-load', setupShareButton)
+</script>

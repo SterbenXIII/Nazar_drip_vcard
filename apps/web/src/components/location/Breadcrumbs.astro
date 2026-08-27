@@ -1,0 +1,34 @@
+---
+export interface Props {
+  items: Array<{ name: string; url: string }>
+}
+const { items } = Astro.props
+---
+
+<nav class="breadcrumbs">
+  {
+    items.map((item, index) => (
+      <>
+        <a href={item.url}>{item.name}</a>
+        {index < items.length - 1 && <span class="sep">/</span>}
+      </>
+    ))
+  }
+</nav>
+
+<style>
+  .breadcrumbs {
+    margin-bottom: 2rem;
+    font-size: 0.875rem;
+    color: var(--md-text);
+  }
+
+  .breadcrumbs a {
+    color: var(--md-teal);
+    text-decoration: none;
+  }
+
+  .breadcrumbs .sep {
+    margin: 0 0.5rem;
+  }
+</style>

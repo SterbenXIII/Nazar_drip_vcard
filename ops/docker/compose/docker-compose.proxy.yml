@@ -1,0 +1,32 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: vcard-proxy
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME:-localhost}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@localhost}
+    volumes:
+      - ../../../ops/docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - web-gateway
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '20m'
+        max-file: '5'
+
+networks:
+  web-gateway:
+    name: web-gateway
+    external: true
+
+volumes:
+  caddy_data:
+  caddy_config:

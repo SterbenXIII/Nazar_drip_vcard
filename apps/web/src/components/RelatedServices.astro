@@ -1,0 +1,96 @@
+---
+import type { SeoPage } from '../types/seo'
+import { useTranslations, getLocalePrefix, type Locale } from '../i18n/ui'
+
+interface Props {
+  pages: SeoPage[]
+  locale: Locale
+}
+
+const { pages, locale } = Astro.props
+
+const uiT = useTranslations(locale)
+const t = {
+  heading: uiT('related.heading'),
+  label: uiT('related.label'),
+}
+---
+
+<nav aria-label={t.label} role="navigation">
+  <h3>{t.heading}</h3>
+  <ul>
+    {
+      pages.map((page) => {
+        const data = page[locale]
+        const prefix = getLocalePrefix(locale)
+        return (
+          <li>
+            <a href={`${prefix}/${data.slug}`} rel="noopener">
+              <span>{data.h1}</span>
+              <span aria-label={uiT('service.price')}>{data.price}</span>
+            </a>
+          </li>
+        )
+      })
+    }
+  </ul>
+</nav>
+
+<style>
+  nav {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--md-border);
+  }
+
+  nav h3 {
+    color: var(--md-navy);
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem;
+    background: rgb(0 0 0 / 5%);
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.2s;
+  }
+
+  :global(.dark) a {
+    background: rgb(255 255 255 / 5%);
+  }
+
+  a:hover {
+    background: rgb(0 0 0 / 10%);
+  }
+
+  :global(.dark) a:hover {
+    background: rgb(255 255 255 / 10%);
+  }
+
+  span:first-child {
+    font-weight: 500;
+    line-height: 1.4;
+    overflow-wrap: break-word;
+  }
+
+  span:last-child {
+    font-size: 0.9rem;
+    color: var(--md-teal);
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: right;
+  }
+</style>

@@ -1,0 +1,26 @@
+---
+// RatingBadge.astro
+// Renders visible star rating with AggregateRating microdata.
+// Must be placed inside the <article itemscope itemtype="https://schema.org/Service"> element
+// in [slug].astro so the rating is associated with the Service entity.
+---
+
+<div
+  itemprop="aggregateRating"
+  itemscope
+  itemtype="https://schema.org/AggregateRating"
+  aria-label="Рейтинг послуги: 5 зірок, 47 відгуків"
+>
+  <meta itemprop="ratingValue" content="5.0" />
+  <meta itemprop="bestRating" content="5" />
+  <meta itemprop="worstRating" content="1" />
+  <meta itemprop="reviewCount" content="47" />
+
+  <!-- Visible star display — pure CSS, zero JS -->
+  <span aria-hidden="true">★★★★★</span>
+  <span>
+    <strong itemprop="ratingValue">5.0</strong>
+    /5 —
+    <span itemprop="reviewCount">47</span> відгуків
+  </span>
+</div>

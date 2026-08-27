@@ -1,0 +1,80 @@
+---
+- name: Free Docker disk space and memory
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    docker builder prune -af 2>/dev/null || true
+    docker image prune -f 2>/dev/null || true
+  changed_when: true
+  tags: [docker, deploy]
+
+- name: Log in to GHCR
+  become: true
+  ansible.builtin.shell: |
+    set -o pipefail
+    echo "{{ github_token }}" | docker login ghcr.io -u oauth2 --password-stdin
+  args:
+    executable: /bin/bash
+  changed_when: false
+  no_log: true
+  tags: [docker, deploy]
+
+- name: Pull and Deploy
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    cd "{{ project_dir }}"
+    docker compose \
+      -f ops/docker/compose/docker-compose.yml \
+      -f ops/docker/compose/docker-compose.proxy.yml config >/dev/null
+    docker compose \
+      -f ops/docker/compose/docker-compose.yml \
+      -f ops/docker/compose/docker-compose.proxy.yml pull
+    docker compose \
+      -f ops/docker/compose/docker-compose.yml \
+      -f ops/docker/compose/docker-compose.proxy.yml \
+      up -d --force-recreate --remove-orphans
+  environment:
+    DOMAIN_NAME: '{{ domain_name }}'
+    NODE_ENV: '{{ node_env }}'
+    BACKEND_PORT: '{{ backend_port }}'
+    TELEGRAM_NOTIFY_IDS: '{{ telegram_notify_ids }}'
+    IMAGE_REGISTRY: '{{ image_registry }}'
+    IMAGE_TAG: '{{ image_tag | default("latest") }}'
+    ADMIN_EMAIL: '{{ admin_email }}'
+  register: compose_result
+  changed_when: true
+  tags: [docker, deploy]
+
+- name: 🔍 Verify deployed containers share the gateway network
+  ansible.builtin.shell: |
+    set -o pipefail
+    for container in vcard-api vcard-web vcard-proxy; do
+      docker inspect -f '{% raw %}{{.State.Status}} {{range $name, $network := .NetworkSettings.Networks}}{{$name}} {{end}}{% endraw %}' "$container"
+    done
+  args:
+    executable: /bin/bash
+  register: deployed_networks
+  changed_when: false
+  failed_when: >-
+    deployed_networks.rc != 0 or
+    (deployed_networks.stdout_lines | select('search', '^running .*web-gateway') | list | length) != 3
+  tags: [docker, deploy, verify]
+
+- name: ⏳ Wait for Caddy to be ready
+  ansible.builtin.pause:
+    seconds: 10
+  tags: [docker, deploy, proxy]
+
+- name: ✅ Verify Caddy is running
+  ansible.builtin.command: docker inspect -f '{% raw %}{{.State.Running}}{% endraw %}' vcard-proxy
+  register: caddy_status
+  failed_when: caddy_status.stdout | trim != 'true'
+  changed_when: false
+  tags: [docker, deploy, proxy]
+
+- name: 📊 Display Docker Compose result
+  ansible.builtin.debug:
+    var: compose_result
+  when: compose_result is defined
+  tags: [docker]

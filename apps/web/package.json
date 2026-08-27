@@ -1,0 +1,57 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vcard/web",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "generate:pwa-icons": "pwa-assets-generator --config pwa-assets.config.ts",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "validate:build": "tsx scripts/validate-build.ts",
+    "audit:seo": "tsx src/scripts/seo-audit.ts",
+    "postbuild": "pagefind --site dist && tsx src/scripts/seo-audit.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:lhci": "pnpx @lhci/cli autorun",
+    "test:lhci:all": "node scripts/lhci-all.js"
+  },
+  "dependencies": {
+    "@astrojs/check": "0.9.6",
+    "@astrojs/sitemap": "3.7.0",
+    "@resvg/resvg-js": "2.6.0",
+    "@unpic/astro": "1.0.2",
+    "@vcard/shared": "workspace:*",
+    "astro": "5.17.1",
+    "astro-icon": "1.1.5",
+    "satori": "0.25.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.11.1",
+    "@csstools/postcss-global-data": "4.0.0",
+    "@playwright/test": "1.58.2",
+    "@types/node": "25.3.1",
+    "@typescript-eslint/parser": "8.54.0",
+    "@vite-pwa/assets-generator": "1.0.2",
+    "@vite-pwa/astro": "1.2.0",
+    "astro-eslint-parser": "1.2.2",
+    "eslint-plugin-astro": "1.5.0",
+    "pagefind": "1.1.0",
+    "pngjs": "7.0.0",
+    "postcss": "8.4.38",
+    "postcss-calc": "10.1.1",
+    "postcss-combine-duplicated-selectors": "10.0.3",
+    "postcss-custom-media": "12.0.1",
+    "postcss-font-display": "0.3.0",
+    "postcss-preset-env": "11.2.0",
+    "postcss-pxtorem": "6.1.0",
+    "postcss-sort-media-queries": "5.2.0",
+    "tsx": "4.19.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

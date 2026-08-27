@@ -1,0 +1,7 @@
+echo "Running full CI checks..."
+pnpm --filter @vcard/shared build
+pnpm --filter @vcard/shared exec tsc --noEmit
+pnpm --filter @vcard/api exec tsc --noEmit
+pnpm --filter @vcard/web exec astro check
+
+# pnpm audit --audit-level=high

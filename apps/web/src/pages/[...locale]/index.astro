@@ -1,0 +1,910 @@
+---
+import { Image } from 'astro:assets'
+import JsonLd from '../../components/JsonLd.astro'
+
+import ContactForm from '../../components/ContactForm.astro'
+import ThemeToggle from '../../components/ThemeToggle.astro'
+import rawData from '../../data/content.json'
+import { parseContent } from '../../types/content'
+
+import { seoPages } from '../../data/seo-pages'
+import { locations } from '../../data/locations'
+import { homeContent } from '../../data/home-content'
+// import { reviews } from '../../data/reviews' // temporarily disabled
+import Layout from '../../layouts/Layout.astro'
+import WelcomeModal from '../../components/WelcomeModal.astro'
+import ShareButton from '../../components/ShareButton.astro'
+import { buildWebSiteSchema, buildHomePageSchema } from '../../utils/schema'
+import TelegramLogo from '../../assets/telegram.svg'
+import WhatsAppLogo from '../../assets/whatsapp.svg'
+import {
+  useTranslations,
+  getAlternateLocale,
+  getLocalePrefix,
+  getLocalizedUrl,
+  getActiveLocale,
+} from '../../i18n/ui'
+import { siteConfig } from '../../config/site'
+
+const baseData = parseContent(rawData)
+
+export async function getStaticPaths() {
+  return [{ params: { locale: undefined } }, { params: { locale: 'ru' } }]
+}
+
+const { locale } = Astro.params
+const activeLocale = getActiveLocale(locale)
+const t = homeContent[activeLocale]
+const uiT = useTranslations(activeLocale)
+
+const { phone, address, telegram, whatsapp } = baseData.contacts
+const webSiteLd = buildWebSiteSchema()
+const homePageLd = buildHomePageSchema(undefined, activeLocale)
+
+const alternateLocale = getAlternateLocale(activeLocale)
+const alternateUrl = getLocalizedUrl(alternateLocale, '/', siteConfig.url)
+
+const services = baseData.services
+
+// For complex apps, we'd translate data.services too.
+// For this MVP, we'll keep the core structure but translate the surrounding text.
+---
+
+<Layout
+  title={t.seoTitle}
+  description={t.seoDescription}
+  locale={activeLocale}
+  alternateLinks={[{ hreflang: alternateLocale, href: alternateUrl }]}
+  surzhykAlt={uiT('seo.home.surzhykAlt')}
+>
+  <main class="container" role="main">
+    <header class="main-header">
+      <div class="live-status" aria-live="polite">
+        <span class="pulse" aria-hidden="true"></span>
+        {t.status}
+      </div>
+      <div class="header-top-actions">
+        <ThemeToggle />
+        <ShareButton />
+      </div>
+      <h1>{t.title}</h1>
+      <p class="tagline">{t.tagline}</p>
+
+      <div class="header-badges" role="list">
+        {
+          t.badges.map((badge) => (
+            <span class="badge-item" role="listitem">
+              {badge}
+            </span>
+          ))
+        }
+      </div>
+
+      <div class="header-badges" aria-hidden="true">
+        <span class="badge-item" role="listitem">
+          <a href="/certificate" class="badge-link" aria-label={t.certificate}>{t.certificate}</a>
+        </span>
+      </div>
+
+      <address class="contact-row" aria-label="Контакти" style="font-style: normal;">
+        <div class="contact-item">
+          <a class="contact-link" href={`tel:${phone}`} aria-label="Телефон">📞 {phone}</a>
+        </div>
+
+        <div class="contact-item">
+          <a
+            class="contact-link"
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+            target="_blank"
+            rel="noopener"
+            aria-label="Адреса"
+          >
+            📍 {address}
+          </a>
+        </div>
+
+        <div class="contact-item">
+          <a
+            class="contact-link"
+            href={`tg://resolve?domain=${telegram}`}
+            target="_parent"
+            rel="noopener"
+            aria-label="Telegram"
+          >
+            <Image
+              src={TelegramLogo}
+              alt=""
+              class="contact-icon"
+              loading="eager"
+              fetchpriority="high"
+            />
+            <span>{telegram}</span>
+          </a>
+        </div>
+
+        <div class="contact-item">
+          <a
+            class="contact-link"
+            href={`https://wa.me/${whatsapp}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t.whatsapp}
+          >
+            <Image
+              src={WhatsAppLogo}
+              alt=""
+              class="contact-icon"
+              loading="eager"
+              fetchpriority="high"
+            />
+            <span>{t.whatsapp}</span>
+          </a>
+        </div>
+      </address>
+    </header>
+
+    <div class="divider" aria-hidden="true"></div>
+
+    <section class="seo-intro" aria-labelledby="seo-intro-title">
+      <h2 id="seo-intro-title" class="sr-only">{t.title}</h2>
+      <p set:html={t.seoIntro} />
+    </section>
+
+    <section class="services-section" aria-labelledby="services-title">
+      <h2 id="services-title" class="section-title">
+        {t.servicesTitle}
+      </h2>
+      <div class="services-grid">
+        {
+          services.map(
+            (service: {
+              badge: string | null
+              title: string
+              description: string
+              price: string
+              duration: string
+            }) => (
+              <article class="service-card">
+                {service.badge && (
+                  <span class="service-badge" aria-label={`Мітка: ${service.badge}`}>
+                    {service.badge}
+                  </span>
+                )}
+                <div class="card-body">
+                  <div class="card-main">
+                    <h3>{service.title}</h3>
+                    <p>{service.description}</p>
+                  </div>
+                  <div class="card-side">
+                    <span class="price-tag" aria-label={`Ціна: ${service.price}`}>
+                      {service.price}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="card-footer">
+                  <span class="feature">
+                    <span aria-hidden="true">⏱</span>
+                    <span class="sr-only">{uiT('service.durationLabel')}</span> {service.duration}
+                  </span>
+                  <span class="feature">
+                    <span aria-hidden="true">📦</span>
+                    <span class="sr-only">{uiT('service.safetyLabel')}</span>{' '}
+                    {uiT('service.safetyValue')}
+                  </span>
+                </div>
+              </article>
+            ),
+          )
+        }
+      </div>
+    </section>
+
+    <ContactForm />
+
+    <section class="faq-section" aria-labelledby="faq-title">
+      <h2 id="faq-title" class="section-title">{t.faqTitle}</h2>
+      <dl class="faq-list">
+        {
+          baseData.faq.map((item: { question: string; answer: string }, i: number) => (
+            <div class="faq-item">
+              <dt class="faq-question" id={`faq-q-${i}`}>
+                <button class="faq-toggle" aria-expanded="false" aria-controls={`faq-a-${i}`}>
+                  {item.question}
+                  <span class="faq-icon" aria-hidden="true">
+                    +
+                  </span>
+                </button>
+              </dt>
+              <dd class="faq-answer" id={`faq-a-${i}`} hidden>
+                {item.answer}
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+    </section>
+
+    <section class="city-links-section" aria-labelledby="city-links-title">
+      <h2 id="city-links-title" class="section-title">
+        {uiT('section.cities')}
+      </h2>
+      <ul class="city-links-list">
+        {
+          locations.map((city) => {
+            const prefix = getLocalePrefix(activeLocale)
+            return (
+              <li>
+                <a href={`${prefix}/${city.slug}`} class="city-link">
+                  <span class="city-link-icon" aria-hidden="true">
+                    📍
+                  </span>
+                  {city.name[activeLocale]}
+                </a>
+              </li>
+            )
+          })
+        }
+      </ul>
+    </section>
+
+    <section class="seo-links-section" aria-labelledby="seo-links-title">
+      <h2 id="seo-links-title" class="sr-only">
+        {uiT('section.usefulArticles')}
+      </h2>
+      <ul class="seo-links-list">
+        {
+          seoPages.map((page) => {
+            const p = page[activeLocale]
+            const prefix = getLocalePrefix(activeLocale)
+            return (
+              <li>
+                <a href={`${prefix}/${p.slug}`} class="seo-link">
+                  {p.h1}
+                </a>
+              </li>
+            )
+          })
+        }
+      </ul>
+    </section>
+
+    <footer class="main-footer" role="contentinfo">
+      <div class="trust-icons" role="list">
+        {t.footerTrust.map((item) => <span role="listitem">{item}</span>)}
+      </div>
+      <p class="license">{baseData.profile.license}</p>
+      <div
+        class="disclaimer"
+        style="font-size: 0.8rem; color: var(--md-text); opacity: 0.8; margin-top: 1rem; text-align: center;"
+      >
+        <p>
+          <em>{t.disclaimer}</em>
+        </p>
+      </div>
+    </footer>
+  </main>
+</Layout>
+
+<WelcomeModal phone={phone} />
+<!-- We can pass locale to these schemas if updated, but using default version for now -->
+<JsonLd schema={webSiteLd} />
+<script is:inline type="application/ld+json" set:html={homePageLd} />
+
+<script>
+  // FAQ accordion
+  document.addEventListener('astro:page-load', () => {
+    document.querySelectorAll('.faq-toggle').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const expanded = btn.getAttribute('aria-expanded') === 'true'
+        btn.setAttribute('aria-expanded', String(!expanded))
+        const icon = btn.querySelector('.faq-icon')
+        const answerId = btn.getAttribute('aria-controls')
+        const answer = answerId ? document.getElementById(answerId) : null
+        if (answer) answer.hidden = expanded
+        if (icon) icon.textContent = expanded ? '+' : '−'
+      })
+    })
+  })
+</script>
+
+<style>
+  /* Клас для екранних дикторів */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    border: 0;
+  }
+
+  .header-top-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  .main-header {
+    padding: 1rem 0 0.5rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .live-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--md-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.0625rem;
+    margin-bottom: 1rem;
+    background: var(--md-blue-grey);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1.25rem;
+  }
+
+  .pulse {
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--md-accent);
+    border-radius: 50%;
+    animation: pulse-ring 2s infinite;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    margin: 0;
+    color: var(--md-navy);
+    line-height: 1.2;
+  }
+
+  .tagline {
+    margin: 0.625rem 0;
+    color: var(--md-text);
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .header-badges {
+    display: flex;
+    gap: 0.625rem;
+    margin-top: 0.9375rem;
+  }
+
+  .badge-item {
+    font-size: 0.8125rem;
+    background: #f1f5f9;
+    color: black;
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.375rem;
+    font-weight: 700;
+  }
+
+  .divider {
+    height: 0.0625rem;
+    background: var(--md-border);
+    margin: 2rem 0;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+    color: var(--md-navy);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+  }
+
+  .seo-intro {
+    background: var(--md-white);
+    border: 0.0625rem solid var(--md-border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgb(0 0 0 / 2%);
+  }
+
+  .seo-intro p {
+    margin: 0;
+    color: var(--md-text);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    text-align: justify;
+  }
+
+  @media (--md-up) {
+    .seo-intro p {
+      font-size: 1rem;
+    }
+  }
+
+  .services-grid {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: auto;
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .service-badge {
+    display: inline-block;
+    background: var(--md-teal);
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.625rem;
+  }
+
+  .service-card {
+    background: var(--md-white);
+    border: 0.0625rem solid var(--md-border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .service-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0.25rem;
+    background: var(--md-teal);
+    opacity: 0.7;
+  }
+
+  .service-card:hover {
+    transform: translateY(-0.125rem);
+    box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 5%);
+    border-color: var(--md-teal);
+  }
+
+  .card-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .card-main h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    color: var(--md-navy);
+    font-weight: 700;
+  }
+
+  .card-main p {
+    margin: 0.5rem 0 0;
+    font-size: 0.9375rem;
+    color: var(--md-text);
+    line-height: 1.4;
+  }
+
+  .price-tag {
+    display: inline-block;
+    background: var(--md-blue-grey);
+    color: var(--md-navy);
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 800;
+    font-size: 0.9375rem;
+    white-space: nowrap;
+    border: 0.0625rem solid var(--md-border);
+  }
+
+  .card-footer {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 0.0625rem dotted var(--md-border);
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .feature {
+    font-size: 0.8125rem;
+    color: var(--md-text);
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-weight: 600;
+  }
+
+  .main-footer {
+    text-align: center;
+    margin-top: 3rem;
+    padding: 2rem 0;
+    border-top: 0.0625rem solid var(--md-border);
+  }
+
+  .trust-icons {
+    display: flex;
+    justify-content: space-around;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--md-navy);
+    margin-bottom: 1.25rem;
+  }
+
+  .license {
+    font-size: 0.75rem;
+    color: var(--md-text);
+    margin-bottom: 0.625rem;
+  }
+
+  .disclaimer {
+    font-size: 0.75rem;
+    color: var(--md-text);
+    line-height: 1.4;
+    font-style: italic;
+  }
+
+  /* ── FAQ ── */
+  .faq-list {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .faq-item {
+    border: 0.0625rem solid var(--md-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+
+  .faq-question {
+    margin: 0;
+    padding: 0;
+  }
+
+  .faq-toggle {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: var(--md-white);
+    border: none;
+    cursor: pointer;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--md-navy);
+    text-align: left;
+    transition: background 0.15s ease;
+  }
+
+  .faq-toggle:hover,
+  .faq-toggle:focus-visible {
+    background: color-mix(in srgb, var(--md-teal) 8%, var(--md-white));
+    outline: none;
+  }
+
+  .faq-icon {
+    flex-shrink: 0;
+    font-size: 1.25rem;
+    color: var(--md-teal);
+    line-height: 1;
+  }
+
+  .faq-answer {
+    margin: 0;
+    padding: 0 1.25rem 1rem;
+    font-size: 0.9375rem;
+    color: var(--md-text);
+    line-height: 1.6;
+    border-top: 0.0625rem solid var(--md-border);
+  }
+
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.5;
+    }
+
+    50% {
+      transform: scale(1.2);
+      opacity: 1;
+    }
+
+    100% {
+      transform: scale(0.8);
+      opacity: 0.5;
+    }
+  }
+
+  @media (--xs-down) {
+    /* ~400px */
+    .card-body {
+      flex-direction: column;
+    }
+
+    .card-side {
+      margin-top: 0.625rem;
+    }
+
+    .header-badges {
+      flex-direction: column;
+      gap: 0.3125rem;
+    }
+
+    .trust-icons {
+      flex-direction: column;
+      gap: 0.625rem;
+    }
+  }
+
+  /* Responsive container and grid breakpoints */
+  .container {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  /* Tablet: two columns for services */
+  @media (--md-up) {
+    .services-grid {
+      display: grid;
+      grid-template-columns: auto;
+      gap: 2rem;
+    }
+
+    .card-body {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+    }
+  }
+
+  /* Desktop: three columns and header layout tweaks */
+  @media (--xl-up) {
+    .services-grid {
+      grid-template-columns: repeat(1, 1fr);
+      gap: 1.75rem;
+    }
+
+    h1 {
+      font-size: 2.75rem;
+    }
+
+    .main-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .header-badges {
+      margin-top: 0;
+    }
+
+    .contact-row {
+      margin-top: 0;
+    }
+  }
+
+  /* Contact row: compact mobile, two-per-row on large screens */
+  .contact-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    align-items: center;
+  }
+
+  .contact-item {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 12rem;
+  }
+
+  .contact-link {
+    border: 1px solid var(--md-border);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: bold;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.5rem;
+    color: var(--md-navy);
+    text-decoration: none;
+    background: transparent;
+    transition:
+      background 0.12s ease,
+      color 0.12s ease,
+      box-shadow 0.12s ease;
+  }
+
+  .contact-item:nth-child(2) > .contact-link {
+    font-weight: normal;
+  }
+
+  .contact-link:hover,
+  .contact-link:focus {
+    background: color-mix(in srgb, var(--md-accent) 12%, transparent);
+    color: var(--md-accent);
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-accent) 12%, transparent);
+  }
+
+  .contact-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    display: inline-block;
+  }
+
+  @media (--xl-up) {
+    .contact-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .contact-item {
+      flex: none;
+    }
+
+    .contact-link {
+      width: 100%;
+      justify-content: flex-start;
+    }
+  }
+
+  :global(.dark) .contact-link {
+    color: var(--md-text);
+  }
+
+  :global(.dark) .contact-link:hover,
+  :global(.dark) .contact-link:focus {
+    background: color-mix(in srgb, var(--md-accent) 14%, transparent);
+    color: white;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-accent) 12%, transparent);
+  }
+
+  /* Modal adjustments for very small screens */
+  @media (--mobile-lge) {
+    .modal-panel {
+      width: 90%;
+      padding: 1rem;
+    }
+  }
+
+  .contact-link:focus {
+    outline: 3px solid color-mix(in srgb, var(--md-accent) 40%, transparent);
+    outline-offset: 2px;
+  }
+
+  .city-links-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 800px;
+  }
+
+  @media (width <= 768px) {
+    .city-links-list {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (width <= 480px) {
+    .city-links-list {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Make sure the section itself centers the list */
+  .city-links-section {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 0.0625rem solid var(--md-border);
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the list and title */
+  }
+
+  .city-links-section .section-title {
+    text-align: center;
+  }
+
+  .city-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center; /* Center text inside card */
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--md-navy);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    background: var(--md-white);
+    border: 0.0625rem solid var(--md-border);
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    width: 100%; /* Fill the grid cell */
+    box-sizing: border-box;
+  }
+
+  .city-link:hover,
+  .city-link:focus-visible {
+    color: var(--md-accent);
+    background: color-mix(in srgb, var(--md-teal) 8%, var(--md-white));
+    border-color: var(--md-teal);
+    transform: translateY(-0.0625rem);
+    outline: none;
+  }
+
+  .city-link-icon {
+    font-size: 0.875rem;
+  }
+
+  :global(.dark) .city-link {
+    color: var(--md-text);
+    background: var(--md-white);
+    border-color: var(--md-border);
+  }
+
+  /* ── Internal SEO Links ── */
+  .seo-links-section {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 0.0625rem solid var(--md-border);
+  }
+
+  .seo-links-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+
+  .seo-link {
+    display: inline-block;
+    font-size: 0.8125rem;
+    color: var(--md-text);
+    text-decoration: none;
+    padding: 0.375rem 0.75rem;
+    background: var(--md-white);
+    border: 0.0625rem solid var(--md-border);
+    border-radius: 1rem;
+    transition: all 0.2s ease;
+  }
+
+  .seo-link:hover,
+  .seo-link:focus-visible {
+    color: var(--md-accent);
+    background: color-mix(in srgb, var(--md-teal) 8%, var(--md-white));
+    border-color: var(--md-teal);
+    outline: none;
+  }
+
+  :global(.dark) .seo-link {
+    background: var(--md-white); /* using var --md-white from dark theme */
+    border-color: var(--md-border);
+  }
+</style>

@@ -1,0 +1,35 @@
+---
+
+---
+
+<div id="search" class="pagefind-ui-container"></div>
+
+<!--
+  Note: In dev mode, /pagefind/... files will return 404 unless you've run `pnpm build` at least once.
+  This is expected behavior for local development.
+-->
+<link href="/pagefind/pagefind-ui.css" rel="stylesheet" />
+<script src="/pagefind/pagefind-ui.js" is:inline></script>
+
+<script is:inline>
+  document.addEventListener('astro:page-load', () => {
+    const el = document.querySelector('#search')
+    if (el) {
+      el.innerHTML = ''
+      if (typeof window.PagefindUI !== 'undefined') {
+        new window.PagefindUI({
+          element: '#search',
+          showSubResults: true,
+          baseUrl: '/',
+        })
+      }
+    }
+  })
+</script>
+
+<style>
+  .pagefind-ui-container {
+    max-width: 800px;
+    margin: 0 auto 2rem;
+  }
+</style>

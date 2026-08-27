@@ -1,0 +1,134 @@
+---
+- name: 📋 Display deployment info
+  ansible.builtin.debug:
+    msg:
+      - 'Deploying to: {{ ansible_host }}'
+      - 'User: {{ ansible_user }}'
+      - 'Project: {{ project_dir }}'
+      - 'Domain: {{ domain_name }}'
+      - 'Environment: {{ node_env }}'
+      - "Git auth: {{ 'PAT token' if (github_token | default('', true) | length > 0) else 'anonymous (public repo)' }}"
+  tags: [always]
+
+- name: 🔍 Check if Docker is installed
+  ansible.builtin.command: docker --version
+  register: docker_check
+  ignore_errors: true
+  changed_when: false
+  tags: [docker, check]
+
+- name: 📦 Install Docker (if missing)
+  when: docker_check.rc != 0
+  tags: [docker, install]
+  block:
+    - name: Update apt cache
+      become: true
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install prerequisites
+      become: true
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+
+    - name: Detect system architecture
+      ansible.builtin.command: dpkg --print-architecture
+      register: dpkg_arch
+      changed_when: false
+
+    - name: Ensure /etc/apt/keyrings directory exists
+      become: true
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download Docker GPG key
+      become: true
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
+
+    - name: Convert Docker GPG key to keyring format
+      become: true
+      ansible.builtin.command:
+        cmd: gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg /etc/apt/keyrings/docker.asc
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Ensure Docker keyring permissions
+      become: true
+      ansible.builtin.file:
+        path: /etc/apt/keyrings/docker.gpg
+        mode: '0644'
+
+    - name: Add Docker repository (signed-by keyrings)
+      become: true
+      ansible.builtin.apt_repository:
+        repo: >-
+          deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/docker.gpg]
+          https://download.docker.com/linux/ubuntu
+          {{ ansible_distribution_release }} stable
+        state: present
+        filename: docker
+
+    - name: Install Docker Engine
+      become: true
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Start and enable Docker
+      become: true
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add user to docker group
+      become: true
+      ansible.builtin.user:
+        name: '{{ ansible_user }}'
+        groups: docker
+        append: true
+
+- name: 🐍 Install Python Docker SDK (required for docker_compose_v2)
+  tags: [docker, pip]
+  block:
+    - name: Install python3-pip
+      become: true
+      ansible.builtin.apt:
+        name:
+          - python3-pip
+          - python3-setuptools
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install Docker Python SDK
+      become: true
+      ansible.builtin.pip:
+        name:
+          - docker>=6.0.0
+        state: present
+        extra_args: --break-system-packages
+
+- name: 🔍 Verify Docker Compose plugin
+  ansible.builtin.command: docker compose version
+  register: compose_check
+  changed_when: false
+  failed_when: compose_check.rc != 0
+  tags: [docker, check]

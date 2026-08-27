@@ -1,0 +1,381 @@
+---
+import data from '../data/content.json'
+import { DISTRICTS, FORM_ELEMENTS } from '@vcard/shared'
+import { siteConfig } from '../config/site'
+
+const isSingleService = data.services.length === 1
+---
+
+<section class="booking-form" id="order" aria-labelledby="form-title">
+  <div class="form-header">
+    <h3 id="form-title">Запис на процедуру</h3>
+    <p>Оберіть потрібні послуги та залиште контакти для виїзду</p>
+  </div>
+
+  <form id={FORM_ELEMENTS.FORM_ID} class="medical-form">
+    <input
+      type="hidden"
+      name={FORM_ELEMENTS.INPUT_SOURCE}
+      value={`vCard - ${siteConfig.businessName}`}
+    />
+
+    <fieldset class="services-fieldset">
+      <legend class="section-label">Доступні послуги:</legend>
+      <div class="checkbox-grid">
+        {
+          data.services.map((service) => (
+            <label class="service-option">
+              <input
+                type="checkbox"
+                name={FORM_ELEMENTS.INPUT_SERVICES}
+                value={service.title}
+                checked={isSingleService}
+                aria-checked={isSingleService}
+                aria-disabled={isSingleService}
+                tabindex={isSingleService ? -1 : undefined}
+                class={isSingleService ? 'non-interactive' : ''}
+              />
+              <div class="option-content">
+                <span class="option-title">{service.title}</span>
+                <span class="option-price" aria-label={`Ціна: ${service.price}`}>
+                  {service.price}
+                </span>
+              </div>
+            </label>
+          ))
+        }
+      </div>
+      <span
+        id={`${FORM_ELEMENTS.INPUT_SERVICES}${FORM_ELEMENTS.ERROR_SUFFIX}`}
+        class="error-text hidden"></span>
+    </fieldset>
+
+    <div class="fields-group">
+      <div class="field">
+        <label for={FORM_ELEMENTS.INPUT_NAME}>Ваше ім'я</label>
+        <input
+          type="text"
+          id={FORM_ELEMENTS.INPUT_NAME}
+          name={FORM_ELEMENTS.INPUT_NAME}
+          placeholder="Приклад: Анна"
+          autocomplete="name"
+        />
+        <span
+          id={`${FORM_ELEMENTS.INPUT_NAME}${FORM_ELEMENTS.ERROR_SUFFIX}`}
+          class="error-text hidden"></span>
+      </div>
+
+      <div class="field">
+        <label for={FORM_ELEMENTS.INPUT_PHONE}>Номер телефону</label>
+        <input
+          type="tel"
+          id={FORM_ELEMENTS.INPUT_PHONE}
+          name={FORM_ELEMENTS.INPUT_PHONE}
+          placeholder="+380..."
+          autocomplete="tel"
+        />
+        <span
+          id={`${FORM_ELEMENTS.INPUT_PHONE}${FORM_ELEMENTS.ERROR_SUFFIX}`}
+          class="error-text hidden"></span>
+      </div>
+
+      <div class="field">
+        <label for={FORM_ELEMENTS.INPUT_DISTRICT}>Район Львова</label>
+        <div class="select-wrapper">
+          <select id={FORM_ELEMENTS.INPUT_DISTRICT} name={FORM_ELEMENTS.INPUT_DISTRICT}>
+            <option value="" disabled selected>Оберіть район</option>
+            {DISTRICTS.map((districtName) => <option value={districtName}>{districtName}</option>)}
+          </select>
+        </div>
+        <span
+          id={`${FORM_ELEMENTS.INPUT_DISTRICT}${FORM_ELEMENTS.ERROR_SUFFIX}`}
+          class="error-text hidden"></span>
+      </div>
+    </div>
+
+    <button type="submit" id={FORM_ELEMENTS.SUBMIT_BTN} class="submit-btn">
+      <div id={FORM_ELEMENTS.SPINNER} class="spinner hidden"></div>
+      <span aria-hidden="true">🚑</span> Підтвердити запис
+    </button>
+
+    <div id={FORM_ELEMENTS.SUCCESS_MSG} class="success-message hidden">
+      🎉 Заявка прийнята! Ми зателефонуємо вам найближчим часом.
+    </div>
+
+    <p class="privacy-note">
+      * Ваші дані захищені. Натискаючи кнопку, ви погоджуєтесь на обробку персональних даних для
+      зв'язку з вами.
+    </p>
+  </form>
+</section>
+
+<script src="../scripts/contact-form.ts"></script>
+
+<style>
+  .hidden {
+    display: none !important;
+  }
+
+  .booking-form {
+    background: var(--md-white);
+    border: 0.0625rem solid var(--md-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    box-shadow: 0 0.5rem 1rem rgb(2 6 23 / 4%);
+
+    @media (prefers-contrast: more) {
+      border: 0.125rem solid black;
+    }
+  }
+
+  .form-header {
+    margin-bottom: 1.5rem;
+    text-align: center;
+
+    h3 {
+      margin: 0;
+      color: var(--md-navy);
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0.3125rem 0 0;
+      font-size: 0.875rem;
+      color: var(--md-text);
+    }
+  }
+
+  .services-fieldset {
+    border: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--md-navy);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .checkbox-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .service-option {
+    display: block;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+
+    input {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+      height: 0;
+      width: 0;
+
+      &:focus-visible ~ .option-content {
+        outline: 0.125rem solid var(--md-teal);
+        outline-offset: 0.125rem;
+      }
+
+      &:checked ~ .option-content {
+        border-color: var(--md-teal);
+        background: color-mix(in srgb, var(--md-teal) 6%, var(--md-white));
+        box-shadow: 0 0 0 0.0625rem color-mix(in srgb, var(--md-teal) 12%, transparent);
+      }
+    }
+  }
+
+  .option-content {
+    background: var(--md-white);
+    border: 0.0625rem solid var(--md-border);
+    border-radius: 0.625rem;
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+
+    @media (prefers-contrast: more) {
+      border: 0.125rem solid black !important;
+    }
+  }
+
+  .option-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--md-navy);
+
+    @media (prefers-contrast: more) {
+      color: black;
+    }
+  }
+
+  .option-price {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--md-teal);
+    white-space: nowrap;
+
+    @media (prefers-contrast: more) {
+      color: black;
+    }
+  }
+
+  .fields-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .field label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--md-navy);
+    margin-bottom: 0.375rem;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 0.0625rem solid var(--md-border);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    color: var(--md-navy);
+    background: var(--md-white);
+    appearance: none;
+
+    &:focus {
+      outline: 0.125rem solid var(--md-teal);
+      border-color: transparent;
+    }
+
+    @media (prefers-contrast: more) {
+      border: 0.125rem solid black !important;
+    }
+  }
+
+  .select-wrapper {
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1rem;
+      height: 1rem;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2334495e'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-size: contain;
+      pointer-events: none;
+    }
+  }
+
+  .submit-btn {
+    width: 100%;
+    background: var(--md-teal);
+    color: var(--md-white);
+    border: none;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    transition: all 0.2s;
+    box-shadow: 0 0.25rem 0.75rem color-mix(in srgb, var(--md-teal) 20%, transparent);
+
+    &:hover {
+      filter: brightness(0.95);
+      transform: translateY(-0.0625rem);
+      box-shadow: 0 0.375rem 0.9375rem color-mix(in srgb, var(--md-teal) 26%, transparent);
+    }
+
+    @media (prefers-contrast: more) {
+      background: black;
+      border: 0.125rem solid black;
+    }
+  }
+
+  .error-text {
+    display: block;
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    font-weight: 500;
+  }
+
+  .success-message {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: color-mix(in srgb, var(--md-teal) 8%, var(--md-white));
+    border: 1px solid color-mix(in srgb, var(--md-teal) 12%, var(--md-border));
+    color: color-mix(in srgb, var(--md-teal) 30%, var(--md-navy));
+    border-radius: 0.75rem;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .spinner {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid color-mix(in srgb, var(--md-text) 18%, transparent);
+    border-radius: 50%;
+    border-top-color: color-mix(in srgb, var(--md-accent) 60%, var(--md-white));
+    animation: spin 0.8s linear infinite;
+  }
+
+  .non-interactive {
+    pointer-events: none;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .privacy-note {
+    font-size: 0.75rem;
+    color: var(--md-text);
+    text-align: center;
+    margin-top: 1.25rem;
+    line-height: 1.4;
+  }
+
+  /* Dark mode specific improvements */
+  :global(.dark) {
+    input,
+    select {
+      background-color: var(--md-white); /* Keep it dark (from palette) */
+      border-color: var(--md-border);
+      color: var(--md-text);
+
+      &:focus {
+        border-color: var(--md-teal);
+        box-shadow: 0 0 0 1px var(--md-teal);
+      }
+    }
+
+    ::placeholder {
+      color: rgb(255 255 255 / 40%);
+    }
+  }
+</style>

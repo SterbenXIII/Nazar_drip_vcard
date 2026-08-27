@@ -1,0 +1,91 @@
+---
+- name: 🔐 Create .env file from template
+  ansible.builtin.template:
+    src: env.j2
+    dest: '{{ project_dir }}/.env'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0600'
+    backup: true
+  no_log: true
+  tags: [env, config]
+  # No notify: Restart_services — docker compose up --force-recreate in 05_deployment
+  # already recreates containers with the new .env, making a post-deploy restart redundant.
+
+- name: 🔒 Enforce .env file permissions (every run)
+  ansible.builtin.file:
+    path: '{{ project_dir }}/.env'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0600'
+  tags: [env, security]
+
+- name: 🔍 Verify .env file exists
+  ansible.builtin.stat:
+    path: '{{ project_dir }}/.env'
+  register: env_file
+  failed_when: not env_file.stat.exists
+  tags: [env, check]
+
+- name: ✅ Validate .env contains all keys from .env.example
+  ansible.builtin.shell: |
+    MISSING_KEYS=""
+    # Extract keys from .env.example (lines with KEY= or KEY without #)
+    for key in $(grep -v '^#' "{{ project_dir }}/.env.example" | grep '=' | cut -d'=' -f1); do
+      if ! grep -q "^${key}=" "{{ project_dir }}/.env"; then
+        MISSING_KEYS="${MISSING_KEYS} ${key}"
+      fi
+    done
+    if [ -n "${MISSING_KEYS}" ]; then
+      echo "Missing required environment variables: ${MISSING_KEYS}"
+      exit 1
+    fi
+  changed_when: false
+  tags: [env, validation]
+
+- name: 🗂️ Ensure scripts directory exists
+  ansible.builtin.file:
+    path: '{{ project_dir }}/scripts'
+    state: directory
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0755'
+  tags: [cron, monitoring]
+
+- name: 📜 Copy monitoring scripts to VPS
+  ansible.builtin.copy:
+    src: '../../scripts/{{ item }}'
+    dest: '{{ project_dir }}/scripts/{{ item }}'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0755'
+  loop:
+    - monitor.sh
+    - daily_report.sh
+  tags: [cron, monitoring]
+
+- name: 🗂️ Ensure logs directory exists for cron output
+  ansible.builtin.file:
+    path: '{{ project_dir }}/logs'
+    state: directory
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0755'
+  tags: [cron, monitoring]
+
+- name: 📅 Install cron jobs for monitoring and daily report
+  become: true
+  ansible.builtin.template:
+    src: monitor.cron.j2
+    dest: /etc/cron.d/vcard-monitor
+    owner: root
+    group: root
+    mode: '0644'
+  tags: [cron, monitoring]
+
+- name: ✅ Ensure cron daemon picks up new jobs (reload)
+  become: true
+  ansible.builtin.service:
+    name: cron
+    state: restarted
+  tags: [cron, monitoring]

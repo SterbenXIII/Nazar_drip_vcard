@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Security audit (pnpm)
+        run: pnpm audit --audit-level=high
+
+      - name: ESLint
+        run: pnpm lint
+
+      - name: Prettier check
+        run: pnpm format:check
+
+      - name: Stylelint
+        run: pnpm stylelint
+
+      - name: Markdownlint
+        run: pnpm mdlint
+
+      - name: Build shared package (for types)
+        run: pnpm --filter @vcard/shared build
+
+      - name: Typecheck (shared)
+        run: pnpm --filter @vcard/shared exec tsc --noEmit
+
+      - name: Typecheck (api)
+        run: pnpm --filter @vcard/api exec tsc --noEmit
+
+      - name: Typecheck (web)
+        run: pnpm --filter @vcard/web exec astro check
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared
+        run: pnpm --filter @vcard/shared build
+
+      - name: Build api
+        run: pnpm --filter @vcard/api build
+
+      - name: Build web
+        run: pnpm --filter @vcard/web build
+
+      - name: Run Lighthouse CI
+        run: pnpx @lhci/cli autorun
+        working-directory: apps/web
+
+  hadolint:
+    name: Dockerfile Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint Dockerfile (web)
+        uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf
+        with:
+          dockerfile: ops/docker/web/Dockerfile
+
+      - name: Lint Dockerfile (api)
+        uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf
+        with:
+          dockerfile: ops/docker/api/Dockerfile
+
+      - name: Lint Dockerfile (n8n)
+        uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf
+        with:
+          dockerfile: ops/docker/n8n/Dockerfile

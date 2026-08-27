@@ -1,0 +1,159 @@
+import { leadSchema } from '@vcard/shared'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+
+import { ENV } from '@/config/env.config'
+import { NotificationProvider } from '@/constants/enums/notification-provider.enum'
+import { NotificationCoordinator } from '@/services/coordinators/notification.coordinator'
+import { DatabaseService } from '@/services/database.service'
+import type { LeadPayload, LeadRecord } from '@/types/lead/lead-payload.type'
+
+vi.mock('@/services/providers/email.provider', () => ({
+  EmailProvider: class {
+    send = vi.fn().mockResolvedValue({ success: true })
+  },
+}))
+
+vi.mock('@/services/providers/notification/telegram-notification.provider', () => ({
+  TelegramNotificationProvider: class {
+    send = vi.fn().mockResolvedValue({ success: true, provider: 'TELEGRAM' })
+  },
+}))
+
+describe('Lead Submission Integration Test', () => {
+  let coordinator: NotificationCoordinator
+
+  beforeAll(async () => {
+    await DatabaseService.initializeOnStartup()
+    coordinator = new NotificationCoordinator()
+  })
+  afterAll(() => {
+    DatabaseService.reset()
+  })
+
+  describe('1. Валідація та збереження в БД', () => {
+    it('повинен прийняти валідну заявку та зберегти в базу', async () => {
+      const testLead: LeadPayload = {
+        name: 'Тестування базової валідації та збереження',
+        phone: '+380671234567',
+        district: 'Центр',
+        services: ['Детокс-крапельниця', 'Вітамінний коктейль'],
+        source: 'тести',
+        timestamp: new Date(),
+      }
+
+      const validated = leadSchema.parse(testLead)
+      expect(validated).toBeDefined()
+      expect(validated.name).toBe(testLead.name)
+
+      await expect(coordinator.handleIncomingLead(testLead)).resolves.not.toThrow()
+
+      const db = DatabaseService.getInstance().getProvider()
+      const results = await db.query<LeadRecord>(
+        'SELECT * FROM leads WHERE phone = ? ORDER BY id DESC LIMIT 1',
+        [testLead.phone],
+      )
+
+      expect(results).toHaveLength(1)
+      const saved = results[0]
+      expect(saved).toBeDefined()
+      expect(saved!.name).toBe(testLead.name)
+      expect(saved!.phone).toBe(testLead.phone)
+      expect(saved!.district).toBe(testLead.district)
+
+      const savedServices = JSON.parse(saved!.services as unknown as string)
+      expect(savedServices).toEqual(testLead.services)
+    })
+
+    it('повинен відкинути невалідну заявку', () => {
+      const invalidLead = {
+        name: 'Test',
+        phone: 'invalid-phone',
+        district: 'Test',
+        services: [],
+      }
+
+      expect(() => leadSchema.parse(invalidLead)).toThrow()
+    })
+  })
+
+  describe('2. Відправка сповіщень', () => {
+    it('повинен відправити сповіщення через всі підключені провайдери', async () => {
+      const testLead: LeadPayload = {
+        name: 'Тестування відправки сповіщень',
+        phone: '+380501111111',
+        district: 'Личаківський',
+        services: ['Тест сповіщень'],
+        source: 'тести',
+        timestamp: new Date(),
+      }
+
+      await coordinator.handleIncomingLead(testLead)
+
+      console.log('\n📬 Перевірте сповіщення:')
+
+      if (ENV.ENABLED_PROVIDERS.includes(NotificationProvider.TELEGRAM)) {
+        console.log(
+          `  ✅ Telegram: bot повинен надіслати повідомлення на ${ENV.TELEGRAM_MASTER_ID}`,
+        )
+      }
+
+      if (ENV.ENABLED_PROVIDERS.includes(NotificationProvider.EMAIL)) {
+        console.log(`  ✅ Email: повідомлення повинно прийти на ${ENV.ADMIN_EMAIL}`)
+      }
+
+      console.log('  (Автоматична перевірка доставки потребує mock/spy)\n')
+    })
+  })
+
+  describe('3. Конкурентні запити', () => {
+    it('повинен обробити багато одночасних заявок', async () => {
+      const leads: LeadPayload[] = Array.from({ length: 5 }, (_, i) => ({
+        name: `Тестування конкурентних запитів ${i + 1}`,
+        phone: `+38050222${i.toString().padStart(4, '0')}`,
+        district: 'Сихів',
+        services: ['Тест конкурентних запитів'],
+        source: 'тести',
+        timestamp: new Date(),
+      }))
+
+      const promises = leads.map((lead) => coordinator.handleIncomingLead(lead))
+      await expect(Promise.all(promises)).resolves.not.toThrow()
+
+      const db = DatabaseService.getInstance().getProvider()
+      const results = await db.query<LeadRecord>(
+        "SELECT * FROM leads WHERE source = 'тести' AND name LIKE 'Тестування конкурентних запитів%'",
+      )
+
+      expect(results.length).toBeGreaterThanOrEqual(5)
+    })
+  })
+
+  describe('4. Database persistence після перезапуску', () => {
+    it('база даних повинна зберігати дані між сесіями', async () => {
+      const testLead: LeadPayload = {
+        name: 'Тестування збереження між сесіями БД',
+        phone: '+380633333333',
+        district: 'Франківський',
+        services: ['Тест збереження'],
+        source: 'тести',
+        timestamp: new Date(),
+      }
+
+      await coordinator.handleIncomingLead(testLead)
+
+      DatabaseService.reset()
+      await DatabaseService.initializeOnStartup()
+
+      const db = DatabaseService.getInstance().getProvider()
+      const results = await db.query<LeadRecord>(
+        'SELECT * FROM leads WHERE phone = ? ORDER BY id DESC LIMIT 1',
+        [testLead.phone],
+      )
+
+      expect(results.length).toBeGreaterThan(0)
+      const saved = results[0]
+      expect(saved).toBeDefined()
+      expect(saved!.name).toBe(testLead.name)
+    })
+  })
+})

@@ -1,0 +1,194 @@
+---
+import { lvivCity } from '../data/locations'
+import { seoPages } from '../data/seo-pages'
+
+import { useTranslations, getLocalePrefix, type Locale } from '../i18n/ui'
+
+export interface Props {
+  currentServiceSlug: string // Base service ID (UK slug)
+  currentDistrictSlug?: string | undefined
+  locale: Locale
+}
+
+const { currentServiceSlug, currentDistrictSlug, locale } = Astro.props
+
+const uiT = useTranslations(locale)
+const t = {
+  heading: uiT('district.heading'),
+  subheading: uiT('district.subheading'),
+  arrival: uiT('district.arrival'),
+  minutes: uiT('district.minutes'),
+}
+
+// Find the localized slug for this service
+const service = seoPages.find((p) => p.slug === currentServiceSlug)
+const localizedServiceSlug = service ? service[locale].slug : currentServiceSlug
+const localePrefix = getLocalePrefix(locale)
+---
+
+<section class="district-coverage">
+  <div class="dc-header">
+    <h2>{t.heading}</h2>
+    <p>{t.subheading}</p>
+  </div>
+
+  <div class="dc-grid">
+    {
+      lvivCity.districts.map((district) => {
+        const isCurrent = district.slug === currentDistrictSlug
+        const href = `${localePrefix}/lviv/${district.slug}/${localizedServiceSlug}`
+
+        return (
+          <a
+            href={href}
+            class:list={['dc-card', { 'is-current': isCurrent }]}
+            aria-current={isCurrent ? 'page' : undefined}
+          >
+            <div class="dc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+            </div>
+            <div class="dc-info">
+              <p class="dc-name">{district.name[locale]}</p>
+              <p class="dc-time">
+                {t.arrival}
+                {district.travelMinutes} {t.minutes}
+              </p>
+            </div>
+          </a>
+        )
+      })
+    }
+  </div>
+</section>
+
+<style>
+  .district-coverage {
+    max-width: 72rem;
+    margin: 3rem auto;
+    padding: 3rem 1.5rem;
+    border-top: 1px solid var(--md-border);
+    background: var(--md-white);
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 5%);
+  }
+
+  :global(.dark) .district-coverage {
+    background: var(--md-secondary-bg, rgb(255 255 255 / 3%));
+  }
+
+  .dc-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .dc-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--md-navy);
+    margin-bottom: 0.5rem;
+  }
+
+  .dc-header p {
+    font-size: 1.125rem;
+    color: var(--md-text);
+    margin: 0;
+  }
+
+  .dc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .dc-card {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--md-border);
+    text-decoration: none;
+    background: var(--md-white);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  :global(.dark) .dc-card {
+    background: color-mix(in srgb, var(--md-secondary-bg) 50%, transparent);
+  }
+
+  .dc-card:not(.is-current):hover {
+    border-color: var(--md-teal);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 10%);
+  }
+
+  .dc-card.is-current {
+    background: color-mix(in srgb, var(--md-teal) 8%, var(--md-white));
+    border-color: var(--md-teal);
+    pointer-events: none;
+  }
+
+  :global(.dark) .dc-card.is-current {
+    background: color-mix(in srgb, var(--md-teal) 15%, transparent);
+  }
+
+  .dc-icon {
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    background: color-mix(in srgb, var(--md-teal) 10%, transparent);
+    color: var(--md-teal);
+  }
+
+  .dc-card.is-current .dc-icon {
+    background: var(--md-teal);
+    color: var(--md-white);
+  }
+
+  .dc-icon svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    stroke-width: 2;
+  }
+
+  .dc-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dc-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--md-navy);
+  }
+
+  .dc-time {
+    font-size: 0.75rem;
+    margin: 0.25rem 0 0;
+    color: var(--md-text);
+  }
+</style>

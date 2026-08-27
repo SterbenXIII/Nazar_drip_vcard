@@ -1,0 +1,18 @@
+# See AGENTS.md at the repo root for full rules.
+
+## This file points Cursor AI to the same conventions.
+
+### Critical Rules
+
+- pnpm monorepo: @vcard/web (Astro 5), @vcard/api (Hono), @vcard/shared (Zod schemas)
+- Import aliases: always use `@/` for internal imports, never relative `../../`
+- No .js extensions in imports (moduleResolution: bundler)
+- NEVER set moduleResolution to NodeNext — use bundler
+- Build: `tsc -b && tsc-alias -p tsconfig.json -f` rewrites @/ → relative in dist/
+- Ukrainian UI text, English code comments and commits
+- apps/web: pure Astro components, no React/Vue/Svelte, no client JS
+- apps/api: barrel exports (index.ts) in every folder, Strategy pattern for providers
+- Zod schemas go in @vcard/shared, not in api
+- Docker CLI: `docker compose` (no hyphen)
+- Commit format: `type(scope): short description` (English, lowercase, imperative, no period)
+- pnpm v10.29.1 only — never npm/ƒyarn

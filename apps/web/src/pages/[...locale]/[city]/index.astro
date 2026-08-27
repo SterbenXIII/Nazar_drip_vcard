@@ -1,0 +1,140 @@
+---
+import Layout from '../../../layouts/Layout.astro'
+import Breadcrumbs from '../../../components/location/Breadcrumbs.astro'
+import ServiceGrid from '../../../components/location/ServiceGrid.astro'
+import DistrictList from '../../../components/location/DistrictList.astro'
+import { locations } from '../../../data/locations'
+import { seoPages } from '../../../data/seo-pages'
+import { buildHubPageSchema } from '../../../utils/schema'
+import { BUILD_DATE } from '../../../utils/date'
+import {
+  useTranslations,
+  getStaticLocaleParam,
+  getLocalePrefix,
+  SUPPORTED_LOCALES,
+  type Locale,
+} from '../../../i18n/ui'
+import { siteConfig } from '../../../config/site'
+import type { City } from '../../../data/locations'
+
+export async function getStaticPaths() {
+  const locales: Locale[] = [SUPPORTED_LOCALES.UK, SUPPORTED_LOCALES.RU]
+  const paths = []
+
+  for (const locale of locales) {
+    for (const city of locations) {
+      paths.push({
+        params: {
+          locale: getStaticLocaleParam(locale),
+          city: city.slug,
+        },
+        props: {
+          cityData: city,
+          locale,
+        },
+      })
+    }
+  }
+  return paths
+}
+
+type Props = {
+  cityData: City
+  locale: Locale
+}
+
+const { cityData, locale }: Props = Astro.props
+
+const uiT = useTranslations(locale)
+
+const title = uiT('city.title').replace('{city}', cityData.name[locale])
+
+const description = uiT('city.description').replace('{city}', cityData.name[locale])
+
+const h1 = uiT('city.h1').replace('{cityLocative}', cityData.nameLocative[locale])
+
+const siteUrl = siteConfig.url
+const currentUrl = `${siteUrl}${getLocalePrefix(locale)}/${cityData.slug}`
+
+const listItems = seoPages.map((page) => ({
+  name: page[locale].h1,
+  url: `${currentUrl}/${page[locale].slug}`,
+}))
+
+const breadcrumbItems = [
+  { name: uiT('nav.home'), url: siteUrl },
+  { name: cityData.name[locale], url: currentUrl },
+]
+
+const schema = buildHubPageSchema(title, breadcrumbItems, listItems, BUILD_DATE, locale)
+---
+
+<Layout title={title} description={description} locale={locale} noindex={true}>
+  <script is:inline type="application/ld+json" set:html={schema} />
+
+  <main class="hub-page" data-pagefind-body>
+    <div class="container">
+      <Breadcrumbs items={breadcrumbItems} />
+
+      <h1 class="h1">{h1}</h1>
+
+      <p class="intro">
+        {uiT('city.intro').replace('{city}', cityData.name[locale])}
+      </p>
+
+      {
+        cityData.localDescription[locale] && (
+          <p class="local-description">{cityData.localDescription[locale]}</p>
+        )
+      }
+
+      <ServiceGrid items={listItems} locale={locale} />
+
+      <div data-pagefind-ignore>
+        <DistrictList districts={cityData.districts} locale={locale} currentUrl={currentUrl} />
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .hub-page {
+    padding: 6rem 0;
+    min-height: 80vh;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+  }
+
+  .intro {
+    font-size: 1.25rem;
+    color: rgb(255 255 255 / 70%);
+    margin-bottom: 1.5rem;
+  }
+
+  .local-description {
+    font-size: 1rem;
+    color: rgb(255 255 255 / 60%);
+    line-height: 1.7;
+    margin-bottom: 3rem;
+    padding: 1.25rem;
+    background: rgb(255 255 255 / 5%);
+    border-radius: 0.75rem;
+    border-left: 3px solid var(--md-teal, #26a69a);
+  }
+
+  @media (--sm-down) {
+    .h1 {
+      font-size: 2.25rem;
+    }
+  }
+</style>

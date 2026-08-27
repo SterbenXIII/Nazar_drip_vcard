@@ -1,0 +1,227 @@
+---
+# ============================================================================
+# Ansible Playbook: Idempotent Deployment for Hostinger VPS
+# ============================================================================
+# Project: astro-vcard monorepo
+# Target: Ubuntu VPS with Docker
+# CI/CD: GitHub Actions
+# ============================================================================
+
+- name: Deploy astro-vcard to Hostinger VPS
+  hosts: vps
+  gather_facts: true
+  become: false
+
+  vars:
+    domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('localhost', true) }}"
+    node_env: "{{ lookup('env', 'NODE_ENV') | default('production', true) }}"
+    deploy_path: "{{ lookup('env', 'DEPLOY_PATH') | default('/home/emerald-recovery', true) }}"
+    docker_network: "{{ lookup('env', 'DOCKER_NETWORK') | default('web-gateway', true) }}"
+    timezone: "{{ lookup('env', 'TIMEZONE') | default('Europe/Kyiv', true) }}"
+    image_registry: ''
+
+    # Git authentication — github_token is passed via environment variable from CI
+    github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"
+    github_repository_path: 'SterbenXIII/Lubomyr_drip_vcard.git'
+    github_repository_url: ''
+    github_repository_source: "{{ github_repository_path if (github_repository_path | default('', true) | length > 0) else github_repository_url }}"
+    github_repository_path_normalized: >-
+      {{
+        github_repository_source
+        | regex_replace('^(https?://github\\.com/)+', '')
+        | regex_replace('^git@github\\.com:', '')        | regex_replace('\.git$', '')        | regex_replace('/+$', '')
+      }}
+    repository_url: >-
+      {{
+        ('https://x-access-token:' ~ github_token ~ '@github.com/' ~ github_repository_path_normalized)
+        if (github_token | default('', true) | length > 0)
+        else ('https://github.com/' ~ github_repository_path_normalized)
+      }}
+
+    # Override these via --extra-vars in GitHub Actions
+    telegram_bot_token: "{{ lookup('env', 'TELEGRAM_BOT_TOKEN') }}"
+    telegram_master_id: "{{ lookup('env', 'TELEGRAM_MASTER_ID') }}"
+    smtp_user: "{{ lookup('env', 'SMTP_USER') }}"
+    gmail_client_id: "{{ lookup('env', 'GMAIL_CLIENT_ID') }}"
+    gmail_client_secret: "{{ lookup('env', 'GMAIL_CLIENT_SECRET') }}"
+    gmail_refresh_token: "{{ lookup('env', 'GMAIL_REFRESH_TOKEN') }}"
+    admin_email: "{{ lookup('env', 'ADMIN_EMAIL') }}"
+    enabled_providers: "{{ lookup('env', 'ENABLED_PROVIDERS') | default('TELEGRAM,EMAIL', true) }}"
+    backend_port: "{{ lookup('env', 'BACKEND_PORT') | default('5678', true) }}"
+    webhook_secret: "{{ lookup('env', 'WEBHOOK_SECRET') | default('', true) }}"
+    n8n_encryption_key: "{{ lookup('env', 'N8N_ENCRYPTION_KEY') }}"
+    n8n_port: "{{ lookup('env', 'N8N_PORT') | default('5679', true) }}"
+    n8n_host: "{{ lookup('env', 'N8N_HOST') | default(domain_name, true) }}"
+    n8n_protocol: "{{ lookup('env', 'N8N_PROTOCOL') | default('https', true) }}"
+    n8n_community_packages_enabled: "{{ lookup('env', 'N8N_COMMUNITY_PACKAGES_ENABLED') | default('true', true) }}"
+    generic_timezone: "{{ lookup('env', 'GENERIC_TIMEZONE') | default(timezone, true) }}"
+    postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
+    postgres_non_root_user: "{{ lookup('env', 'POSTGRES_NON_ROOT_USER') | default('n8n', true) }}"
+    postgres_non_root_password: "{{ lookup('env', 'POSTGRES_NON_ROOT_PASSWORD') | default(postgres_password, true) }}"
+    public_gsc_verification: "{{ lookup('env', 'PUBLIC_GSC_VERIFICATION') | default('', true) }}"
+    telegram_notify_ids: "{{ lookup('env', 'TELEGRAM_NOTIFY_IDS') }}"
+
+    # Paths and project config (from inventory)
+    project_dir: '{{ deploy_path }}'
+    data_dir: '{{ deploy_path }}/apps/api/data'
+    backup_dir: '{{ deploy_path }}/backups'
+
+  tasks:
+    - name: Validate required deployment variables
+      ansible.builtin.assert:
+        that:
+          - ansible_host is defined
+          - ansible_host != '127.0.0.1'
+          - ansible_host != 'localhost'
+        fail_msg: >
+          FATAL: ansible_host is not set or points to localhost.
+          Pass --extra-vars "target_host=<VPS_IP>" to set the target host.
+        success_msg: 'Target host: {{ ansible_host }}'
+      tags: [always]
+
+    - name: Validate production domain is not localhost
+      ansible.builtin.assert:
+        that:
+          - domain_name != 'localhost'
+        fail_msg: >
+          FATAL: domain_name is localhost for production deployment.
+          Set DOMAIN_NAME in CI variables or pass --extra-vars "domain_name=<your-domain>".
+        success_msg: 'Production domain: {{ domain_name }}'
+      when: node_env == 'production'
+      tags: [always]
+
+    - name: Validate required production encryption and database secrets
+      ansible.builtin.assert:
+        that:
+          - n8n_encryption_key | default('', true) | length > 0
+          - postgres_non_root_password | default('', true) | length > 0
+        fail_msg: >-
+          FATAL: required production secrets are not configured. Set
+          N8N_ENCRYPTION_KEY and POSTGRES_NON_ROOT_PASSWORD in the deployment environment.
+        success_msg: 'Required production secrets are configured.'
+      when: node_env == 'production'
+      no_log: true
+      tags: [always, env]
+
+    - name: Pre-deploy Cleanup
+      ansible.builtin.shell: |
+        docker builder prune -f --filter "until=2h"
+        docker image prune -f
+      changed_when: true
+      tags: [cleanup]
+
+    - name: Main Deployment Block
+      block:
+        - name: 01 - Preflight & System Check
+          ansible.builtin.include_tasks: tasks/01_preflight_system.yml
+
+        - name: 02 - Network & Firewall
+          ansible.builtin.include_tasks: tasks/02_network.yml
+
+        - name: 03 - Project Workspace Setup
+          ansible.builtin.include_tasks: tasks/03_project.yml
+
+        - name: 04 - Environment Variables & Cron
+          ansible.builtin.include_tasks: tasks/04_environment.yml
+
+        - name: 05 - Deployment (GHCR Pull & Compose)
+          ansible.builtin.include_tasks: tasks/05_deployment.yml
+
+        - name: 06 - File Permissions
+          ansible.builtin.include_tasks: tasks/06_permissions.yml
+
+        - name: 07 - Docker Pruning
+          ansible.builtin.include_tasks: tasks/07_cleanup.yml
+
+        - name: 08 - Healthchecks
+          ansible.builtin.include_tasks: tasks/08_healthcheck.yml
+
+      rescue:
+        - name: '🔍 Capture deployment diagnostics'
+          ansible.builtin.shell: |
+            cd "{{ project_dir }}"
+            {
+              echo '=== compose ps ==='
+              docker compose \
+                -f ops/docker/compose/docker-compose.yml \
+                -f ops/docker/compose/docker-compose.proxy.yml ps -a 2>&1 || true
+              for container in vcard-api vcard-web vcard-proxy; do
+                echo "=== ${container} logs (tail 30) ==="
+                if docker container inspect "${container}" >/dev/null 2>&1; then
+                  echo "--- ${container} state/health/restarts ---"
+                  docker container inspect --format '{% raw %}{{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} exit={{.State.ExitCode}} restarts={{.RestartCount}}{% endraw %}' "${container}" 2>&1 || true
+                  echo "--- ${container} networks/ports ---"
+                  docker container inspect --format '{% raw %}{{range $name, $network := .NetworkSettings.Networks}}network={{$name}} {{end}}ports={{json .NetworkSettings.Ports}}{% endraw %}' "${container}" 2>&1 || true
+                  docker logs --tail 30 "${container}" 2>&1 || true
+                else
+                  echo "Container ${container} does not exist."
+                fi
+              done
+              echo '=== internal API health ==='
+              if docker container inspect vcard-api >/dev/null 2>&1; then
+                docker exec vcard-api curl --fail --silent --show-error http://localhost:5678/api/health 2>&1 || true
+              else
+                echo 'vcard-api does not exist.'
+              fi
+              echo '=== public API health ==='
+              curl --fail --silent --show-error --max-time 15 "https://{{ domain_name }}/api/health" 2>&1 || true
+            }
+          args:
+            executable: /bin/bash
+          register: deployment_diagnostics
+          changed_when: false
+
+        - name: Notify Telegram
+          community.general.telegram:
+            token: '{{ telegram_bot_token }}'
+            api_method: sendMessage
+            api_args:
+              chat_id: '{{ telegram_master_id }}'
+              parse_mode: 'HTML'
+              text: |
+                <b>❌ Deployment failed</b>
+                <pre>{{ deployment_diagnostics.stdout | default(deployment_diagnostics.stderr | default('No diagnostics captured.'), true) | regex_replace('\x1b\\[[0-9;]*m', '') | regex_replace('&', '&amp;') | regex_replace('<', '&lt;') | regex_replace('>', '&gt;') | truncate(3500, true, '...') }}</pre>
+          failed_when: false
+          no_log: true
+
+        - name: Fail deployment after diagnostics
+          ansible.builtin.fail:
+            msg: 'Deployment failed; diagnostics were captured and the failure notification was attempted.'
+
+    - name: Final System Cleanup
+      ansible.builtin.command: "docker system prune -f --filter 'until=24h'"
+      # NOTE: --volumes intentionally omitted — would wipe api_data SQLite volume
+      changed_when: true
+      tags: [cleanup]
+
+    - name: 📋 Deployment Summary
+      ansible.builtin.debug:
+        msg:
+          - '========================================'
+          - 'Deployment Complete'
+          - '========================================'
+          - 'Domain: {{ domain_name }}'
+          - 'Project: {{ project_dir }}'
+          - 'API Port: {{ backend_port }}'
+          - 'Docker Network: {{ docker_network }}'
+          - 'Environment: {{ node_env }}'
+          - '========================================'
+          - 'Next steps:'
+          - '1. Verify frontend: http://{{ domain_name }}'
+          - '2. Verify API: http://{{ domain_name }}/api/health'
+          - '3. Check logs: docker logs vcard-api'
+          - '========================================'
+      tags: [always]
+
+  handlers:
+    - name: Restart_services
+      become: true
+      become_user: '{{ ansible_user }}'
+      ansible.builtin.shell: |
+        cd "{{ project_dir }}"
+        docker compose -f ops/docker/compose/docker-compose.yml restart api web
+      environment:
+        DOMAIN_NAME: '{{ domain_name }}'
+        NODE_ENV: '{{ node_env }}'
+        BACKEND_PORT: '{{ backend_port }}'
+      changed_when: true

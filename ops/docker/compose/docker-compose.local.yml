@@ -1,0 +1,71 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    volumes:
+      - ../../../ops/docker/caddy/Caddyfile.local:/etc/caddy/Caddyfile:ro
+    ports:
+      - '80:80'
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME:-localhost}
+    depends_on:
+      - web
+      - api
+
+  web:
+    build:
+      context: ../../../
+      dockerfile: ops/docker/web/Dockerfile
+      target: builder
+      args:
+        - DOMAIN_NAME=${DOMAIN_NAME:-vcard.local}
+    command: >
+      sh -c "pnpm install &&
+             pnpm --filter @vcard/web dev --host"
+    volumes:
+      - ../../../apps/web/src:/app/apps/web/src:cached
+      - ../../../apps/web/public:/app/apps/web/public:cached
+      - ../../../packages/shared/src:/app/packages/shared/src:cached
+      - /app/node_modules # Protect node_modules
+    read_only: false
+    ports:
+      - '4321:4321' # Astro dev server
+    environment:
+      - NODE_ENV=development
+    networks:
+      - web-gateway
+
+  api:
+    # Watch mode for Node.js
+    build:
+      context: ../../../
+      dockerfile: ops/docker/api/Dockerfile
+      target: builder # Keep builder stage for dev
+      args:
+        - DOMAIN_NAME=${DOMAIN_NAME:-vcard.local}
+    command:
+      - sh
+      - -c
+      - |
+        pnpm install && \
+        pnpm --filter @vcard/shared build && \
+        pnpm --filter @vcard/api build && \
+        pnpm --filter @vcard/api dev
+    volumes:
+      - ../../../apps/api/src:/app/apps/api/src:cached
+      - ../../../packages/shared/src:/app/packages/shared/src:cached
+      - ../../../apps/api/data:/app/data
+      - /app/node_modules # Protect node_modules
+      - /app/apps/api/node_modules # Protect api node_modules
+    read_only: false
+    ports:
+      - '5678:5678' # Direct access in dev
+    environment:
+      - NODE_ENV=development
+    env_file: ../../../.env
+    networks:
+      - web-gateway
+
+networks:
+  web-gateway:
+    name: web-gateway
+    driver: bridge

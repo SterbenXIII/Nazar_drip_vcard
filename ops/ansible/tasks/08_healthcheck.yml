@@ -1,0 +1,108 @@
+---
+- name: 🔍 Check required container states
+  ansible.builtin.command:
+    cmd: "docker inspect -f '{% raw %}{{.State.Status}}{% endraw %}' {{ item }}"
+  register: container_statuses
+  changed_when: false
+  failed_when: false
+  loop:
+    - vcard-api
+    - vcard-web
+    - vcard-proxy
+  tags: [health, check]
+
+- name: ✅ Wait for API container to become running
+  ansible.builtin.command:
+    cmd: "docker inspect -f '{% raw %}{{.State.Status}}{% endraw %}' vcard-api"
+  register: api_running_status
+  changed_when: false
+  retries: 6
+  delay: 10
+  until: api_running_status.rc == 0 and (api_running_status.stdout | trim) == 'running'
+  tags: [health, check]
+
+- name: Assert required containers are running
+  ansible.builtin.assert:
+    that:
+      - item.rc == 0
+      - (item.stdout | trim) == 'running'
+    fail_msg: 'Required container {{ item.item }} is not running.'
+  loop: '{{ container_statuses.results }}'
+  tags: [health]
+
+- name: 🔍 Check API Docker health status
+  ansible.builtin.command:
+    cmd: "docker inspect -f '{% raw %}{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}{% endraw %}' vcard-api"
+  register: api_health_status
+  changed_when: false
+  failed_when: false
+  retries: 6
+  delay: 10
+  until: api_health_status.rc == 0 and (api_health_status.stdout | trim) == 'healthy'
+  tags: [health, check]
+
+- name: Assert API Docker healthcheck passed
+  ansible.builtin.assert:
+    that:
+      - api_health_status.rc == 0
+      - (api_health_status.stdout | trim) == 'healthy'
+    fail_msg: 'vcard-api Docker healthcheck is not healthy.'
+  tags: [health, verify]
+
+- name: Verify API health inside Docker network
+  ansible.builtin.command:
+    cmd: docker exec vcard-api curl --fail --silent --show-error http://localhost:5678/api/health
+  register: internal_health_check
+  changed_when: false
+  retries: 3
+  delay: 5
+  until: internal_health_check.rc == 0
+  tags: [health, verify]
+
+- name: Validate active Caddy configuration
+  ansible.builtin.command:
+    cmd: docker exec vcard-proxy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+  changed_when: false
+  tags: [health, verify]
+
+- name: ✅ Verify API health endpoint
+  ansible.builtin.uri:
+    url: 'https://{{ domain_name }}/api/health'
+    method: GET
+    status_code: 200
+    timeout: 15
+  register: health_check
+  retries: 3
+  delay: 10
+  until: health_check.status == 200
+  when: node_env == 'production'
+  tags: [health, verify]
+
+- name: Verify production homepage and Content-Security-Policy
+  ansible.builtin.uri:
+    url: 'https://{{ domain_name }}/'
+    method: GET
+    status_code: 200
+    timeout: 15
+  register: production_homepage_check
+  retries: 3
+  delay: 15
+  until: production_homepage_check.status == 200
+  when: node_env == 'production'
+  tags: [health, verify]
+
+- name: Assert production Content-Security-Policy is current
+  ansible.builtin.assert:
+    that:
+      - "production_homepage_check.content_security_policy | default('') is search('https://www.googletagmanager.com')"
+      - "production_homepage_check.content_security_policy | default('') is search('connect-src')"
+    fail_msg: Production is still serving an outdated Content-Security-Policy header.
+  no_log: true
+  when: node_env == 'production'
+  tags: [health, verify]
+
+- name: 📊 Display health check result
+  ansible.builtin.debug:
+    msg: "Health check: {{ 'PASSED ✅' if (health_check.status | default(0)) == 200 else 'FAILED ⚠️' }}"
+  when: health_check is defined and health_check is not skipped
+  tags: [health]

@@ -1,0 +1,33 @@
+---
+/// <reference types="astro/client" />
+
+export interface Props {
+  action?: string
+}
+
+const { action = 'contact' } = Astro.props
+const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA' // 1x... is a testing key that always passes
+---
+
+<div class="turnstile-container">
+  <div
+    class="cf-turnstile"
+    data-sitekey={siteKey}
+    data-action={action}
+    data-language="uk"
+    data-theme="auto"
+  >
+  </div>
+</div>
+
+<!-- Only load the script once using is:inline, it handles subsequent renders -->
+<script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<style>
+  .turnstile-container {
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    min-height: 65px;
+  }
+</style>

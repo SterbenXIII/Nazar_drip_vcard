@@ -1,0 +1,7 @@
+---
+- name: 🌐 Ensure Docker network exists
+  ansible.builtin.shell: |
+    docker network inspect "{{ docker_network }}" >/dev/null 2>&1 || docker network create "{{ docker_network }}"
+  register: docker_network_result
+  changed_when: docker_network_result.stdout | length > 0
+  tags: [network]

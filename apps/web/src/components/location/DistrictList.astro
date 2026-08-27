@@ -1,0 +1,56 @@
+---
+import { useTranslations, type Locale } from '../../i18n/ui'
+
+export interface Props {
+  districts: ReadonlyArray<{ name: { uk: string; ru: string }; slug: string }>
+  currentUrl: string
+  locale: Locale
+}
+const { districts, currentUrl, locale } = Astro.props
+const uiT = useTranslations(locale)
+---
+
+{
+  districts && districts.length > 0 && (
+    <section class="districts-section">
+      <h2>{uiT('section.districts')}</h2>
+      <div class="districts-list">
+        {districts.map((district) => (
+          <a href={`${currentUrl}/${district.slug}`} class="district-link">
+            {district.name[locale]}
+          </a>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .districts-section h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+    color: var(--md-navy);
+  }
+
+  .districts-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .district-link {
+    background: var(--md-blue-grey);
+    border: 1px solid var(--md-border);
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    text-decoration: none;
+    color: var(--md-text);
+    transition: all 0.2s ease;
+  }
+
+  .district-link:hover {
+    background: var(--md-teal);
+    color: #fff;
+    border-color: var(--md-teal);
+  }
+</style>

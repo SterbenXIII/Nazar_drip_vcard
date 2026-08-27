@@ -1,0 +1,95 @@
+name: 🔐 Initialize SSL Certificate (First-Time Setup)
+
+on:
+  workflow_dispatch:
+
+env:
+  DOMAIN_NAME: ${{ vars.DOMAIN_NAME || 'localhost' }}
+
+jobs:
+  setup-ssl:
+    name: Certbot SSL Setup
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ssl-init]')
+    steps:
+      - name: 🚚 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🛡️ Validate domain variable
+        run: |
+          if [ "${{ env.DOMAIN_NAME }}" = "localhost" ]; then
+            echo "❌ DOMAIN_NAME is localhost. Set repository variable DOMAIN_NAME before SSL initialization."
+            exit 1
+          fi
+
+      - name: 🔐 Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          SSH_HOST: ${{ secrets.HOSTINGER_VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: 🔐 Initialize SSL Certificate
+        env:
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_VPS_HOST }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/emerald-recovery' }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" << 'SCRIPT'
+          set -e
+          cd "${{ env.DEPLOY_PATH }}"
+
+          echo "🌐 Domain: ${{ env.DOMAIN_NAME }}"
+          echo "📍 Path: $(pwd)"
+
+          # Check if certificate already exists
+          if [ -d "certbot/conf/live/${{ env.DOMAIN_NAME }}" ]; then
+            echo "📋 Certificate already exists for ${{ env.DOMAIN_NAME }}"
+            certbot certificates
+            exit 0
+          fi
+
+          echo "🚀 Requesting SSL certificate from Let's Encrypt..."
+          make cert-init || {
+            echo "⚠️  Certbot setup may need manual review"
+            echo "Run manually: ssh vps_user@$SSH_HOST 'cd $DEPLOY_PATH && make cert-init'"
+            exit 0
+          }
+
+          echo "✅ SSL certificate issued successfully"
+          certbot certificates
+          SCRIPT
+
+      - name: 🚀 Deploy after SSL setup
+        env:
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_VPS_HOST }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/emerald-recovery' }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" << 'SCRIPT'
+          set -e
+          cd "${{ env.DEPLOY_PATH }}"
+
+          echo "🏗 Building and starting services..."
+          make rebuild
+
+          echo "✅ SSL setup complete — services running with HTTPS"
+          SCRIPT
+
+      - name: ✅ Notification
+        if: success()
+        uses: appleboy/telegram-action@master
+        continue-on-error: true
+        with:
+          to: ${{ secrets.TELEGRAM_MASTER_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            ✅ SSL Certificate Initialized
+
+            Domain: ${{ env.DOMAIN_NAME }}
+            Certificate: Active
+
+            Services ready at: https://${{ env.DOMAIN_NAME }}

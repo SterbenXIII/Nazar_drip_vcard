@@ -1,0 +1,344 @@
+---
+import '../../styles/global.css'
+import type { SeoPage, FaqItem } from '../../types/seo'
+import { seoPages } from '../../data/seo-pages'
+import SeoHead from '../../components/SeoHead.astro'
+import ThemeScript from '../../components/layout/ThemeScript.astro'
+import ThemeToggle from '../../components/ThemeToggle.astro'
+import HowTo from '../../components/HowTo.astro'
+import RelatedServices from '../../components/RelatedServices.astro'
+import TableOfContents from '../../components/TableOfContents.astro'
+import ColloquialTerms from '../../components/ColloquialTerms.astro'
+import CoverageArea from '../../components/CoverageArea.astro'
+import { buildServicePageSchema } from '../../utils/schema'
+import { buildMedicalWebPageSchema } from '../../utils/medical-schema'
+import { siteConfig } from '../../config/site'
+import {
+  useTranslations,
+  getAlternateLocale,
+  getLocalePrefix,
+  getLocalizedUrl,
+  SUPPORTED_LOCALES,
+  type Locale,
+} from '../../i18n/ui'
+
+export async function getStaticPaths() {
+  const paths: any[] = []
+
+  for (const page of seoPages) {
+    // UK variant (no locale prefix)
+    paths.push({
+      params: { locale: undefined, slug: page.uk.slug },
+      props: { page, locale: SUPPORTED_LOCALES.UK },
+    })
+
+    // RU variant
+    paths.push({
+      params: { locale: SUPPORTED_LOCALES.RU, slug: page.ru.slug },
+      props: { page, locale: SUPPORTED_LOCALES.RU },
+    })
+  }
+
+  return paths
+}
+
+interface Props {
+  page: SeoPage
+  locale: Locale
+}
+
+const { page, locale } = Astro.props
+const localeData = page[locale]
+const { seo, h1, price, description, faq, surzhykAlt, colloquialTerms } = localeData
+
+const schemaJson = buildServicePageSchema(page, Astro.url.href, locale)
+
+const relatedPages = page.relatedSlugs
+  .map((slug: string) => seoPages.find((p) => p.slug === slug))
+  .filter((p: SeoPage | undefined): p is SeoPage => p !== undefined)
+
+const uiT = useTranslations(locale)
+
+// UI Translations
+const t = {
+  main: uiT('nav.home'),
+  backHome: uiT('nav.backHome'),
+  faqHeading: uiT('section.faq'),
+  price: uiT('service.price'),
+  duration: uiT('service.duration'),
+  howTo: `${uiT('seo.howToPrefix')} ${h1.toLowerCase()}`,
+  telegram: uiT('action.telegram'),
+  call: uiT('action.call'),
+}
+
+// Dynamic headings for ToC
+const headings = [
+  { depth: 2, slug: 'price-section', text: t.price },
+  ...(page.howToSteps ? [{ depth: 2, slug: 'how-to', text: t.howTo }] : []),
+  { depth: 2, slug: 'faq', text: t.faqHeading },
+]
+
+const medicalSchema = buildMedicalWebPageSchema(
+  seo.title,
+  seo.description,
+  Astro.url.href,
+  page.dateModified,
+  locale,
+)
+
+// Alternate language calculation for hreflang
+const alternateLocale = getAlternateLocale(locale)
+const alternateSlug = page[alternateLocale].slug
+const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteConfig.url)
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <SeoHead
+      title={seo.title}
+      description={seo.description}
+      schema={[schemaJson, medicalSchema]}
+      dateModified={page.dateModified}
+      alternateLinks={[{ hreflang: alternateLocale, href: alternateUrl }]}
+      surzhykAlt={surzhykAlt}
+    />
+    <ThemeScript />
+    <style>
+      .breadcrumb {
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+      }
+
+      .breadcrumb ol {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .breadcrumb li + li::before {
+        content: '/';
+        color: #999;
+        margin-right: 0.5rem;
+      }
+
+      .breadcrumb a {
+        color: var(--md-teal);
+        text-decoration: none;
+      }
+
+      .breadcrumb a:hover {
+        text-decoration: underline;
+      }
+
+      .breadcrumb span[aria-current='page'] {
+        color: var(--md-text);
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        line-height: 1.6;
+        color: var(--md-text);
+        background: var(--md-white);
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        color: var(--md-navy);
+      }
+
+      dl {
+        display: grid;
+        grid-template-columns: max-content auto;
+        gap: 0.5rem 1.5rem;
+        background: rgb(0 0 0 / 5%);
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 2rem 0;
+      }
+
+      :global(.dark) dl {
+        background: rgb(255 255 255 / 5%);
+      }
+
+      dt {
+        font-weight: bold;
+      }
+
+      dd {
+        margin: 0;
+      }
+
+      .cta-block {
+        display: flex;
+        gap: 1rem;
+        margin: 2rem 0;
+        flex-wrap: wrap;
+      }
+
+      .cta-btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .btn-phone {
+        background: var(--md-blue-grey);
+        color: var(--md-navy);
+        border: 1px solid var(--md-border);
+      }
+
+      .btn-tg {
+        background: var(--md-teal);
+        color: white;
+      }
+
+      details {
+        margin-bottom: 0.5rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--md-border);
+      }
+
+      summary {
+        font-weight: bold;
+        cursor: pointer;
+        padding: 0.5rem 0;
+        color: var(--md-navy);
+      }
+
+      details p {
+        margin: 0.5rem 0 1rem;
+        color: var(--md-text);
+      }
+
+      .back-link {
+        display: inline-block;
+        margin-top: 3rem;
+        color: var(--md-teal);
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .back-link:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+        <ThemeToggle />
+      </div>
+      <nav aria-label="Навігація" class="breadcrumb">
+        <ol itemscope itemtype="https://schema.org/BreadcrumbList">
+          <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+            <a itemprop="item" href={getLocalePrefix(locale) + '/'}>
+              <span itemprop="name">{t.main}</span>
+            </a>
+            <meta itemprop="position" content="1" />
+          </li>
+          <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+            <span itemprop="name" aria-current="page">{h1}</span>
+            <meta itemprop="item" content={Astro.url.href} />
+            <meta itemprop="position" content="2" />
+          </li>
+        </ol>
+      </nav>
+
+      <article itemscope itemtype="https://schema.org/Service" data-pagefind-body>
+        <h1 itemprop="name" transition:name="main-heading">{h1}</h1>
+
+        <div class="cta-block" aria-label="Контакти">
+          <a class="cta-btn btn-phone" href={`tel:${siteConfig.phone.raw}`}>
+            {t.call}: {siteConfig.phone.display}
+          </a>
+          <a
+            class="cta-btn btn-tg"
+            href={siteConfig.telegramUrl}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            {t.telegram}
+          </a>
+        </div>
+
+        <div data-pagefind-ignore>
+          <TableOfContents headings={headings} locale={locale} />
+        </div>
+
+        <section aria-label="Вартість послуги" id="price-section">
+          <dl>
+            <dt>{t.price}</dt>
+            <dd itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+              <meta itemprop="price" content={String(page.priceNumeric)} />
+              <span>{price}</span>
+              <meta itemprop="priceCurrency" content="UAH" />
+              <link itemprop="availability" href="https://schema.org/InStock" />
+            </dd>
+
+            <dt>{t.duration}</dt>
+            <dd>{page.duration}</dd>
+          </dl>
+        </section>
+
+        <p itemprop="description">{description}</p>
+
+        {
+          page.howToSteps && (
+            <div id="how-to">
+              <HowTo
+                data-pagefind-ignore
+                heading={t.howTo}
+                steps={page.howToSteps}
+                totalDuration="PT60M"
+              />
+            </div>
+          )
+        }
+
+        <div data-pagefind-ignore>
+          <CoverageArea serviceSlug={page.slug} locale={locale} />
+        </div>
+
+        <section
+          aria-label="Часті запитання"
+          itemscope
+          itemtype="https://schema.org/FAQPage"
+          id="faq"
+        >
+          <h2>{t.faqHeading}</h2>
+          {
+            faq.map((item: FaqItem) => (
+              <details itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                <summary itemprop="name">{item.question}</summary>
+                <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                  <p itemprop="text">{item.answer}</p>
+                </div>
+              </details>
+            ))
+          }
+        </section>
+
+        <a href={getLocalePrefix(locale) + '/'} class="back-link">{t.backHome}</a>
+
+        <ColloquialTerms terms={colloquialTerms} />
+
+        <div data-pagefind-ignore>
+          <RelatedServices pages={relatedPages} locale={locale} />
+        </div>
+      </article>
+    </main>
+  </body>
+</html>

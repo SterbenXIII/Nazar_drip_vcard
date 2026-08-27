@@ -1,0 +1,176 @@
+name: ⏪ Rollback to Specific Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: 'Commit SHA to rollback to'
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+env:
+  DOMAIN_NAME: ${{ vars.DOMAIN_NAME || 'localhost' }}
+  DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/emerald-recovery' }}
+  VPS_IP: ${{ vars.VPS_IP || 'localhost' }}
+
+jobs:
+  rollback:
+    name: Rollback to ${{ inputs.commit_sha }}
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://${{ env.DOMAIN_NAME }}
+    steps:
+      - name: 🚚 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔧 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install Ansible and dependencies
+        run: |
+          pip install ansible
+          ansible-galaxy collection install -r ops/ansible/requirements.yml
+
+      - name: 🔠 Lowercase Repository Name
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
+
+      - name: 🔐 Configure SSH key
+        env:
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          SSH_HOST: ${{ env.VPS_IP }}
+        run: |
+          mkdir -p ~/.ssh
+          printf "%s" "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          touch ~/.ssh/known_hosts
+          ssh-keyscan -T 10 -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: 🚀 Run Rollback with Ansible
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANSIBLE_HOST_KEY_CHECKING: 'False'
+          HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
+          DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
+          NODE_ENV: 'production'
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_MASTER_ID: ${{ secrets.TELEGRAM_MASTER_ID }}
+          TELEGRAM_NOTIFY_IDS: ${{ secrets.TELEGRAM_NOTIFY_IDS }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ENABLED_PROVIDERS: 'TELEGRAM'
+          BACKEND_PORT: '5678'
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          N8N_PORT: ${{ vars.N8N_PORT || '5679' }}
+          N8N_HOST: ${{ vars.N8N_HOST || env.DOMAIN_NAME }}
+          N8N_PROTOCOL: ${{ vars.N8N_PROTOCOL || 'https' }}
+          N8N_ENCRYPTION_KEY: ${{ secrets.N8N_ENCRYPTION_KEY }}
+          N8N_COMMUNITY_PACKAGES_ENABLED: ${{ vars.N8N_COMMUNITY_PACKAGES_ENABLED || 'true' }}
+          GENERIC_TIMEZONE: ${{ vars.GENERIC_TIMEZONE || 'Europe/Kyiv' }}
+          POSTGRES_NON_ROOT_USER: ${{ vars.POSTGRES_NON_ROOT_USER || 'n8n' }}
+          POSTGRES_NON_ROOT_PASSWORD: ${{ secrets.POSTGRES_NON_ROOT_PASSWORD || secrets.POSTGRES_PASSWORD }}
+          PUBLIC_GSC_VERIFICATION: ${{ vars.PUBLIC_GSC_VERIFICATION || '' }}
+        run: |
+          cd ops/ansible
+          ansible-playbook playbook.yml \
+            -vv \
+            -i inventory.ini \
+            --private-key $HOME/.ssh/deploy_key \
+            --extra-vars "target_host=${{ env.VPS_IP }}" \
+            --extra-vars "ansible_user=${HOSTINGER_SSH_USER}" \
+            --extra-vars "ansible_ssh_private_key_file=$HOME/.ssh/deploy_key" \
+            --extra-vars "deploy_path=${DEPLOY_PATH}" \
+            --extra-vars "domain_name=${DOMAIN_NAME}" \
+            --extra-vars "github_repository_path=${{ github.repository }}.git" \
+            --extra-vars "image_registry=ghcr.io/${{ env.REPO_LC }}/" \
+            --extra-vars "image_tag=${{ inputs.commit_sha }}"
+
+      - name: 🔍 Verify rollback (smoke tests)
+        run: |
+          DOMAIN="${{ env.DOMAIN_NAME }}"
+          MAX_ATTEMPTS=5
+          RETRY_DELAY=15
+
+          check_https() {
+            local label="$1"
+            local url="$2"
+            local status
+
+            for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+              status=$(curl --silent --show-error --location --output /dev/null \
+                --write-out '%{http_code}' --max-time 20 "$url") || status=000
+              if [ "$status" = "200" ]; then
+                echo "✅ $label: HTTP $status"
+                return 0
+              fi
+              echo "⚠️ $label attempt $attempt/$MAX_ATTEMPTS: HTTP $status"
+              [ "$attempt" -lt "$MAX_ATTEMPTS" ] && sleep "$RETRY_DELAY"
+            done
+
+            echo "❌ $label failed after $MAX_ATTEMPTS attempts: $url"
+            return 1
+          }
+
+          check_csp() {
+            local headers status csp
+
+            for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+              headers=$(curl --silent --show-error --location --dump-header - --output /dev/null \
+                --max-time 20 "https://$DOMAIN/") || headers=''
+              status=$(printf '%s\n' "$headers" | awk '/^HTTP/{status=$2} END{print status}')
+              csp=$(printf '%s\n' "$headers" | awk 'tolower($1) == "content-security-policy:" {sub(/^[^:]*:[[:space:]]*/, ""); value=$0} END{print value}')
+              if [ "$status" = "200" ] \
+                && printf '%s' "$csp" | grep -q 'https://www.googletagmanager.com' \
+                && printf '%s' "$csp" | grep -q 'connect-src'; then
+                echo "✅ CSP: required production directives found"
+                return 0
+              fi
+              echo "⚠️ CSP attempt $attempt/$MAX_ATTEMPTS: HTTP ${status:-000}, required directives missing"
+              [ "$attempt" -lt "$MAX_ATTEMPTS" ] && sleep "$RETRY_DELAY"
+            done
+
+            echo "❌ CSP failed after $MAX_ATTEMPTS attempts: https://$DOMAIN/"
+            return 1
+          }
+
+          echo "⏳ Checking public HTTPS rollback endpoints..."
+          check_https 'Frontend' "https://$DOMAIN/"
+          check_https 'API health' "https://$DOMAIN/api/health"
+          check_csp
+          echo "✅ Rollback verified through the public proxy."
+
+      - name: 💬 Notify Telegram (success)
+        if: success()
+        uses: appleboy/telegram-action@master
+        continue-on-error: true
+        with:
+          to: ${{ secrets.TELEGRAM_MASTER_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            ⏪ Rollback Success
+
+            Version: ${{ inputs.commit_sha }}
+            Domain: https://${{ env.DOMAIN_NAME }}
+            verified ✓
+
+      - name: 🚨 Notify Telegram (failure)
+        if: failure()
+        uses: appleboy/telegram-action@master
+        continue-on-error: true
+        with:
+          to: ${{ secrets.TELEGRAM_MASTER_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            ❌ Rollback Failed
+
+            Attempted SHA: ${{ inputs.commit_sha }}
+            Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

@@ -1,0 +1,17 @@
+<!-- Dark-mode guard: apply before rendering to prevent FOUC -->
+<script is:inline>
+  const setTheme = () => {
+    try {
+      const stored = localStorage.getItem('theme')
+      const prefersDark =
+        window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      const theme = stored || (prefersDark ? 'dark' : 'light')
+      if (theme === 'dark') document.documentElement.classList.add('dark')
+      else document.documentElement.classList.remove('dark')
+    } catch (e) {
+      /* noop */
+    }
+  }
+  setTheme()
+  document.addEventListener('astro:after-swap', setTheme)
+</script>

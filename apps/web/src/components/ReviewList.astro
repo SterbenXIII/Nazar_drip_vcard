@@ -1,0 +1,116 @@
+---
+import { reviews } from '../data/reviews'
+import ReviewCard from './ReviewCard.astro'
+import type { Locale } from '../i18n/ui'
+
+interface Props {
+  serviceSlug?: string
+  locale: Locale
+  limit?: number
+}
+
+const { serviceSlug, locale, limit = 5 } = Astro.props
+
+const filteredReviews = serviceSlug ? reviews.filter((r) => r.serviceSlug === serviceSlug) : reviews
+
+const displayReviews = filteredReviews.slice(0, limit)
+
+const title = locale === 'uk' ? 'Відгуки наших пацієнтів' : 'Отзывы наших пациентов'
+const aggregateLabel = locale === 'uk' ? 'Середня оцінка' : 'Средняя оценка'
+const countsLabel = locale === 'uk' ? 'на основі 47 відгуків' : 'на основе 47 отзывов'
+---
+
+<section class="reviews-section" id="reviews">
+  <div class="reviews-container">
+    <div class="reviews-info">
+      <h2 class="title">{title}</h2>
+      <div
+        class="aggregate-rating"
+        itemprop="aggregateRating"
+        itemscope
+        itemtype="https://schema.org/AggregateRating"
+      >
+        <div class="rating-value">
+          <span itemprop="ratingValue">5.0</span>/5
+        </div>
+        <div class="rating-meta">
+          <span class="label">{aggregateLabel}</span>
+          <span class="counts" itemprop="reviewCount">47</span>
+          <span class="counts-text">{countsLabel}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="reviews-grid">
+      {displayReviews.map((review) => <ReviewCard review={review} locale={locale} />)}
+    </div>
+  </div>
+</section>
+
+<style>
+  .reviews-section {
+    padding: 4rem 0;
+  }
+
+  .reviews-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .reviews-info {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(to right, var(--md-navy), var(--md-teal));
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .aggregate-rating {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .rating-value {
+    font-size: 3rem;
+    font-weight: 900;
+    color: #fbbf24;
+  }
+
+  .rating-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 1rem;
+    color: var(--md-text);
+    opacity: 0.7;
+  }
+
+  .counts {
+    display: none; /* Semantic only */
+  }
+
+  .reviews-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+
+  @media (--md-down) {
+    .reviews-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .title {
+      font-size: 2rem;
+    }
+  }
+</style>

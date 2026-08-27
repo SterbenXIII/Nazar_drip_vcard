@@ -1,0 +1,15 @@
+dist
+node_modules
+.astro
+pnpm-lock.yaml
+backups
+certbot
+certs
+pg_data
+n8n_data
+old
+tooling
+*.min.js
+*.min.css
+venv
+venv/*

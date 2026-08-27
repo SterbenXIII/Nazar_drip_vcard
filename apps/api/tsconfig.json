@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "exclude": ["node_modules", "dist"],
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "module": "ESNext",
+    "moduleResolution": "bundler", // Дозволяє імпорти без .js та аліаси
+    "allowImportingTsExtensions": false, // Важливо для tsc
+    "baseUrl": ".",
+    "composite": true,
+    "types": ["node"],
+    "paths": {
+      "@/*": ["src/*"],
+      "@vcard/shared": ["../../packages/shared/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "references": [
+    {
+      "path": "../../packages/shared"
+    }
+  ]
+}

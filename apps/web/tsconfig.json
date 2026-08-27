@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "composite": true,
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@vcard/shared": ["../../packages/shared/src/index.ts"]
+    }
+  },
+  "include": [".astro/types.d.ts", "src/**/*", "src/**/*.json"],
+  "references": [
+    {
+      "path": "../../packages/shared"
+    }
+  ]
+}

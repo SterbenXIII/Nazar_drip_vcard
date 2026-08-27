@@ -1,0 +1,146 @@
+---
+/**
+ * CoverageArea — Phase 1 silo-linking component.
+ *
+ * Renders a structured list of internal links to all Lviv district pages
+ * and Oblast city pages for the given service, building a coverage silo.
+ * Unlike DistrictCoverage (which shows a rich card grid), this is a
+ * lightweight text-based link cluster optimised for crawlability.
+ */
+import { lvivCity, oblastCities } from '../data/locations'
+import { seoPages } from '../data/seo-pages'
+import { useTranslations, getLocalePrefix, type Locale } from '../i18n/ui'
+
+export interface Props {
+  /** Base (UK) service slug, used to resolve the localized slug. */
+  serviceSlug: string
+  /** Active locale for link prefixes and text. */
+  locale: Locale
+}
+
+const { serviceSlug, locale } = Astro.props as Props
+
+const uiT = useTranslations(locale)
+const service = seoPages.find((p) => p.slug === serviceSlug)
+const localizedServiceSlug: string = service ? service[locale].slug : serviceSlug
+const localePrefix = getLocalePrefix(locale)
+
+const t = {
+  districtsHeading: uiT('coverage.districts'),
+  citiesHeading: uiT('coverage.cities'),
+} as const
+---
+
+<nav aria-label={uiT('coverage.label')} class="coverage-area">
+  <h3>
+    {t.districtsHeading}
+  </h3>
+  <ul class="coverage-list mb-6">
+    {
+      lvivCity.districts.map((district) => (
+        <li>
+          <a
+            href={`${localePrefix}/lviv/${district.slug}/${localizedServiceSlug}`}
+            class="coverage-link"
+          >
+            {district.name[locale]}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+
+  <h3>
+    {t.citiesHeading}
+  </h3>
+  <ul class="coverage-list">
+    {
+      oblastCities.map((city) => (
+        <li>
+          <a href={`${localePrefix}/${city.slug}/${localizedServiceSlug}`} class="coverage-link">
+            {city.name[locale]}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<style>
+  .coverage-area {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--md-border);
+  }
+
+  .coverage-area h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--md-text);
+    margin-bottom: 0.75rem;
+  }
+
+  .coverage-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+
+  @media (width <= 640px) {
+    .coverage-list {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (width <= 480px) {
+    .coverage-list {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .coverage-list.mb-6 {
+    margin-bottom: 1.5rem;
+  }
+
+  .coverage-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--md-navy);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    background: var(--md-white);
+    border: 0.0625rem solid var(--md-border);
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  .coverage-link:hover {
+    color: var(--md-accent);
+    background: color-mix(in srgb, var(--md-teal) 8%, var(--md-white));
+    border-color: var(--md-teal);
+    transform: translateY(-0.0625rem);
+    text-decoration: none;
+  }
+
+  :global(.dark) .coverage-link {
+    color: var(--md-text);
+    background: var(--md-white);
+    border-color: var(--md-border);
+  }
+
+  :global(.dark) .coverage-link:hover,
+  :global(.dark) .coverage-link:focus-visible {
+    background: color-mix(in srgb, var(--md-accent) 14%, transparent);
+    color: white;
+    border-color: var(--md-accent);
+  }
+</style>

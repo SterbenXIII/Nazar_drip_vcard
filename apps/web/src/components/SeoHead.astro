@@ -1,0 +1,147 @@
+---
+interface AlternateLink {
+  hreflang: string
+  href: string
+}
+
+interface Props {
+  title: string
+  description: string
+  canonicalUrl?: string
+  image?: string
+  schema?: string | any | (string | any)[]
+  dateModified?: string
+  alternateLinks?: AlternateLink[]
+  surzhykAlt?: string
+  noindex?: boolean
+}
+
+import { siteConfig } from '../config/site'
+
+const {
+  title,
+  description,
+  canonicalUrl = Astro.url.href,
+  image,
+  schema,
+  dateModified,
+  alternateLinks = [],
+  surzhykAlt,
+  noindex = false,
+} = Astro.props
+
+// Determine locale from URL
+const isRu = Astro.url.pathname.startsWith('/ru')
+const locale = isRu ? 'ru' : 'uk'
+const ogLocale = isRu ? 'ru_UA' : 'uk_UA'
+const siteName = isRu ? 'Капельница Львов' : siteConfig.businessName
+
+const siteBase = Astro.site ?? new URL(siteConfig.url)
+
+const urlObj = new URL(canonicalUrl)
+const slugMatch = urlObj.pathname.match(/\/([^/]+)\/?$/)
+let slug = slugMatch?.[1] ?? ''
+const isServicePage =
+  slug &&
+  slug !== 'certificate' &&
+  urlObj.pathname !== '/' &&
+  urlObj.pathname !== '/ru' &&
+  urlObj.pathname !== '/ru/'
+
+const defaultOgImage = isServicePage ? `/og/${slug}.png` : '/assets/og-preview.png'
+const finalImage = image ?? defaultOgImage
+const ogImageUrl = new URL(finalImage, siteBase).href
+
+// Ensure we have at least the current page and x-default if it's UK
+const allAlternateLinks = [...alternateLinks]
+if (!allAlternateLinks.find((l) => l.hreflang === locale)) {
+  allAlternateLinks.push({ hreflang: locale, href: canonicalUrl })
+}
+if (!allAlternateLinks.find((l) => l.hreflang === 'x-default')) {
+  // If we are in UK, it's the default. If RU, we'd need to know the UK partner.
+  // The pages pass the partner in alternateLinks usually.
+  const ukLink = allAlternateLinks.find((l) => l.hreflang === 'uk')
+  if (ukLink) {
+    allAlternateLinks.push({ hreflang: 'x-default', href: ukLink.href })
+  }
+}
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonicalUrl} />
+{
+  import.meta.env.PUBLIC_GSC_VERIFICATION && (
+    <meta name="google-site-verification" content={import.meta.env.PUBLIC_GSC_VERIFICATION} />
+  )
+}
+
+<meta
+  name="robots"
+  content={noindex
+    ? 'noindex, follow'
+    : 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'}
+/>
+<meta
+  name="author"
+  content={isRu
+    ? 'Медицинский специалист, Капельница Львов'
+    : `Медичний спеціаліст, ${siteConfig.businessName}`}
+/>
+
+{
+  allAlternateLinks.map((link) => (
+    <link rel="alternate" hreflang={link.hreflang} href={link.href} />
+  ))
+}
+
+{isServicePage && <link rel="preload" href="/assets/avatar.webp" as="image" fetchpriority="high" />}
+
+<link rel="preconnect" href="https://t.me" />
+<link rel="preconnect" href="https://www.googletagmanager.com" />
+<link rel="dns-prefetch" href="https://api.telegram.org" />
+<link rel="dns-prefetch" href="https://www.google-analytics.com" />
+
+<meta
+  name="geo.region"
+  content={`UA-${siteConfig.address.region === 'Львівська область' ? '46' : '00'}`}
+/>
+<meta name="geo.placename" content="Lviv" />
+<meta name="geo.position" content={`${siteConfig.geo.latitude};${siteConfig.geo.longitude}`} />
+<meta name="ICBM" content={`${siteConfig.geo.latitude}, ${siteConfig.geo.longitude}`} />
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:image" content={ogImageUrl} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={surzhykAlt || `${title} — ${siteName}`} />
+<meta property="og:locale" content={ogLocale} />
+<meta property="og:locale:alternate" content={isRu ? 'uk_UA' : 'ru_UA'} />
+<meta property="og:site_name" content={siteName} />
+
+{dateModified && <meta property="article:modified_time" content={dateModified} />}
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImageUrl} />
+
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+
+{
+  (() => {
+    const schemas = Array.isArray(schema) ? schema : [schema].filter(Boolean)
+    return schemas.map((s) => (
+      <script
+        is:inline
+        type="application/ld+json"
+        set:html={typeof s === 'string' ? s : JSON.stringify(s)}
+      />
+    ))
+  })()
+}

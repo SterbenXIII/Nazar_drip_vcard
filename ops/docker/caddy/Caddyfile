@@ -1,0 +1,51 @@
+{
+    # Global options
+    email {$ADMIN_EMAIL:admin@localhost}
+}
+
+{$DOMAIN_NAME:localhost} {
+    # Compress responses
+    encode gzip zstd
+
+    header {
+        -Server
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options nosniff
+        X-Frame-Options SAMEORIGIN
+        Referrer-Policy strict-origin-when-cross-origin
+        Content-Security-Policy "default-src 'self' viber: tel: mailto: https://wa.me; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://*.viber.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.telegram.org https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.viber.com; frame-src 'self' viber: tel: mailto: https://wa.me;"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Content-Language "uk"
+    }
+
+    # HTML documents and service worker must never be cached
+    @nocache {
+        path *.html /sw.js /
+        not path /_astro/*
+    }
+    header @nocache Cache-Control "no-store, no-cache, must-revalidate"
+
+    # Cache static assets for 1 year (immutable hashed filenames from Vite)
+    @static path *.js *.css *.png *.webp *.svg *.woff2 *.ico *.jpg *.jpeg *.avif
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    # Block access to sensitive files
+    @sensitive {
+        path /.env* /.git* /.config* /package.json /pnpm-lock.yaml
+    }
+    respond @sensitive "Access Denied" 403
+
+    # Proxy /api requests to the API backend
+    handle /api/* {
+        reverse_proxy api:5678
+    }
+
+    # Proxy all other requests to the web frontend
+    handle {
+        reverse_proxy web:8080 {
+            header_up Host {host}
+            header_down Location ^https?://[^/]*(:\d+)?(/.*)$ https://{host}$2
+        }
+    }
+}
+

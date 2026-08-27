@@ -1,0 +1,87 @@
+---
+export interface Heading {
+  depth: number
+  slug: string
+  text: string
+}
+
+import { useTranslations, type Locale } from '../i18n/ui'
+
+interface Props {
+  headings: Heading[]
+  locale?: Locale
+}
+
+const { headings, locale = 'uk' } = Astro.props
+const uiT = useTranslations(locale)
+
+// Filter only H2 and H3 for cleaner ToC, and only if we have at least 2 headings
+const filteredHeadings = headings.filter((h: Heading) => h.depth >= 2 && h.depth <= 3)
+
+if (filteredHeadings.length < 2) return null
+---
+
+<nav class="toc-container" aria-label={uiT('toc.label')}>
+  <div class="toc-header">
+    <span class="toc-title">{uiT('toc.title')}</span>
+  </div>
+  <ul class="toc-list">
+    {
+      filteredHeadings.map((h: Heading) => (
+        <li class={`toc-item depth-${h.depth}`}>
+          <a href={`#${h.slug}`}>{h.text}</a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<style>
+  .toc-container {
+    background: var(--md-blue-grey);
+    border: 1px solid var(--md-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .toc-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--md-border);
+  }
+
+  .toc-title {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--md-navy);
+    opacity: 0.7;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .toc-item {
+    margin: 0.5rem 0;
+  }
+
+  .toc-item.depth-3 {
+    padding-left: 1rem;
+    font-size: 0.9em;
+  }
+
+  .toc-item a {
+    color: var(--md-text);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .toc-item a:hover {
+    color: var(--md-teal);
+  }
+</style>
