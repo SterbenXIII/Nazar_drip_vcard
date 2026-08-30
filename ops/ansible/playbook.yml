@@ -41,6 +41,7 @@
     # Override these via --extra-vars in GitHub Actions
     telegram_bot_token: "{{ lookup('env', 'TELEGRAM_BOT_TOKEN') }}"
     telegram_master_id: "{{ lookup('env', 'TELEGRAM_MASTER_ID') }}"
+    telegram_allowed_chat_ids: "{{ lookup('env', 'TELEGRAM_ALLOWED_CHAT_IDS') }}"
     smtp_user: "{{ lookup('env', 'SMTP_USER') }}"
     gmail_client_id: "{{ lookup('env', 'GMAIL_CLIENT_ID') }}"
     gmail_client_secret: "{{ lookup('env', 'GMAIL_CLIENT_SECRET') }}"
@@ -100,6 +101,18 @@
           N8N_ENCRYPTION_KEY and POSTGRES_NON_ROOT_PASSWORD in the deployment environment.
         success_msg: 'Required production secrets are configured.'
       when: node_env == 'production'
+      no_log: true
+      tags: [always, env]
+
+    - name: Validate Telegram allowlist input
+      ansible.builtin.assert:
+        that:
+          - telegram_allowed_chat_ids | default('', true) | trim | length == 0 or (telegram_allowed_chat_ids | regex_replace('\\s+', '')) is match('^-?[0-9]+(,-?[0-9]+)*$')
+          - node_env != 'production' or telegram_allowed_chat_ids | default('', true) | trim | length > 0
+        fail_msg: >-
+          FATAL: TELEGRAM_ALLOWED_CHAT_IDS must be a comma-separated list of
+          numeric Telegram IDs and is required for production deployment.
+        success_msg: 'Telegram allowlist input is valid.'
       no_log: true
       tags: [always, env]
 

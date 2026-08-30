@@ -6,7 +6,6 @@ import path from 'node:path'
 import sitemap from '@astrojs/sitemap'
 import pwa from '@vite-pwa/astro'
 import { defineConfig } from 'astro/config'
-import icon from 'astro-icon'
 
 /**
  * Helper to get the real modification date of a page's source file.
@@ -188,7 +187,6 @@ export default defineConfig({
         }
       },
     }),
-    icon(),
   ],
 
   prefetch: true,

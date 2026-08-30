@@ -245,10 +245,8 @@ display_github_instructions() {
     echo -e "${BLUE}   # Linux (display):${NC}"
     echo "   cat $KEY_PATH"
     echo ""
-    echo -e "${BLUE}   # Or manually copy:${NC}"
-    echo "   -----BEGIN OPENSSH PRIVATE KEY-----"
-    echo "   [entire key content including headers]"
-    echo "   -----END OPENSSH PRIVATE KEY-----"
+    echo -e "${BLUE}   # Or copy the locally generated key into the GitHub secret:${NC}"
+    echo "   HOSTINGER_SSH_KEY must contain the contents of $KEY_PATH."
     echo ""
 
     echo -e "${YELLOW}2. HOSTINGER_VPS_HOST${NC}"

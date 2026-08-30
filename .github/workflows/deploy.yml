@@ -224,6 +224,7 @@ jobs:
           NODE_ENV: 'production'
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_MASTER_ID: ${{ secrets.TELEGRAM_MASTER_ID }}
+          TELEGRAM_ALLOWED_CHAT_IDS: ${{ secrets.TELEGRAM_ALLOWED_CHAT_IDS }}
           TELEGRAM_NOTIFY_IDS: ${{ secrets.TELEGRAM_NOTIFY_IDS }}
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           ENABLED_PROVIDERS: ${{ secrets.ENABLED_PROVIDERS || 'TELEGRAM,EMAIL' }}

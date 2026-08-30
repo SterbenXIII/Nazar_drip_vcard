@@ -20,13 +20,12 @@
     "test:lhci:all": "node scripts/lhci-all.js"
   },
   "dependencies": {
-    "@astrojs/check": "0.9.6",
+    "@astrojs/check": "0.9.10",
     "@astrojs/sitemap": "3.7.0",
     "@resvg/resvg-js": "2.6.0",
     "@unpic/astro": "1.0.2",
     "@vcard/shared": "workspace:*",
     "astro": "5.17.1",
-    "astro-icon": "1.1.5",
     "satori": "0.25.0"
   },
   "devDependencies": {
@@ -34,14 +33,14 @@
     "@csstools/postcss-global-data": "4.0.0",
     "@playwright/test": "1.58.2",
     "@types/node": "25.3.1",
-    "@typescript-eslint/parser": "8.54.0",
+    "@typescript-eslint/parser": "8.68.0",
     "@vite-pwa/assets-generator": "1.0.2",
     "@vite-pwa/astro": "1.2.0",
     "astro-eslint-parser": "1.2.2",
     "eslint-plugin-astro": "1.5.0",
     "pagefind": "1.1.0",
     "pngjs": "7.0.0",
-    "postcss": "8.4.38",
+    "postcss": "8.5.18",
     "postcss-calc": "10.1.1",
     "postcss-combine-duplicated-selectors": "10.0.3",
     "postcss-custom-media": "12.0.1",

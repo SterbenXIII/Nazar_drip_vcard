@@ -135,15 +135,6 @@ ansible-playbook playbook.yml --check --diff
 ansible-playbook playbook.yml
 ```
 
-### With Custom Variables
-
-```bash
-ansible-playbook playbook.yml \
-  -e "domain_name=example.com" \
-  -e "telegram_bot_token=YOUR_TOKEN" \
-  -e "telegram_master_id=YOUR_ID"
-```
-
 ### Using Environment Variables
 
 ```bash
@@ -152,9 +143,13 @@ export HOSTINGER_SSH_USER="vps_user"
 export DEPLOY_PATH="/home/vps_user/astro-vcard"
 export TELEGRAM_BOT_TOKEN="your_token"
 export TELEGRAM_MASTER_ID="your_id"
+# Set this only in a protected operator environment; never commit or log the IDs.
+export TELEGRAM_ALLOWED_CHAT_IDS="<comma-separated numeric IDs>"
 
 ansible-playbook playbook.yml
 ```
+
+The canonical production deployment requires `TELEGRAM_ALLOWED_CHAT_IDS`. Ansible rewrites `apps/api/allowed_chats.json` on every run with mode `0600`. The manual SSH and SSL workflows do not transport this secret; ensure the protected allowlist already exists on the VPS before running `make rebuild` through either workflow.
 
 ## 🔧 Configuration
 
@@ -292,29 +287,30 @@ The rollback workflow deploys a previously built image tag through the same Ansi
 
 ### Required GitHub Secrets
 
-| Secret                           | Description                                            |
-| -------------------------------- | ------------------------------------------------------ |
-| `HOSTINGER_SSH_KEY`              | Private SSH key (ed25519)                              |
-| `HOSTINGER_VPS_HOST`             | VPS IP address                                         |
-| `HOSTINGER_SSH_USER`             | SSH user (e.g., vps_user)                              |
-| `DEPLOY_PATH`                    | Project path on VPS                                    |
-| `TELEGRAM_BOT_TOKEN`             | Telegram bot token                                     |
-| `TELEGRAM_MASTER_ID`             | Telegram admin user ID                                 |
-| `SMTP_USER`                      | Gmail address                                          |
-| `GMAIL_CLIENT_ID`                | Google OAuth client ID                                 |
-| `GMAIL_CLIENT_SECRET`            | Google OAuth client secret                             |
-| `GMAIL_REFRESH_TOKEN`            | Google OAuth refresh token                             |
-| `ADMIN_EMAIL`                    | Email for lead notifications                           |
-| `N8N_PORT`                       | n8n port (default: 5679)                               |
-| `N8N_HOST`                       | n8n public host                                        |
-| `N8N_PROTOCOL`                   | n8n protocol (default: https)                          |
-| `N8N_ENCRYPTION_KEY`             | Persistent n8n encryption key (required in production) |
-| `N8N_COMMUNITY_PACKAGES_ENABLED` | Enable n8n community packages                          |
-| `GENERIC_TIMEZONE`               | n8n timezone (default: Europe/Kyiv)                    |
-| `POSTGRES_PASSWORD`              | PostgreSQL password                                    |
-| `POSTGRES_NON_ROOT_USER`         | n8n PostgreSQL user (default: n8n)                     |
-| `POSTGRES_NON_ROOT_PASSWORD`     | PostgreSQL password (required in production)           |
-| `PUBLIC_GSC_VERIFICATION`        | Google Search Console token (optional)                 |
+| Secret                           | Description                                                   |
+| -------------------------------- | ------------------------------------------------------------- |
+| `HOSTINGER_SSH_KEY`              | Private SSH key (ed25519)                                     |
+| `HOSTINGER_VPS_HOST`             | VPS IP address                                                |
+| `HOSTINGER_SSH_USER`             | SSH user (e.g., vps_user)                                     |
+| `DEPLOY_PATH`                    | Project path on VPS                                           |
+| `TELEGRAM_BOT_TOKEN`             | Telegram bot token                                            |
+| `TELEGRAM_MASTER_ID`             | Telegram admin user ID                                        |
+| `TELEGRAM_ALLOWED_CHAT_IDS`      | Comma-separated numeric Telegram IDs (required in production) |
+| `SMTP_USER`                      | Gmail address                                                 |
+| `GMAIL_CLIENT_ID`                | Google OAuth client ID                                        |
+| `GMAIL_CLIENT_SECRET`            | Google OAuth client secret                                    |
+| `GMAIL_REFRESH_TOKEN`            | Google OAuth refresh token                                    |
+| `ADMIN_EMAIL`                    | Email for lead notifications                                  |
+| `N8N_PORT`                       | n8n port (default: 5679)                                      |
+| `N8N_HOST`                       | n8n public host                                               |
+| `N8N_PROTOCOL`                   | n8n protocol (default: https)                                 |
+| `N8N_ENCRYPTION_KEY`             | Persistent n8n encryption key (required in production)        |
+| `N8N_COMMUNITY_PACKAGES_ENABLED` | Enable n8n community packages                                 |
+| `GENERIC_TIMEZONE`               | n8n timezone (default: Europe/Kyiv)                           |
+| `POSTGRES_PASSWORD`              | PostgreSQL password                                           |
+| `POSTGRES_NON_ROOT_USER`         | n8n PostgreSQL user (default: n8n)                            |
+| `POSTGRES_NON_ROOT_PASSWORD`     | PostgreSQL password (required in production)                  |
+| `PUBLIC_GSC_VERIFICATION`        | Google Search Console token (optional)                        |
 
 ## 🔒 Security Notes
 

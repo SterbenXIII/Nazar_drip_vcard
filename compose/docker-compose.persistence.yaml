@@ -1,0 +1,17 @@
+services:
+  postgres:
+    volumes: !override
+      - ${VOLUME_DIR}/db:/var/lib/postgresql/data
+
+  edge:
+    volumes: !override
+      - ${VOLUME_DIR}/certs/edge:/etc/defguard/certs
+
+  gateway:
+    volumes: !override
+      - ${VOLUME_DIR}/certs/gateway:/etc/defguard/certs
+
+  caddy:
+    volumes: !override
+      - ${VOLUME_DIR}/caddy/data:/data
+      - ${VOLUME_DIR}/caddy/config:/config

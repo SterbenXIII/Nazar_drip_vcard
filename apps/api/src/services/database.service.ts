@@ -11,11 +11,11 @@ let dbServiceInstance: DatabaseService | null = null
 export class DatabaseService {
   private readonly provider: BaseDatabaseProvider
 
-  private constructor() {
+  private constructor(connectionString: string = DATABASE_PATHS.LEADS_DB) {
     this.provider = new SqliteDatabaseProvider(
       {
         type: DatabaseType.SQLITE,
-        connectionString: DATABASE_PATHS.LEADS_DB,
+        connectionString,
       },
       LEAD_TABLE_SCHEMA,
     )
@@ -23,13 +23,15 @@ export class DatabaseService {
     this.provider.initialize()
   }
 
-  public static getInstance(): DatabaseService {
-    dbServiceInstance ??= new DatabaseService()
+  public static getInstance(connectionString: string = DATABASE_PATHS.LEADS_DB): DatabaseService {
+    dbServiceInstance ??= new DatabaseService(connectionString)
     return dbServiceInstance
   }
 
-  public static async initializeOnStartup(): Promise<void> {
-    const service = DatabaseService.getInstance()
+  public static async initializeOnStartup(
+    connectionString: string = DATABASE_PATHS.LEADS_DB,
+  ): Promise<void> {
+    const service = DatabaseService.getInstance(connectionString)
 
     try {
       const migrationService = new MigrationService(service.provider)
@@ -47,13 +49,15 @@ export class DatabaseService {
     return this.provider
   }
 
-  public static reset(): void {
-    if (dbServiceInstance) {
+  public static async reset(): Promise<void> {
+    const service = dbServiceInstance
+    dbServiceInstance = null
+
+    if (service) {
       // Закриваємо з'єднання якщо потрібно
-      dbServiceInstance.provider.close().catch((error) => {
+      await service.provider.close().catch((error) => {
         logger.error({ msg: '[DatabaseService] Error closing provider during reset', error })
       })
-      dbServiceInstance = null
     }
   }
 }

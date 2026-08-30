@@ -65,10 +65,6 @@ KEEP=(
   "ms-vscode-remote.remote-ssh-edit"
   "ms-vscode.remote-explorer"
 
-  # AI / Copilot
-  "github.copilot-chat"
-  "ms-windows-ai-studio.windows-ai-studio"
-
   # n8n (used in project)
   "ivov.n8n-utils"
 

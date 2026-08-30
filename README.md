@@ -33,7 +33,7 @@ make deploy-setup
 git push origin main  # ✅ Deployed automatically
 ```
 
-**That's it!** No manual VPS configuration needed. See [DEPLOYMENT.md](./DEPLOYMENT.md) for details.
+**That's it!** No manual VPS configuration needed. See [Ansible deployment quick reference](./docs/deployment/ansible-quickref.md) for details.
 
 ---
 
@@ -51,9 +51,8 @@ git push origin main  # ✅ Deployed automatically
 
 ## 📖 Documentation
 
-- [DEPLOYMENT.md](./DEPLOYMENT.md) — Complete setup & troubleshooting guide
+- [Ansible deployment quick reference](./docs/deployment/ansible-quickref.md) — Setup & troubleshooting guide
 - [AGENTS.md](./AGENTS.md) — Architecture & development conventions
-- [copilot-instructions.md](./.github/copilot-instructions.md) — Code standards
 
 ---
 

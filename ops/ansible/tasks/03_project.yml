@@ -54,12 +54,22 @@
     - '{{ backup_dir }}'
   tags: [project]
 
-- name: 📋 Ensure allowed_chats.json exists
+- name: 📋 Write protected Telegram allowlist
   ansible.builtin.copy:
-    content: '[]'
+    content: >-
+      {{
+        (
+          (telegram_allowed_chat_ids | trim).split(',')
+          | map('trim')
+          | map('int')
+          | list
+          | to_json
+        ) if (telegram_allowed_chat_ids | default('', true) | trim | length > 0) else '[]'
+      }}
     dest: '{{ project_dir }}/apps/api/allowed_chats.json'
     owner: '{{ ansible_user }}'
     group: '{{ ansible_user }}'
-    mode: '0644'
-    force: false
+    mode: '0600'
+    force: true
+  no_log: true
   tags: [project]
