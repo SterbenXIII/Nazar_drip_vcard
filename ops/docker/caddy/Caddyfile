@@ -13,7 +13,7 @@
         X-Content-Type-Options nosniff
         X-Frame-Options SAMEORIGIN
         Referrer-Policy strict-origin-when-cross-origin
-        Content-Security-Policy "default-src 'self' viber: tel: mailto: https://wa.me; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://*.viber.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.telegram.org https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.viber.com; frame-src 'self' viber: tel: mailto: https://wa.me;"
+        Content-Security-Policy "default-src 'self' viber: tel: mailto: https://wa.me; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://*.viber.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.telegram.org https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.viber.com https://challenges.cloudflare.com; frame-src 'self' viber: tel: mailto: https://wa.me https://challenges.cloudflare.com;"
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
         Content-Language "uk"
     }
