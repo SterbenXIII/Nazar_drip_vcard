@@ -8,6 +8,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 vi.hoisted(() => {
   process.env.ADMIN_EMAIL = 'ci@example.test'
   process.env.ENABLED_PROVIDERS = 'EMAIL'
+  process.env.SMTP_HOST = 'smtp.example.test'
+  process.env.SMTP_PASS = 'synthetic-password'
+  process.env.SMTP_USER = 'sender@example.test'
 })
 
 import { NotificationCoordinator } from '@/services/coordinators/notification.coordinator'
@@ -111,6 +114,26 @@ describe('Lead Submission Integration Test', () => {
 
       expect(emailSend).toHaveBeenCalledOnce()
       expect(emailSend).toHaveBeenCalledWith(expect.any(String), expect.any(String))
+    })
+
+    it('keeps the accepted lead when a provider throws after persistence', async () => {
+      const testLead: LeadPayload = {
+        name: 'Тестування помилки провайдера після збереження',
+        phone: '+380501111112',
+        district: 'Личаківський',
+        services: ['Тест помилки провайдера'],
+        source: 'тести',
+        timestamp: new Date(),
+      }
+      emailSend.mockRejectedValueOnce(new Error('synthetic provider failure'))
+
+      await expect(coordinator.handleIncomingLead(testLead)).resolves.not.toThrow()
+
+      const db = DatabaseService.getInstance().getProvider()
+      const results = await db.query<LeadRecord>('SELECT * FROM leads WHERE phone = ?', [
+        testLead.phone,
+      ])
+      expect(results).toHaveLength(1)
     })
   })
 

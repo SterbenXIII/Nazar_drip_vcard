@@ -4,6 +4,11 @@ const { providerConstructor } = vi.hoisted(() => ({
   providerConstructor: vi.fn(),
 }))
 
+vi.hoisted(() => {
+  process.env.ENABLED_PROVIDERS = 'TELEGRAM'
+  process.env.TELEGRAM_BOT_TOKEN = 'synthetic-telegram-token'
+})
+
 vi.mock('@/services/providers/database/sqlite-database.provider', () => ({
   SqliteDatabaseProvider: class {
     constructor(config: unknown, schema: unknown) {
