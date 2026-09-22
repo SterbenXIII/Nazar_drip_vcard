@@ -2,11 +2,11 @@
 /// <reference types="astro/client" />
 
 export interface Props {
+  siteKey: string
   action?: string
 }
 
-const { action = 'contact' } = Astro.props
-const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA' // 1x... is a testing key that always passes
+const { action = 'contact', siteKey } = Astro.props
 ---
 
 <div class="turnstile-container">

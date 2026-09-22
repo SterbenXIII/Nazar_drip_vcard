@@ -2,8 +2,10 @@
 import data from '../data/content.json'
 import { DISTRICTS, FORM_ELEMENTS } from '@vcard/shared'
 import { siteConfig } from '../config/site'
+import Turnstile from './Turnstile.astro'
 
 const isSingleService = data.services.length === 1
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
 ---
 
 <section class="booking-form" id="order" aria-labelledby="form-title">
@@ -19,7 +21,10 @@ const isSingleService = data.services.length === 1
       value={`vCard - ${siteConfig.businessName}`}
     />
 
-    <fieldset class="services-fieldset">
+    <fieldset
+      class="services-fieldset"
+      aria-describedby={`${FORM_ELEMENTS.INPUT_SERVICES}${FORM_ELEMENTS.ERROR_SUFFIX}`}
+    >
       <legend class="section-label">Доступні послуги:</legend>
       <div class="checkbox-grid">
         {
@@ -47,7 +52,8 @@ const isSingleService = data.services.length === 1
       </div>
       <span
         id={`${FORM_ELEMENTS.INPUT_SERVICES}${FORM_ELEMENTS.ERROR_SUFFIX}`}
-        class="error-text hidden"></span>
+        class="error-text hidden"
+        aria-live="polite"></span>
     </fieldset>
 
     <div class="fields-group">
@@ -57,12 +63,14 @@ const isSingleService = data.services.length === 1
           type="text"
           id={FORM_ELEMENTS.INPUT_NAME}
           name={FORM_ELEMENTS.INPUT_NAME}
+          aria-describedby={`${FORM_ELEMENTS.INPUT_NAME}${FORM_ELEMENTS.ERROR_SUFFIX}`}
           placeholder="Приклад: Анна"
           autocomplete="name"
         />
         <span
           id={`${FORM_ELEMENTS.INPUT_NAME}${FORM_ELEMENTS.ERROR_SUFFIX}`}
-          class="error-text hidden"></span>
+          class="error-text hidden"
+          aria-live="polite"></span>
       </div>
 
       <div class="field">
@@ -71,25 +79,32 @@ const isSingleService = data.services.length === 1
           type="tel"
           id={FORM_ELEMENTS.INPUT_PHONE}
           name={FORM_ELEMENTS.INPUT_PHONE}
+          aria-describedby={`${FORM_ELEMENTS.INPUT_PHONE}${FORM_ELEMENTS.ERROR_SUFFIX}`}
           placeholder="+380..."
           autocomplete="tel"
         />
         <span
           id={`${FORM_ELEMENTS.INPUT_PHONE}${FORM_ELEMENTS.ERROR_SUFFIX}`}
-          class="error-text hidden"></span>
+          class="error-text hidden"
+          aria-live="polite"></span>
       </div>
 
       <div class="field">
         <label for={FORM_ELEMENTS.INPUT_DISTRICT}>Район Львова</label>
         <div class="select-wrapper">
-          <select id={FORM_ELEMENTS.INPUT_DISTRICT} name={FORM_ELEMENTS.INPUT_DISTRICT}>
+          <select
+            id={FORM_ELEMENTS.INPUT_DISTRICT}
+            name={FORM_ELEMENTS.INPUT_DISTRICT}
+            aria-describedby={`${FORM_ELEMENTS.INPUT_DISTRICT}${FORM_ELEMENTS.ERROR_SUFFIX}`}
+          >
             <option value="" disabled selected>Оберіть район</option>
             {DISTRICTS.map((districtName) => <option value={districtName}>{districtName}</option>)}
           </select>
         </div>
         <span
           id={`${FORM_ELEMENTS.INPUT_DISTRICT}${FORM_ELEMENTS.ERROR_SUFFIX}`}
-          class="error-text hidden"></span>
+          class="error-text hidden"
+          aria-live="polite"></span>
       </div>
     </div>
 
@@ -98,9 +113,17 @@ const isSingleService = data.services.length === 1
       <span aria-hidden="true">🚑</span> Підтвердити запис
     </button>
 
-    <div id={FORM_ELEMENTS.SUCCESS_MSG} class="success-message hidden">
+    {turnstileSiteKey && <Turnstile siteKey={turnstileSiteKey} />}
+
+    <div
+      id={FORM_ELEMENTS.SUCCESS_MSG}
+      class="success-message hidden"
+      role="status"
+      aria-live="polite"
+    >
       🎉 Заявка прийнята! Ми зателефонуємо вам найближчим часом.
     </div>
+    <div id="form-status" class="error-text hidden" role="alert"></div>
 
     <p class="privacy-note">
       * Ваші дані захищені. Натискаючи кнопку, ви погоджуєтесь на обробку персональних даних для
@@ -119,10 +142,10 @@ const isSingleService = data.services.length === 1
   .booking-form {
     background: var(--md-white);
     border: 0.0625rem solid var(--md-border);
-    border-radius: 1rem;
-    padding: 1.5rem;
+    border-radius: 0.5rem;
+    padding: 1.15rem;
     margin: 2rem 0;
-    box-shadow: 0 0.5rem 1rem rgb(2 6 23 / 4%);
+    box-shadow: 0 0.45rem 1.25rem rgb(18 48 74 / 7%);
 
     @media (prefers-contrast: more) {
       border: 0.125rem solid black;
@@ -291,7 +314,7 @@ const isSingleService = data.services.length === 1
     color: var(--md-white);
     border: none;
     padding: 1rem;
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
     font-size: 1.125rem;
     font-weight: 700;
     cursor: pointer;
@@ -316,7 +339,7 @@ const isSingleService = data.services.length === 1
 
   .error-text {
     display: block;
-    color: #ef4444;
+    color: var(--md-error);
     font-size: 0.75rem;
     margin-top: 0.25rem;
     font-weight: 500;

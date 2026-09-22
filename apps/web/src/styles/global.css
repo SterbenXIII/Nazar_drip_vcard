@@ -1,24 +1,38 @@
 :root {
   --font-base: 1rem;
-  --md-navy: #2c3e50;
-  --md-bg-page: #f0f4f8;
-  --md-teal: #347d64;
-  --md-border: #d1d9e0;
+  --md-navy: #12304a;
+  --md-bg-page: #edf3f6;
+  --md-teal: #126b76;
+  --md-border: #d5e1e7;
   --md-white: #fff;
-  --md-text: #1f2937;
-  --md-accent: #2d6a54;
-  --md-blue-grey: #e8f0f7;
+  --md-text: #304353;
+  --md-accent: #126b76;
+  --md-blue-grey: #e5f0f2;
+  --md-header-bg: #12304a;
+  --md-header-fg: #fff;
+  --md-secondary: #1e5f8a;
+  --md-focus: #126b76;
+  --md-success: #167f7a;
+  --md-warning: #9a5a00;
+  --md-error: #b42318;
 }
 
 .dark {
   --md-navy: #e6eef3;
   --md-bg-page: #07101a;
-  --md-teal: #28a186;
+  --md-teal: #167f7a;
   --md-border: rgb(255 255 255 / 6%);
   --md-white: #071421; /* panels */
   --md-text: #e6eef3;
   --md-accent: #2bb38a;
   --md-blue-grey: #111e2a;
+  --md-header-bg: #0d1c2a;
+  --md-header-fg: #f4fbff;
+  --md-secondary: #7fc4ee;
+  --md-focus: #7bd8cf;
+  --md-success: #72d3b7;
+  --md-warning: #f4c56a;
+  --md-error: #ff9b92;
 }
 
 @media (prefers-contrast: more) {
@@ -28,6 +42,8 @@
     --md-text: #000;
     --md-border: #000;
     --md-bg-page: #fff;
+    --md-header-bg: #000;
+    --md-header-fg: #fff;
   }
 
   * {
@@ -46,6 +62,10 @@ html {
   scroll-behavior: smooth;
 }
 
+html.has-modal {
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   background-color: var(--md-bg-page);
@@ -54,24 +74,24 @@ body {
     -apple-system,
     sans-serif;
   font-size: var(--font-base);
-  line-height: 1.6;
+  line-height: 1.55;
   color: var(--md-text);
 }
 
 .app-wrapper {
   width: 100%;
-  max-width: 31.25rem;
+  max-width: 52rem;
   background-color: var(--md-white);
   min-height: 100vh;
   margin: 0 auto;
-  box-shadow: 0 0 2.5rem rgb(0 0 0 / 5%);
+  box-shadow: 0 0 2.5rem rgb(18 48 74 / 7%);
 }
 
 .container {
   width: 100%;
-  max-width: 500px;
+  max-width: 52rem;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 1rem;
 }
 
 .skip-link {
@@ -93,6 +113,26 @@ body {
 }
 
 :focus-visible {
-  outline: 0.1875rem solid var(--md-teal);
+  outline: 0.1875rem solid var(--md-focus);
   outline-offset: 0.125rem;
+}
+
+@media (width >= 48rem) {
+  .container {
+    padding: 2rem 2.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
