@@ -1,45 +1,54 @@
 name: 🚀 Deploy to Hostinger VPS
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
-  workflow_dispatch:
 
 concurrency:
   group: deploy-production
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   DOMAIN_NAME: ${{ vars.DOMAIN_NAME || 'localhost' }}
   DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/emerald-recovery' }}
   VPS_IP: ${{ vars.VPS_IP || 'localhost' }}
+  COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+  SSH_KNOWN_HOSTS: ${{ secrets.HOSTINGER_SSH_KNOWN_HOSTS }}
 
 jobs:
   build-and-push:
     name: Build & Push to GHCR
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.event == 'push' ||
+      github.event.workflow_run.event == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
       - name: 🚚 Checkout code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ env.COMMIT_SHA }}
 
       - name: 🔠 Lowercase Repository Name
         run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
 
       - name: 🐳 Log in to GitHub Container Registry
-        uses: docker/login-action@v3.3.0
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🏗️ Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3.10.0
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
 
       - name: 📦 Build and push API
-        uses: docker/build-push-action@v6.15.0
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: .
           file: ops/docker/api/Dockerfile
@@ -47,12 +56,12 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ env.REPO_LC }}/vcard-api:latest
-            ghcr.io/${{ env.REPO_LC }}/vcard-api:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LC }}/vcard-api:${{ env.COMMIT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: 📦 Build and push Web
-        uses: docker/build-push-action@v6.15.0
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: .
           file: ops/docker/web/Dockerfile
@@ -60,7 +69,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ env.REPO_LC }}/vcard-web:latest
-            ghcr.io/${{ env.REPO_LC }}/vcard-web:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LC }}/vcard-web:${{ env.COMMIT_SHA }}
           build-args: |
             DOMAIN_NAME=${{ env.DOMAIN_NAME }}
           cache-from: type=gha
@@ -95,18 +104,23 @@ jobs:
   deploy-to-vps:
     name: Deploy with Ansible
     needs: build-and-push
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.event == 'push' ||
+      github.event.workflow_run.event == 'workflow_dispatch')
     runs-on: ubuntu-latest
     environment:
       name: production
       url: https://${{ env.DOMAIN_NAME }}
     steps:
       - name: 🚚 Checkout code (for Ansible playbook)
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
+          ref: ${{ env.COMMIT_SHA }}
 
       - name: 🔧 Set up Python
-        uses: actions/setup-python@v5.4.0
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: '3.11'
 
@@ -139,9 +153,11 @@ jobs:
           mkdir -p ~/.ssh
           printf "%s" "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          touch ~/.ssh/known_hosts
-          ssh-keyscan -T 10 -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || \
-            echo "⚠️ ssh-keyscan failed (continuing, StrictHostKeyChecking is disabled in SSH steps)"
+          test -n "$SSH_KNOWN_HOSTS"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          ssh-keygen -F "$SSH_HOST" -f ~/.ssh/known_hosts >/dev/null
           echo "✓ SSH key configured"
           echo "🔑 Key fingerprint:"
           ssh-keygen -lf ~/.ssh/deploy_key || echo "⚠️ Cannot read key fingerprint"
@@ -157,7 +173,7 @@ jobs:
 
           for i in $(seq 1 $MAX_RETRIES); do
             echo "Testing SSH to ${SSH_USER}@${SSH_HOST} (Attempt $i/$MAX_RETRIES)..."
-            if ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
+            if ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes \
               -i ~/.ssh/deploy_key "${SSH_USER}@${SSH_HOST}" "echo SSH_OK"; then
               echo "✅ SSH connection successful"
               SUCCESS=1
@@ -179,7 +195,7 @@ jobs:
             echo "  Key permissions: $(ls -la ~/.ssh/deploy_key)"
             echo ""
             echo "Running verbose SSH for diagnostics..."
-            ssh -vvv -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
+            ssh -vvv -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes \
               -i ~/.ssh/deploy_key "${SSH_USER}@${SSH_HOST}" "echo SSH_OK" 2>&1 | tail -30
             exit 1
           fi
@@ -217,7 +233,7 @@ jobs:
       - name: 🚀 Deploy with Ansible
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ANSIBLE_HOST_KEY_CHECKING: 'False'
+          ANSIBLE_HOST_KEY_CHECKING: 'True'
           HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
           DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
           DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
@@ -228,6 +244,14 @@ jobs:
           TELEGRAM_NOTIFY_IDS: ${{ secrets.TELEGRAM_NOTIFY_IDS }}
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           ENABLED_PROVIDERS: ${{ secrets.ENABLED_PROVIDERS || 'TELEGRAM,EMAIL' }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || '465' }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           BACKEND_PORT: '5678'
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
@@ -253,7 +277,7 @@ jobs:
             --extra-vars "domain_name=${DOMAIN_NAME}" \
             --extra-vars "github_repository_path=${{ github.repository }}.git" \
             --extra-vars "image_registry=ghcr.io/${{ env.REPO_LC }}/" \
-            --extra-vars "image_tag=${{ github.sha }}"
+            --extra-vars "image_tag=${{ env.COMMIT_SHA }}"
 
       - name: 🔍 Verify deployment (smoke tests)
         run: |
@@ -311,7 +335,7 @@ jobs:
 
       - name: 💬 Notify Telegram (success)
         if: success()
-        uses: appleboy/telegram-action@master
+        uses: appleboy/telegram-action@214f06cfa3d3a588c1472116889437e7c6fd29b1 # v1.1.1
         continue-on-error: true
         with:
           to: ${{ secrets.TELEGRAM_MASTER_ID }}
@@ -321,14 +345,14 @@ jobs:
 
             Access: http://${{ env.VPS_IP }}
             Domain: ${{ env.DOMAIN_NAME }}
-            Commit: ${{ github.sha }}
+            Commit: ${{ env.COMMIT_SHA }}
             Branch: main
 
             Frontend & API verified ✓
 
       - name: 🚨 Notify Telegram (failure)
         if: failure()
-        uses: appleboy/telegram-action@master
+        uses: appleboy/telegram-action@214f06cfa3d3a588c1472116889437e7c6fd29b1 # v1.1.1
         continue-on-error: true
         with:
           to: ${{ secrets.TELEGRAM_MASTER_ID }}
@@ -337,6 +361,6 @@ jobs:
             ❌ Deployment Failed
 
             Domain: ${{ env.DOMAIN_NAME }}
-            Commit: ${{ github.sha }}
+            Commit: ${{ env.COMMIT_SHA }}
 
             Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
