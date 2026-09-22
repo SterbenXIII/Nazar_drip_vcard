@@ -2,7 +2,7 @@
 
 **A pnpm monorepo** combining:
 
-- **Astro 5** static vCard site (production-ready, Ukrainian)
+- **Astro 7.3.1** static vCard site (production-ready, Ukrainian)
 - **Hono** HTTP API (lead submissions, Telegram/Email notifications)
 - **SQLite** database (zero DevOps)
 - **Docker** deployment to Hostinger VPS

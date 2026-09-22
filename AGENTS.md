@@ -4,7 +4,7 @@
 
 This repository is a pnpm monorepo for a Ukrainian Astro vCard site and lead-management API.
 
-- `apps/web/` — `@vcard/web`, an Astro 5 static site with source, public assets, and Playwright tests.
+- `apps/web/` — `@vcard/web`, an Astro 7.3.1 static site with source, public assets, and Playwright tests.
 - `apps/api/` — `@vcard/api`, a Hono API with SQLite persistence and Telegram/Email notification providers.
 - `packages/shared/` — `@vcard/shared`, shared TypeScript types and Zod schemas.
 - `ops/` — Docker Compose, proxy, Ansible, SSL, and deployment automation.

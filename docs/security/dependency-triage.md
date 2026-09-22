@@ -2,15 +2,20 @@
 
 ## Snapshot and method
 
-This matrix is a redacted, current-tree snapshot taken on 2026-08-30 after updating Nodemailer to 9.0.6 and `@astrojs/check` to 0.9.10. Raw audit JSON is intentionally not committed; capture it locally with `pnpm audit --json` when refreshing this document.
+This matrix is a redacted, current-tree snapshot taken on 2026-09-05 after the
+Astro 7 migration. Raw audit JSON is intentionally not committed; capture it
+locally with `pnpm audit --json` when refreshing this document.
 
 | Audit mode               | Critical | High | Moderate | Low |
 | ------------------------ | -------: | ---: | -------: | --: |
-| Current tree             |        0 |   36 |       26 |   6 |
-| Production dependencies  |        0 |   18 |       16 |   4 |
-| Development dependencies |        0 |   35 |       26 |   6 |
+| Current tree             |        0 |    0 |        5 |   3 |
+| Production dependencies  |        0 |    0 |        2 |   0 |
+| Development dependencies |        0 |    0 |        4 |   3 |
 
-`pnpm audit --json` has 36 high-severity findings and 36 high dependency paths. The table below has one row per path; none is dismissed merely because it is transitive or development-only.
+`pnpm audit --json` has 0 high-severity findings. The historical matrix below
+is retained for audit trail only; the fresh grouped normalization and current
+remediation order supersede it. None is dismissed merely because it is
+transitive or development-only.
 
 Verdicts mean:
 
@@ -20,7 +25,11 @@ Verdicts mean:
 
 All paths currently need an owner update or a compatibility decision. No `pnpm.overrides` or accepted-leak baseline is permitted.
 
-## High-severity reachability matrix
+## Historical high-severity reachability matrix
+
+This section reflects the pre-Phase-3 snapshot and is not a current dependency
+inventory. In particular, its former PWA rows are obsolete after the adapter and
+Pagefind removal.
 
 | Advisory / package@version                                            | Full dependency path                                                                                                                       | Surface, attacker-controlled input, reachable product path                                     | Controls and counterevidence                           | Verdict, proof gap, rank                                                        | Owner and exact remediation                                                             |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -61,12 +70,43 @@ All paths currently need an owner update or a compatibility decision. No `pnpm.o
 | GHSA-v2wj-q39q-566r / vite@7.3.1                                      | `apps__api>vitest>vite`                                                                                                                    | API test runner; test/source files only; no production route.                                  | Vitest runs in isolated CI test job.                   | needs_review; test-server precondition unproven; P3                             | `apps/api:vitest`; upgrade when a compatible parent releases a patched Vite.            |
 | GHSA-v39h-62p7-jpjc / fast-uri@3.1.0                                  | `.>stylelint>table>ajv>fast-uri`                                                                                                           | Stylelint schema validation; repository CSS/config only; no shipped path.                      | Stylelint is CI/developer tooling.                     | needs_review; URI parsing precondition unproven; P3                             | root `stylelint`; compatible Stylelint/Ajv update.                                      |
 
+## Fresh grouped normalization (2026-09-05)
+
+| Group | Current paths and versions | Patched range | Scope | Role and status |
+| --- | --- | --- | --- | --- |
+| Astro | `apps__web>astro@7.3.1`; sharp `0.35.4`; Vite/devalue/h3/svgo child advisories cleared | sharp `>=0.35.0` | prod/build | Astro 6→7 migration implemented; resolved |
+| Astro check | `apps__web>@astrojs/check@0.9.10>...>fast-uri@3.1.7` | `fast-uri >=3.1.6` | prod/build | Targeted resolution complete; resolved |
+| ESLint | `eslint@9.39.3>...>flatted@3.4.4`, js-yaml `4.3.2`, brace-expansion `1.1.18` | flatted `>=3.4.2`; js-yaml `>=4.3.1`; brace-expansion `>=1.1.18` | dev | Targeted resolution complete; resolved |
+| TypeScript ESLint | `typescript-eslint@8.68.0>...>picomatch@4.0.7`, brace-expansion `5.0.9` | picomatch `>=4.0.4`; brace-expansion `>=5.0.9` | dev | Targeted resolution complete; resolved |
+| Stylelint | `stylelint@17.4.0>table>ajv>fast-uri@3.1.7` | `fast-uri >=3.1.6` | dev | Targeted resolution complete; resolved |
+| PostCSS | `postcss-preset-env@11.2.0>browserslist@4.28.9` | browserslist `>=4.28.7` | dev | Targeted resolution complete; resolved |
+| Vitest | `apps__api>vitest@4.1.0>vite@7.3.6` | Vite `>=7.3.5` | dev | Targeted resolution complete; resolved |
+
+The Pagefind batch removed `pagefind@1.1.0` and its optional `@pagefind/*`
+platform binaries. No high/critical advisory disappeared. Compared with the
+retained pre-Pagefind count (`33 high / 25 moderate / 7 low` overall and
+`24 high / 13 moderate / 3 low` in dev), one moderate overall/dev result
+disappeared; its advisory ID is **NOT VERIFIED** because the prior raw audit JSON
+was not retained.
+
+The follow-up cleanup removed the now-unused direct `pngjs@7.0.0` development
+dependency left behind by the deleted PWA placeholder generator. The fresh audit
+counts are unchanged, confirming it did not own an advisory path.
+
+The historical T4 targeted resolution wave updated all vulnerable children whose existing
+parent ranges allowed patched versions: `svgo`, `fast-uri`, `js-yaml`,
+`picomatch`, `brace-expansion`, `browserslist`, `vite`, and `flatted`. The fresh
+historical result was `1 high` overall and in production, with no development
+high findings. The subsequent Astro 7 migration resolved the remaining
+`sharp@0.34.5` path; the current snapshot above is authoritative.
+
 ## Remediation order and release gate
 
 1. Remove an unused parent before changing a transitive package. None of the current high-severity parents is proven unused.
-2. Resolve the PWA/Workbox chain first. A supported migration away from `@vite-pwa/astro` is required if its peer support remains Astro 5-only.
-3. Migrate Astro only after that PWA decision. `@unpic/astro` also declares an Astro 5-era peer range; its single `Image` use must move to the supported Astro image API before the major.
-4. Update each lint, TypeScript ESLint, Stylelint, and Vitest parent only when its release brings the patched child; retain the row until then.
-5. After every parent change, rerun current, production, and development audits plus the targeted package test. The release is not accepted until all three audits have zero high/critical findings.
+2. Keep Astro and its integrations on supported releases; do not add direct
+   transitive pins or overrides.
+3. After every parent change, rerun current, production, and development audits
+   plus the targeted package test. The release is not accepted until all three
+   audits have zero high/critical findings.
 
 The `pnpm audit --audit-level=high` CI gate remains blocking. This document records open work; it is not a baseline or an exception.
