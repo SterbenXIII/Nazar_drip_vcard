@@ -10,7 +10,13 @@ import { buildMatrixPageSchema } from '../../../utils/schema'
 import DistrictCoverage from '../../../components/DistrictCoverage.astro'
 import CoverageArea from '../../../components/CoverageArea.astro'
 import ColloquialTerms from '../../../components/ColloquialTerms.astro'
-import { useTranslations, getAlternateLocale, getLocalePrefix, type Locale } from '../../../i18n/ui'
+import {
+  useTranslations,
+  getAlternateLocale,
+  getLocalePrefix,
+  getHreflang,
+  type Locale,
+} from '../../../i18n/ui'
 import { siteConfig } from '../../../config/site'
 
 export async function getStaticPaths() {
@@ -65,7 +71,7 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${alternat
       schema={schemaJson}
       dateModified={content.dateModified}
       canonicalUrl={canonicalUrl}
-      alternateLinks={[{ hreflang: alternateLocale, href: alternateUrl }]}
+      alternateLinks={[{ hreflang: getHreflang(alternateLocale), href: alternateUrl }]}
       surzhykAlt={content.surzhykAlt}
     />
     <ThemeScript />
@@ -202,7 +208,7 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${alternat
     </style>
   </head>
   <body>
-    <main>
+    <main id="main-content" tabindex="-1">
       <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
         <ThemeToggle />
       </div>
@@ -258,13 +264,13 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${alternat
 
         {
           location.citySlug === 'lviv' ? (
-            <div data-pagefind-ignore>
+            <div>
               <DistrictCoverage currentServiceSlug={serviceSlug} locale={locale} />
             </div>
           ) : null
         }
 
-        <div data-pagefind-ignore>
+        <div>
           <CoverageArea serviceSlug={serviceSlug} locale={locale} />
         </div>
 

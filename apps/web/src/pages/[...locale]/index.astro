@@ -23,6 +23,7 @@ import {
   getLocalePrefix,
   getLocalizedUrl,
   getActiveLocale,
+  getHreflang,
 } from '../../i18n/ui'
 import { siteConfig } from '../../config/site'
 
@@ -54,10 +55,10 @@ const services = baseData.services
   title={t.seoTitle}
   description={t.seoDescription}
   locale={activeLocale}
-  alternateLinks={[{ hreflang: alternateLocale, href: alternateUrl }]}
+  alternateLinks={[{ hreflang: getHreflang(alternateLocale), href: alternateUrl }]}
   surzhykAlt={uiT('seo.home.surzhykAlt')}
 >
-  <main class="container" role="main">
+  <main id="main-content" class="container" tabindex="-1">
     <header class="main-header">
       <div class="live-status" aria-live="polite">
         <span class="pulse" aria-hidden="true"></span>
@@ -80,7 +81,7 @@ const services = baseData.services
         }
       </div>
 
-      <div class="header-badges" aria-hidden="true">
+      <div class="header-badges" role="list">
         <span class="badge-item" role="listitem">
           <a href="/certificate" class="badge-link" aria-label={t.certificate}>{t.certificate}</a>
         </span>
@@ -111,13 +112,7 @@ const services = baseData.services
             rel="noopener"
             aria-label="Telegram"
           >
-            <Image
-              src={TelegramLogo}
-              alt=""
-              class="contact-icon"
-              loading="eager"
-              fetchpriority="high"
-            />
+            <Image src={TelegramLogo} alt="" class="contact-icon" loading="lazy" />
             <span>{telegram}</span>
           </a>
         </div>
@@ -130,13 +125,7 @@ const services = baseData.services
             rel="noopener noreferrer"
             aria-label={t.whatsapp}
           >
-            <Image
-              src={WhatsAppLogo}
-              alt=""
-              class="contact-icon"
-              loading="eager"
-              fetchpriority="high"
-            />
+            <Image src={WhatsAppLogo} alt="" class="contact-icon" loading="lazy" />
             <span>{t.whatsapp}</span>
           </a>
         </div>
@@ -269,7 +258,7 @@ const services = baseData.services
       </ul>
     </section>
 
-    <footer class="main-footer" role="contentinfo">
+    <footer class="main-footer">
       <div class="trust-icons" role="list">
         {t.footerTrust.map((item) => <span role="listitem">{item}</span>)}
       </div>
@@ -329,7 +318,7 @@ const services = baseData.services
     margin-bottom: 1rem;
   }
 
-  .main-header {
+  main.container .main-header {
     padding: 1rem 0 0.5rem;
     display: flex;
     flex-direction: column;
@@ -906,5 +895,206 @@ const services = baseData.services
   :global(.dark) .seo-link {
     background: var(--md-white); /* using var --md-white from dark theme */
     border-color: var(--md-border);
+  }
+
+  /* Mobile-first visual system: preserve the existing information architecture. */
+  .main-header {
+    margin: -1rem -1rem 0;
+    padding: 1rem;
+    background: var(--md-header-bg);
+    color: var(--md-header-fg);
+    border-bottom: 0.25rem solid var(--md-teal);
+  }
+
+  main.container .main-header h1,
+  main.container .main-header .tagline,
+  main.container .main-header .contact-link,
+  main.container .main-header .live-status {
+    color: var(--md-header-fg);
+  }
+
+  main.container .main-header h1 {
+    font-size: clamp(1.8rem, 7vw, 2.8rem);
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+    max-width: 18ch;
+  }
+
+  main.container .main-header .tagline {
+    max-width: 42rem;
+    opacity: 0.86;
+  }
+
+  main.container .live-status {
+    align-self: flex-start;
+    background: transparent;
+    border: 1px solid rgb(255 255 255 / 28%);
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    text-transform: none;
+  }
+
+  main.container .pulse {
+    background: #8dd8c8;
+  }
+
+  main.container .header-badges {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  main.container .badge-item {
+    background: rgb(255 255 255 / 10%);
+    border: 1px solid rgb(255 255 255 / 18%);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  main.container .badge-link {
+    color: inherit;
+  }
+
+  main.container .contact-row {
+    gap: 0.625rem;
+  }
+
+  main.container .contact-item {
+    min-width: 0;
+  }
+
+  main.container .contact-link {
+    min-height: 2.75rem;
+    border-color: rgb(255 255 255 / 24%);
+    background: rgb(255 255 255 / 8%);
+    font-size: 0.9rem;
+  }
+
+  main.container .contact-link:hover,
+  main.container .contact-link:focus {
+    background: rgb(255 255 255 / 16%);
+    color: var(--md-header-fg);
+  }
+
+  main.container .divider {
+    display: none;
+  }
+
+  main.container .seo-intro {
+    margin: 1.5rem 0 2rem;
+    padding: 1.15rem;
+    border-radius: 0.5rem;
+    border-left: 0.25rem solid var(--md-teal);
+    box-shadow: none;
+  }
+
+  main.container .section-title {
+    margin-bottom: 1rem;
+    font-size: clamp(1.35rem, 5vw, 1.75rem);
+    letter-spacing: -0.02em;
+  }
+
+  main.container .services-grid {
+    gap: 0.75rem;
+  }
+
+  main.container .service-card {
+    border-radius: 0.5rem;
+    padding: 1.15rem;
+    box-shadow: 0 0.25rem 1rem rgb(18 48 74 / 5%);
+  }
+
+  main.container .service-card::before {
+    width: 0.2rem;
+  }
+
+  main.container .service-card:hover {
+    transform: none;
+    box-shadow: 0 0.45rem 1.25rem rgb(18 48 74 / 9%);
+  }
+
+  main.container .price-tag {
+    background: var(--md-blue-grey);
+    border-color: transparent;
+  }
+
+  main.container .faq-list {
+    gap: 0.5rem;
+  }
+
+  main.container .faq-item {
+    border-radius: 0.5rem;
+  }
+
+  main.container .faq-toggle {
+    min-height: 3.25rem;
+    padding: 0.9rem 1rem;
+  }
+
+  main.container .city-links-section,
+  main.container .seo-links-section,
+  main.container .main-footer {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+  }
+
+  main.container .city-link,
+  main.container .seo-link {
+    min-height: 2.75rem;
+  }
+
+  @media (width >= 48rem) {
+    main.container .main-header {
+      margin: -2rem -2.5rem 0;
+      padding: 2rem 2.5rem 1.5rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0 1rem;
+    }
+
+    main.container .main-header .live-status {
+      grid-column: 1;
+      grid-row: 1;
+      justify-self: start;
+      width: max-content;
+      margin-bottom: 0.75rem;
+    }
+
+    main.container .main-header .header-top-actions {
+      grid-column: 2;
+      grid-row: 1;
+      width: auto;
+      margin-bottom: 0.75rem;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    main.container .main-header h1,
+    main.container .main-header .tagline,
+    main.container .main-header .header-badges,
+    main.container .main-header .contact-row {
+      grid-column: 1 / -1;
+    }
+
+    main.container .main-header h1 {
+      max-width: 30ch;
+      font-size: clamp(2.15rem, 3.6vw, 2.5rem);
+    }
+
+    main.container .main-header .tagline {
+      margin: 0.5rem 0;
+    }
+
+    main.container .main-header .header-badges {
+      margin-top: 0.75rem;
+    }
+
+    main.container .contact-row {
+      max-width: none;
+      margin-top: 1rem;
+    }
+
+    main.container .services-grid {
+      gap: 1rem;
+    }
   }
 </style>

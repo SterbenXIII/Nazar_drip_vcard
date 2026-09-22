@@ -14,6 +14,7 @@ import {
   useTranslations,
   getAlternateLocale,
   getLocalePrefix,
+  getHreflang,
   type Locale,
 } from '../../../../i18n/ui'
 import { siteConfig } from '../../../../config/site'
@@ -73,7 +74,7 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.d
       schema={schemaJson}
       dateModified={content.dateModified}
       canonicalUrl={canonicalUrl}
-      alternateLinks={[{ hreflang: alternateLocale, href: alternateUrl }]}
+      alternateLinks={[{ hreflang: getHreflang(alternateLocale), href: alternateUrl }]}
       surzhykAlt={surzhykAlt}
     />
     <ThemeScript />
@@ -210,7 +211,7 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.d
     </style>
   </head>
   <body>
-    <main>
+    <main id="main-content" tabindex="-1">
       <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
         <ThemeToggle />
       </div>
@@ -236,7 +237,7 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.d
         </ol>
       </nav>
 
-      <article itemscope itemtype="https://schema.org/Service" data-pagefind-body>
+      <article itemscope itemtype="https://schema.org/Service">
         <h1 itemprop="name">{content.h1}</h1>
 
         <div class="cta-block" aria-label="Контакти">
@@ -272,7 +273,7 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.d
 
         {
           location.citySlug === 'lviv' ? (
-            <div data-pagefind-ignore>
+            <div>
               <DistrictCoverage
                 currentServiceSlug={serviceSlug}
                 currentDistrictSlug={location.districtSlug}
@@ -282,7 +283,7 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.d
           ) : null
         }
 
-        <div data-pagefind-ignore>
+        <div>
           <CoverageArea serviceSlug={serviceSlug} locale={locale} />
         </div>
 

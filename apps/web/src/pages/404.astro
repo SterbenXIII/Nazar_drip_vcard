@@ -15,7 +15,7 @@ const webSiteLd = buildWebSiteSchema()
 >
   <meta name="robots" content="noindex, follow" />
 
-  <main class="error-page">
+  <main id="main-content" class="error-page" tabindex="-1">
     <div class="container">
       <h1 class="h1">404</h1>
       <p class="subtitle">Упс... Схоже, ви зайшли не туди.</p>
@@ -46,7 +46,7 @@ const webSiteLd = buildWebSiteSchema()
 
 <style>
   .error-page {
-    padding: 8rem 0;
+    padding: clamp(3rem, 10vw, 8rem) 0;
     text-align: center;
     min-height: 90vh;
     display: flex;
@@ -60,33 +60,31 @@ const webSiteLd = buildWebSiteSchema()
   }
 
   .h1 {
-    font-size: 8rem;
+    font-size: clamp(4.5rem, 22vw, 8rem);
     font-weight: 900;
     margin: 0;
     line-height: 1;
-    background: linear-gradient(to bottom, var(--accent-primary, #6366f1), #4f46e5);
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--md-teal);
   }
 
   .subtitle {
     font-size: 1.5rem;
-    color: var(--md-text-muted, rgb(255 255 255 / 70%));
+    color: var(--md-text);
     margin: 1rem 0 3rem;
   }
 
   .cta-box {
-    background: var(--md-secondary-bg, rgb(255 255 255 / 5%));
-    border: 1px solid var(--md-border, rgb(255 255 255 / 10%));
-    padding: 2rem;
-    border-radius: 1.5rem;
+    background: var(--md-blue-grey);
+    border: 1px solid var(--md-border);
+    padding: clamp(1.25rem, 5vw, 2rem);
+    border-radius: 0.75rem;
     margin-bottom: 3rem;
   }
 
   .phone-btn {
     display: inline-block;
-    background: #fff;
-    color: #000;
+    background: var(--md-teal);
+    color: var(--md-white);
     padding: 1rem 2rem;
     border-radius: 3rem;
     font-weight: 700;
@@ -102,32 +100,32 @@ const webSiteLd = buildWebSiteSchema()
 
   .services-list h2 {
     margin-bottom: 1.5rem;
-    color: var(--md-text-muted, rgb(255 255 255 / 50%));
+    color: var(--md-navy);
   }
 
   .grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
     gap: 0.75rem;
     margin-bottom: 3rem;
   }
 
   .link {
-    color: var(--md-text, rgb(255 255 255 / 80%));
+    color: var(--md-text);
     text-decoration: none;
     padding: 0.5rem;
-    border: 1px solid var(--md-border, rgb(255 255 255 / 10%));
+    border: 1px solid var(--md-border);
     border-radius: 0.5rem;
     font-size: 0.875rem;
   }
 
   .link:hover {
-    color: var(--accent-primary, #6366f1);
-    border-color: var(--accent-primary, #6366f1);
+    color: var(--md-teal);
+    border-color: var(--md-teal);
   }
 
   .back-home {
-    color: var(--accent-secondary, #ec4899);
+    color: var(--md-secondary);
     text-decoration: none;
     font-weight: 600;
   }

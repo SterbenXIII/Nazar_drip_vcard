@@ -1,10 +1,7 @@
-import 'dotenv/config'
-
 import fs from 'node:fs'
 import path from 'node:path'
 
 import sitemap from '@astrojs/sitemap'
-import pwa from '@vite-pwa/astro'
 import { defineConfig } from 'astro/config'
 
 /**
@@ -40,113 +37,6 @@ export default defineConfig({
   },
 
   integrations: [
-    !process.env.SKIP_PWA &&
-      pwa({
-        registerType: 'autoUpdate',
-        experimental: { assets: true },
-
-        manifest: {
-          id: '/',
-          name: 'Krapelnytsia Lviv',
-          short_name: 'Krapelnytsia',
-          description:
-            'Професійне встановлення крапельниць від алкоголю на дому у Львові. Детокс після отруєння, вітамінні коктейлі, медикаментозна терапія. Швидкий виїзд!',
-          theme_color: '#2c3e50',
-          background_color: '#2c3e50',
-          display: 'standalone',
-          display_override: ['window-controls-overlay', 'minimal-ui'],
-          start_url: '/',
-          lang: 'uk',
-          protocol_handlers: [
-            {
-              protocol: 'web+krapelnytsia',
-              url: '/?url=%s',
-            },
-          ],
-          icons: [
-            {
-              src: 'pwa-64x64.png',
-              sizes: '64x64',
-              type: 'image/png',
-            },
-            {
-              src: 'pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png',
-            },
-            {
-              src: 'pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: 'maskable-icon-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
-            },
-          ],
-          screenshots: [
-            {
-              src: 'assets/pwa-screenshot-wide.png',
-              sizes: '1280x720',
-              type: 'image/png',
-              form_factor: 'wide',
-              label: 'Домашня сторінка (ПК)',
-            },
-            {
-              src: 'assets/pwa-screenshot-narrow.png',
-              sizes: '750x1334',
-              type: 'image/png',
-              form_factor: 'narrow',
-              label: 'Мобільна версія',
-            },
-          ],
-          shortcuts: [
-            {
-              name: 'Замовити крапельницю',
-              short_name: 'Замовити',
-              description: 'Швидке замовлення крапельниці на дому у Львові',
-              url: '/#order',
-              icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }],
-            },
-          ],
-        },
-
-        workbox: {
-          // HTML pages are intentionally excluded from precache — they must always
-          // be fetched from the network so users immediately see the new version
-          // after a deploy. Only immutable hashed assets are safe to precache.
-          globPatterns: ['**/*.{js,css,svg,png,webp,ico,woff2}'],
-          // Astro's PWA integration supplies a fallback by default. Disable it
-          // because HTML is intentionally not part of the precache manifest.
-          navigateFallback: undefined,
-          runtimeCaching: [
-            {
-              // Navigation requests (HTML pages): always try network first.
-              // Falls back to cache only when offline.
-              urlPattern: ({ request }) => request.mode === 'navigate',
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'pages',
-                networkTimeoutSeconds: 3,
-                expiration: {
-                  maxEntries: 50,
-                  maxAgeSeconds: 60 * 60 * 24, // 24h — never stale after deploy
-                },
-                cacheableResponse: { statuses: [200] },
-              },
-            },
-          ],
-        },
-
-        devOptions: {
-          enabled: false,
-          type: 'module',
-          suppressWarnings: false,
-        },
-      }),
     sitemap({
       i18n: {
         defaultLocale: 'uk',
