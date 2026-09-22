@@ -37,7 +37,12 @@
 
     # Proxy /api requests to the API backend
     handle /api/* {
-        reverse_proxy api:5678
+        reverse_proxy api:5678 {
+            # Caddy is the only public path to the API. Replace, do not append,
+            # the client identity used by the API rate limiter.
+            header_up X-Forwarded-For {remote_host}
+            header_up -CF-Connecting-IP
+        }
     }
 
     # Proxy all other requests to the web frontend
@@ -48,4 +53,3 @@
         }
     }
 }
-

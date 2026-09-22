@@ -27,6 +27,7 @@ ENV DOMAIN_NAME=${DOMAIN_NAME}
 
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
+COPY apps/api/tsconfig.json ./apps/api/tsconfig.json
 COPY tsconfig.base.json tsconfig.json ./
 
 RUN find . -name "*.tsbuildinfo" -delete

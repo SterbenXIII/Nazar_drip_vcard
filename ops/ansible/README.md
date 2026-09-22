@@ -171,7 +171,7 @@ domain_name=krapelnytsia.com.ua
 
 Default settings are configured for CI/CD. Key options:
 
-- `host_key_checking = False` - Disabled for CI/CD (security tradeoff)
+- `host_key_checking = True` - SSH host identity verification is required
 - `diff_mode = True` - Show diffs when files change
 - `gathering = explicit` - Only gather facts when needed
 
@@ -283,7 +283,17 @@ The playbook is designed to be called from GitHub Actions. See `.github/workflow
 
 ### Rollback safety
 
-The rollback workflow deploys a previously built image tag through the same Ansible playbook and uses the same `DEPLOY_PATH` and public HTTPS checks. It recreates application/proxy containers as needed but **does not delete Docker volumes or the SQLite database**. Do not add `docker compose down --volumes`, `docker volume rm`, or prune commands with `--volumes` to rollback steps.
+The rollback workflow accepts only a full lowercase commit SHA, verifies that the exact images are pullable before service recreation, and uses the same `DEPLOY_PATH` and public HTTPS checks. Before rollback mutation, Ansible uses the running API container's SQLite backup API to create a non-empty backup inside the persistent `api_data` volume. It does not blindly copy `leads.db` or its WAL sidecars, and it **does not delete Docker volumes or the SQLite database**. Do not add `docker compose down --volumes`, `docker volume rm`, or prune commands with `--volumes` to rollback steps.
+
+The application rollback contract is limited: an older image is supported only when its migrations remain readable with the existing database schema. The repository has forward-only startup migrations and no general backward-compatibility guarantee. If an older image cannot read the schema, restore from the pre-rollback SQLite backup instead of assuming that image replacement alone is safe.
+
+### Notification provider contract
+
+`ENABLED_PROVIDERS` is validated by the API before startup. `TELEGRAM` requires `TELEGRAM_BOT_TOKEN`. `EMAIL` requires `ADMIN_EMAIL` and either complete generic SMTP (`SMTP_USER`, `SMTP_HOST`, `SMTP_PASS`, optional `SMTP_PORT`) or complete Gmail OAuth2 (`SMTP_USER`, `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`). The deploy workflow transports these values through protected GitHub secrets/variables; Ansible writes them to the mode `0600` `.env` without logging them.
+
+### Turnstile and client identity contract
+
+`TURNSTILE_SECRET_KEY` is optional by the current product contract: when absent, server-side Turnstile verification is disabled; when present, the API verifies every submitted token. This phase does not change the separate browser widget integration. Turnstile requests do not receive a client IP because that value was not available from a verified application boundary. For rate limiting, Caddy overwrites `X-Forwarded-For` with the connecting client address and removes `CF-Connecting-IP`; production API containers have no host port and are reachable through the `web-gateway` proxy path only.
 
 ### Required GitHub Secrets
 

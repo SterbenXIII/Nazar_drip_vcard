@@ -145,7 +145,7 @@ test_connection() {
     print_info "Testing SSH connection to ${VPS_USER}@${VPS_HOST}:${VPS_PORT}..."
 
     # Test with timeout
-    if timeout 10 ssh -p "$VPS_PORT" -o ConnectTimeout=5 -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" "echo 'Connection successful'" 2>/dev/null; then
+    if timeout 10 ssh -p "$VPS_PORT" -o ConnectTimeout=5 -o StrictHostKeyChecking=yes "${VPS_USER}@${VPS_HOST}" "echo 'Connection successful'" 2>/dev/null; then
         print_success "VPS is reachable"
         return 0
     else
@@ -215,7 +215,7 @@ verify_key_auth() {
     print_info "Testing SSH connection with key..."
 
     if ssh -i "$KEY_PATH" -p "$VPS_PORT" -o PasswordAuthentication=no \
-        -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" "echo 'Authentication successful'"; then
+        -o StrictHostKeyChecking=yes "${VPS_USER}@${VPS_HOST}" "echo 'Authentication successful'"; then
         print_success "Key-based authentication working!"
     else
         print_error "Key-based authentication failed"
