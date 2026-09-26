@@ -136,9 +136,19 @@ case "$action" in
     if [[ "$argument" == restore:* ]]; then
       backup_id=${argument#restore:}; backup="$base/backups/$backup_id"
       [[ -d "$backup" ]] || { echo 'BLOCKED: backup does not exist'; exit 2; }
+      [[ -s "$backup/postgres.dump" ]] || { echo 'BLOCKED: PostgreSQL dump is missing or empty'; exit 2; }
       restore_project="$(grep '^COMPOSE_PROJECT_NAME=' "$runtime" | cut -d= -f2-)-restore"
       docker volume create "$restore_project-db" >/dev/null
-      docker compose --project-name "$restore_project" --env-file "$runtime" -f "$current/docker-compose.yaml" -f "$current/compose/docker-compose.persistence.yaml" up -d postgres
+      restore_compose=(docker compose --project-name "$restore_project" --env-file "$runtime" -f "$current/docker-compose.yaml" -f "$current/compose/docker-compose.persistence.yaml")
+      "${restore_compose[@]}" up -d postgres
+      for _ in {1..60}; do
+        "${restore_compose[@]}" exec -T postgres pg_isready -U postgres >/dev/null 2>&1 && break
+        sleep 1
+      done
+      "${restore_compose[@]}" exec -T postgres pg_isready -U postgres >/dev/null 2>&1 || { echo 'NOT VERIFIED: restore PostgreSQL was not ready'; exit 3; }
+      "${restore_compose[@]}" exec -T postgres pg_restore --list < "$backup/postgres.dump" >/dev/null
+      "${restore_compose[@]}" exec -T postgres pg_restore -U postgres -d postgres --clean --if-exists < "$backup/postgres.dump"
+      "${restore_compose[@]}" exec -T postgres psql -U postgres -d postgres -Atc "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' LIMIT 1" | grep -qx 1
       echo "PASS: restore drill namespace=$restore_project volume=${restore_project}-db"
       exit 0
     fi

@@ -70,6 +70,9 @@ assert_contains scripts/remote.sh 'pg_dump'
 assert_contains scripts/remote.sh 'redact_stream'
 assert_contains scripts/remote.sh 'current'
 assert_contains scripts/remote.sh 'restore_project'
+assert_contains scripts/remote.sh 'pg_restore --list'
+assert_contains scripts/remote.sh 'pg_restore -U postgres -d postgres --clean --if-exists'
+assert_contains scripts/remote.sh "information_schema.tables"
 assert_contains scripts/remote.sh 'VOLUME_DIR='
 
 preflight_output=$(mktemp "$ROOT_DIR/.remote-preflight.XXXXXX")
