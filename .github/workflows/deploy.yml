@@ -72,6 +72,7 @@ jobs:
             ghcr.io/${{ env.REPO_LC }}/vcard-web:${{ env.COMMIT_SHA }}
           build-args: |
             DOMAIN_NAME=${{ env.DOMAIN_NAME }}
+            PUBLIC_TURNSTILE_SITE_KEY=${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
