@@ -76,6 +76,12 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${alternat
     />
     <ThemeScript />
     <style>
+      .theme-toggle-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 1rem;
+      }
+
       .breadcrumb {
         margin-bottom: 2rem;
         font-size: 0.9rem;
@@ -209,7 +215,7 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${alternat
   </head>
   <body>
     <main id="main-content" tabindex="-1">
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+      <div class="theme-toggle-row">
         <ThemeToggle />
       </div>
       <nav aria-label="Навігація" class="breadcrumb">

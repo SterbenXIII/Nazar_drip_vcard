@@ -79,16 +79,16 @@ test('welcome dialog traps Tab in both directions and restores focus after backd
   await expect(skipLink).toBeFocused()
 })
 
-test('welcome dialog does not lock the destination after navigation before its delay', async ({
-  page,
-}) => {
+test('welcome dialog does not lock the destination after client navigation', async ({ page }) => {
   await preparePageLoad(page)
   await page.goto('/', { waitUntil: 'domcontentloaded' })
   await waitForAstroPageLoad(page)
 
+  await expect(page.getByRole('dialog', { name: 'Вітаємо у Krapelnytsia!' })).toBeVisible({
+    timeout: 3_000,
+  })
   await page.locator('a[href="/certificate"]').click()
   await expect(page).toHaveURL(/\/certificate$/)
-  await page.waitForTimeout(2_200)
 
   await expect(page.locator('html')).not.toHaveClass(/has-modal/)
   await expect(page.locator('#welcome-modal')).toHaveCount(0)
@@ -137,6 +137,22 @@ test('form fields expose validation errors to assistive technology', async ({ pa
   await submitButton.click()
   await expect(nameInput).toHaveAttribute('aria-invalid', 'true')
   await expect(page.locator('#name-error')).toBeVisible()
+})
+
+test('form marks the first invalid service checkbox and focuses it', async ({ page }) => {
+  await preparePageLoad(page, true)
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  await waitForAstroPageLoad(page)
+
+  await page.getByLabel("Ваше ім'я").fill('Тест')
+  const phone = page.getByLabel('Номер телефону')
+  await phone.fill('+380630000001')
+  await page.getByLabel('Район Львова').selectOption({ label: 'Личаківський' })
+  await page.getByRole('button', { name: 'Підтвердити запис' }).click()
+
+  const firstService = page.locator('input[name="services"]').first()
+  await expect(firstService).toHaveAttribute('aria-invalid', 'true')
+  await expect(firstService).toBeFocused()
 })
 
 test('submits the contact form to the same-origin lead endpoint', async ({ page }) => {

@@ -48,6 +48,7 @@ document.addEventListener('astro:page-load', () => {
 
         const field = form.elements.namedItem(fieldName)
         if (field instanceof HTMLElement) field.setAttribute('aria-invalid', 'true')
+        if (field instanceof RadioNodeList) field[0]?.setAttribute('aria-invalid', 'true')
       })
 
       const firstInvalidField = form.querySelector<HTMLElement>('[aria-invalid="true"]')

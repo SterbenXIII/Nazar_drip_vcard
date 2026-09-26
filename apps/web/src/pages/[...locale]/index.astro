@@ -87,7 +87,7 @@ const services = baseData.services
         </span>
       </div>
 
-      <address class="contact-row" aria-label="Контакти" style="font-style: normal;">
+      <address class="contact-row" aria-label="Контакти">
         <div class="contact-item">
           <a class="contact-link" href={`tel:${phone}`} aria-label="Телефон">📞 {phone}</a>
         </div>
@@ -263,10 +263,7 @@ const services = baseData.services
         {t.footerTrust.map((item) => <span role="listitem">{item}</span>)}
       </div>
       <p class="license">{baseData.profile.license}</p>
-      <div
-        class="disclaimer"
-        style="font-size: 0.8rem; color: var(--md-text); opacity: 0.8; margin-top: 1rem; text-align: center;"
-      >
+      <div class="disclaimer">
         <p>
           <em>{t.disclaimer}</em>
         </p>
@@ -328,7 +325,7 @@ const services = baseData.services
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: var(--md-accent);
     text-transform: uppercase;
@@ -539,6 +536,9 @@ const services = baseData.services
     color: var(--md-text);
     line-height: 1.4;
     font-style: italic;
+    opacity: 0.8;
+    margin-top: 1rem;
+    text-align: center;
   }
 
   /* ── FAQ ── */
@@ -693,6 +693,7 @@ const services = baseData.services
   /* Contact row: compact mobile, two-per-row on large screens */
   .contact-row {
     display: flex;
+    font-style: normal;
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-top: 1rem;

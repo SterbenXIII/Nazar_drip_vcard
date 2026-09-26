@@ -94,7 +94,7 @@ const breadcrumbLd = buildBreadcrumbSchema([
   surzhykAlt={uiT('seo.cert.surzhykAlt')}
 >
   <main id="main-content" class="container" tabindex="-1">
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+    <div class="theme-toggle-row">
       <ThemeToggle />
     </div>
     <header class="cert-header">
@@ -190,6 +190,12 @@ const breadcrumbLd = buildBreadcrumbSchema([
 </script>
 
 <style>
+  .theme-toggle-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+  }
+
   .cert-header {
     text-align: center;
     margin-bottom: 1rem;

@@ -250,7 +250,14 @@ const { phone } = Astro.props
       }, 2000)
     }
 
-    document.addEventListener('astro:before-swap', cancelPendingShow, { once: true })
+    document.addEventListener(
+      'astro:before-swap',
+      () => {
+        cancelPendingShow()
+        document.documentElement.classList.remove('has-modal')
+      },
+      { once: true },
+    )
 
     closeBtn.addEventListener('click', dismiss)
 
