@@ -137,7 +137,8 @@
       ansible.builtin.shell: |
         set -euo pipefail
         backup_path="/app/data/.rollback-backup-$(date -u +%Y%m%dT%H%M%SZ).db"
-        docker exec --user node --env "BACKUP_PATH=${backup_path}" vcard-api node -e '
+        api_image=$(docker inspect -f '{% raw %}{{.Config.Image}}{% endraw %}' vcard-api)
+        docker run --rm --user node --volumes-from vcard-api --env "BACKUP_PATH=${backup_path}" "$api_image" node -e '
           const Database = require("better-sqlite3")
           const database = new Database("/app/data/leads.db", { readonly: true })
           database.backup(process.env.BACKUP_PATH)
@@ -147,7 +148,7 @@
               process.exit(1)
             })
         '
-        docker exec --user node vcard-api test -s "${backup_path}"
+        docker run --rm --user node --volumes-from vcard-api "$api_image" test -s "${backup_path}"
       args:
         executable: /bin/bash
       changed_when: true

@@ -23,7 +23,9 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 # --- Stage 3: Builder ---
 FROM deps AS builder
 ARG DOMAIN_NAME
+ARG PUBLIC_TURNSTILE_SITE_KEY
 ENV DOMAIN_NAME=${DOMAIN_NAME}
+ENV PUBLIC_TURNSTILE_SITE_KEY=${PUBLIC_TURNSTILE_SITE_KEY}
 
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web

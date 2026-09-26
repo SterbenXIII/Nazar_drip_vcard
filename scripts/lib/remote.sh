@@ -24,9 +24,7 @@ scp_command() {
 }
 
 require_prod_hosts() {
-  local profile=$1 core edge
-  core=$(awk -F= '$1 == "CORE_HOST" {print substr($0, index($0, "=") + 1)}' "$profile")
-  edge=$(awk -F= '$1 == "EDGE_HOST" {print substr($0, index($0, "=") + 1)}' "$profile")
+  local core=${CORE_HOST:-} edge=${EDGE_HOST:-}
   [[ -n "$core" && -n "$edge" ]] || remote_blocked "CORE_HOST and EDGE_HOST are required for production"
 }
 

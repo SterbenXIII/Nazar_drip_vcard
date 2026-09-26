@@ -87,4 +87,6 @@ if DEPLOY_HOST=example.invalid DEPLOY_USER=deploy DEPLOY_PATH=/srv/defguard SSH_
 fi
 rg -q 'CORE_HOST and EDGE_HOST' "$preflight_output" || fail 'missing production hostname block'
 
+CORE_HOST=core.example.test EDGE_HOST=edge.example.test bash -c "source '$LIB'; require_prod_hosts"
+
 echo 'PASS: remote deployment contract'

@@ -283,7 +283,7 @@ The playbook is designed to be called from GitHub Actions. See `.github/workflow
 
 ### Rollback safety
 
-The rollback workflow accepts only a full lowercase commit SHA, verifies that the exact images are pullable before service recreation, and uses the same `DEPLOY_PATH` and public HTTPS checks. Before rollback mutation, Ansible uses the running API container's SQLite backup API to create a non-empty backup inside the persistent `api_data` volume. It does not blindly copy `leads.db` or its WAL sidecars, and it **does not delete Docker volumes or the SQLite database**. Do not add `docker compose down --volumes`, `docker volume rm`, or prune commands with `--volumes` to rollback steps.
+The rollback workflow accepts only a full lowercase commit SHA, verifies that the exact images are pullable before service recreation, and uses the same `DEPLOY_PATH` and public HTTPS checks. Before rollback mutation, Ansible starts an ephemeral container from the API image with the persistent `api_data` volume attached, so it can use SQLite's backup API even when `vcard-api` is stopped. It does not blindly copy `leads.db` or its WAL sidecars, and it **does not delete Docker volumes or the SQLite database**. Do not add `docker compose down --volumes`, `docker volume rm`, or prune commands with `--volumes` to rollback steps.
 
 The application rollback contract is limited: an older image is supported only when its migrations remain readable with the existing database schema. The repository has forward-only startup migrations and no general backward-compatibility guarantee. If an older image cannot read the schema, restore from the pre-rollback SQLite backup instead of assuming that image replacement alone is safe.
 

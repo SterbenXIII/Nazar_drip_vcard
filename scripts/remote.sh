@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 source "$ROOT_DIR/scripts/lib/remote.sh"
-# Operator contract: DEPLOY_HOST, DEPLOY_USER, DEPLOY_PATH, SSH_KEY.
+# Operator contract: DEPLOY_HOST, DEPLOY_USER, DEPLOY_PATH, SSH_KEY; production also requires CORE_HOST and EDGE_HOST.
 # Provenance is recorded with git rev-parse HEAD and git -C vendor/defguard-deployment rev-parse HEAD.
 
 usage() { echo "Usage: scripts/remote.sh preflight|deploy <dev|prod> | status | logs [--follow] | backup | recover | rollback <release-id>" >&2; }
@@ -33,13 +33,16 @@ make_archive() {
 remote_install_script() {
   cat <<'REMOTE'
 set -euo pipefail
-release=$1 profile=$2 base=$3
+release=$1 profile=$2 base=$3 core_host=${4:-} edge_host=${5:-}
 mkdir -p "$base/releases/$release" "$base/volumes/db" "$base/volumes/certs/edge" "$base/volumes/certs/gateway" "$base/volumes/caddy/data" "$base/volumes/caddy/config" "$base/backups" "$base/logs" "$base/shared" "$base/incoming"
 tar -xf "$base/incoming/$release.tar" -C "$base/releases/$release"
 runtime="$base/shared/runtime.env"
 if [[ ! -e "$runtime" ]]; then install -m 0600 "$base/releases/$release/config/deployment.$profile.env.example" "$runtime"; fi
 if ! grep -q '^VOLUME_DIR=' "$runtime"; then printf 'VOLUME_DIR=%s\n' "$base/volumes" >> "$runtime"; fi
 if ! grep -q '^POSTGRES_PASSWORD=' "$runtime"; then printf 'POSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 32)" >> "$runtime"; fi
+if [[ "$profile" == prod ]]; then
+  sed -i "s|^CORE_HOST=.*|CORE_HOST=$core_host|; s|^EDGE_HOST=.*|EDGE_HOST=$edge_host|" "$runtime"
+fi
 chmod 0600 "$runtime"
 ln -sfn "$runtime" "$base/releases/$release/.env"
 compose=(docker compose --project-name "$(grep '^COMPOSE_PROJECT_NAME=' "$runtime" | cut -d= -f2-)" --env-file "$runtime" -f "$base/releases/$release/docker-compose.yaml" -f "$base/releases/$release/compose/docker-compose.persistence.yaml" -f "$base/releases/$release/compose/docker-compose.caddy.yaml")
@@ -57,7 +60,7 @@ preflight() {
   local env=$1
   require_operator_vars
   [[ $env == dev || $env == prod ]] || remote_fail "unknown environment: $env"
-  [[ $env != prod ]] || require_prod_hosts "$ROOT_DIR/config/deployment.prod.env.example"
+  [[ $env != prod ]] || require_prod_hosts
   ssh_command 'bash -s --' <<'REMOTE'
 set -euo pipefail
 command -v docker >/dev/null || { echo 'BLOCKED: Docker Engine missing'; exit 2; }
@@ -80,7 +83,7 @@ deploy() {
   local env=$1 tmp release
   require_operator_vars
   [[ $env == dev || $env == prod ]] || remote_fail "unknown environment: $env"
-  [[ $env != prod ]] || require_prod_hosts "$ROOT_DIR/config/deployment.prod.env.example"
+  [[ $env != prod ]] || require_prod_hosts
   assert_clean_release
   preflight "$env"
   tmp=$(mktemp -d); trap 'rm -rf "$tmp"' RETURN
@@ -88,7 +91,7 @@ deploy() {
   tar -cf "$tmp/$release.tar" -C "$tmp/release" .
   ssh_command "mkdir -p '$DEPLOY_PATH/incoming'"
   scp_command "$tmp/$release.tar" "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/incoming/$release.tar"
-  remote_install_script | ssh_command 'bash -s --' "$release" "$env" "$DEPLOY_PATH"
+  remote_install_script | ssh_command 'bash -s --' "$release" "$env" "$DEPLOY_PATH" "${CORE_HOST:-}" "${EDGE_HOST:-}"
 }
 
 remote_action() {
