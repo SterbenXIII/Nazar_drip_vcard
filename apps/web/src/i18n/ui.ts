@@ -12,6 +12,15 @@ export const languages: Record<Locale, string> = {
 
 export const defaultLang: Locale = SUPPORTED_LOCALES.UK
 
+export const HREFLANG_BY_LOCALE: Record<Locale, `${Locale}-UA`> = {
+  [SUPPORTED_LOCALES.UK]: 'uk-UA',
+  [SUPPORTED_LOCALES.RU]: 'ru-UA',
+}
+
+export function getHreflang(locale: Locale): `${Locale}-UA` {
+  return HREFLANG_BY_LOCALE[locale]
+}
+
 /** Safely parse locale from Astro.params without type assertion */
 export function getActiveLocale(localeParam?: string | undefined): Locale {
   return localeParam === SUPPORTED_LOCALES.RU ? SUPPORTED_LOCALES.RU : SUPPORTED_LOCALES.UK
@@ -41,7 +50,7 @@ export const ui = {
     'action.print': '🖨 Друк',
     'action.open': 'Відкрити',
 
-    'a11y.skipToOrder': 'Перейти до замовлення',
+    'a11y.skipToOrder': 'Перейти до основного вмісту',
 
     'toc.title': 'Зміст',
     'toc.label': 'Зміст сторінки',
@@ -117,7 +126,7 @@ export const ui = {
     'action.print': '🖨 Печать',
     'action.open': 'Открыть',
 
-    'a11y.skipToOrder': 'Перейти к заказу',
+    'a11y.skipToOrder': 'Перейти к основному содержимому',
 
     'toc.title': 'Содержание',
     'toc.label': 'Содержание страницы',

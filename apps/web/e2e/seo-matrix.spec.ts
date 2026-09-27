@@ -3,10 +3,10 @@ import { expect, type Page, test } from '@playwright/test'
 const testUrls = [
   '/',
   '/ru/',
-  '/vyvedennya-iz-zapoyu',
-  '/ru/vyvod-iz-zapoya',
-  '/lviv/syhivskyy/vyvedennya-iz-zapoyu',
-  '/ru/lviv/syhivskyy/vyvod-iz-zapoya',
+  '/vyvedennya-iz-zapoyu-lviv',
+  '/ru/vyvod-iz-zapoya-lvov',
+  '/lviv/syhivskyy/vyvedennya-iz-zapoyu-lviv',
+  '/ru/lviv/syhivskyy/vyvod-iz-zapoya-lvov',
 ]
 
 test.describe('SEO Matrix & Hreflang', () => {

@@ -1,1 +1,1 @@
-export * from './lead/'
+export * from './lead/index.js'

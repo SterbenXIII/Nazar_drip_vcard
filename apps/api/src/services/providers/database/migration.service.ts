@@ -21,10 +21,18 @@ export class MigrationService {
       if (!appliedMigrations.includes(migration.name)) {
         logger.info(`Applying migration: ${migration.name}`)
         try {
+          await this.db.execute('BEGIN')
           await migration.up(this.db)
           await this.recordMigration(migration.name)
+          await this.db.execute('COMMIT')
           logger.info(`Migration successful: ${migration.name}`)
         } catch (error) {
+          await this.db.execute('ROLLBACK').catch((rollbackError) => {
+            logger.error({
+              msg: `Migration rollback failed: ${migration.name}`,
+              error: rollbackError,
+            })
+          })
           logger.error({ msg: `Migration failed: ${migration.name}`, error })
           throw error
         }

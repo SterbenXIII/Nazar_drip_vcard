@@ -1,10 +1,9 @@
 import { existsSync, mkdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
 import DatabaseConstructor, { type Database } from 'better-sqlite3'
 
 import { logger } from '@/config/logger'
-import { FILE_PATHS } from '@/constants/config/file-paths.const'
 import { LOG_MESSAGES } from '@/constants/messages/log-messages.const'
 import { BaseDatabaseProvider } from '@/core/abstracts/base-database.provider'
 import { SqlBuilder } from '@/core/utils/sql-builder.util'
@@ -23,12 +22,12 @@ export class SqliteDatabaseProvider extends BaseDatabaseProvider {
 
   protected init(): void {
     try {
-      const dataDir = FILE_PATHS.DATA_DIR
-      if (!existsSync(dataDir)) {
-        mkdirSync(dataDir, { recursive: true })
+      const dbPath = this.config.connectionString || join('data', `${this.schema.tableName}.db`)
+      const dbDir = dirname(dbPath)
+      if (!existsSync(dbDir)) {
+        mkdirSync(dbDir, { recursive: true })
       }
 
-      const dbPath = this.config.connectionString || join(dataDir, `${this.schema.tableName}.db`)
       logger.debug(this.formatLog(`Connecting to database: ${dbPath}`))
 
       // Спробуємо чітко присвоїти

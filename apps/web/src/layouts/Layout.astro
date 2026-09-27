@@ -2,10 +2,8 @@
 import SeoHead from '../components/SeoHead.astro'
 import Analytics from '../components/Analytics.astro'
 import ThemeScript from '../components/layout/ThemeScript.astro'
-import PwaHead from '../components/layout/PwaHead.astro'
 import SecurityMeta from '../components/layout/SecurityMeta.astro'
 import { ClientRouter } from 'astro:transitions'
-import Search from '../components/Search.astro'
 import '../styles/global.css'
 
 import type { Locale } from '../i18n/ui'
@@ -44,7 +42,13 @@ const uiT = useTranslations(locale)
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <PwaHead />
+  <script is:inline>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) registration.unregister()
+      })
+    }
+  </script>
 
   <SeoHead
     title={title ?? ''}
@@ -60,10 +64,9 @@ const uiT = useTranslations(locale)
 
   <body>
     <div class="app-wrapper">
-      <a href="#order" class="skip-link">
+      <a href="#main-content" class="skip-link">
         {uiT('a11y.skipToOrder')}
       </a>
-      <Search />
       <slot />
     </div>
   </body>

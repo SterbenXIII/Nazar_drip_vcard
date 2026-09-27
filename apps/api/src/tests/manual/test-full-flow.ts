@@ -43,14 +43,7 @@ try {
     timestamp: new Date(),
   }
 
-  console.log('2️⃣  Test lead data:')
-  console.log('    ┌─────────────────────────────────────')
-  console.log(`    │ Ім'я:     ${testLead.name}`)
-  console.log(`    │ Телефон:  ${testLead.phone}`)
-  console.log(`    │ Район:    ${testLead.district}`)
-  console.log(`    │ Послуги:  ${testLead.services.join(', ')}`)
-  console.log(`    │ Джерело:  ${testLead.source}`)
-  console.log('    └─────────────────────────────────────\n')
+  console.log('2️⃣  Synthetic test lead prepared')
 
   // ═════════════════════════════════════════════════════════
   // 3️⃣ Submit Lead
@@ -71,20 +64,7 @@ try {
   )
 
   if (results.length > 0 && results[0]) {
-    const saved = results[0]
-    console.log('    ✅ Lead found in database:\n')
-    console.log('    ┌─────────────────────────────────────')
-    console.log(`    │ ID:       ${saved.id}`)
-    console.log(`    │ Ім'я:     ${saved.name}`)
-    console.log(`    │ Телефон:  ${saved.phone}`)
-    console.log(`    │ Район:    ${saved.district}`)
-
-    // services зберігається як JSON string
-    const savedServices =
-      typeof saved.services === 'string' ? JSON.parse(saved.services) : saved.services
-    console.log(`    │ Послуги:  ${savedServices.join(', ')}`)
-    console.log(`    │ Timestamp: ${saved.timestamp}`)
-    console.log('    └─────────────────────────────────────\n')
+    console.log('    ✅ Persistence check passed\n')
   } else {
     console.error('    ❌ Lead not found in database!\n')
     process.exit(1)
@@ -98,16 +78,12 @@ try {
   const enabledProviders = ENV.ENABLED_PROVIDERS
 
   if (enabledProviders.includes(NotificationProvider.TELEGRAM)) {
-    console.log('    📱 Telegram:')
-    console.log(`       → Bot Token: ${ENV.TELEGRAM_BOT_TOKEN?.slice(0, 10)}...`)
-    console.log(`       → Master ID:  ${ENV.TELEGRAM_MASTER_ID ?? 'not set'}`)
+    console.log('    📱 Telegram configured: yes')
     console.log('       ⚠️  MANUALLY CHECK: відкрий Telegram бот і перевір повідомлення\n')
   }
 
   if (enabledProviders.includes(NotificationProvider.EMAIL)) {
-    console.log('    📧 Email:')
-    console.log(`       → From:       ${ENV.SMTP_USER}`)
-    console.log(`       → To:         ${ENV.ADMIN_EMAIL}`)
+    console.log('    📧 SMTP configured: yes')
     console.log('       ⚠️  MANUALLY CHECK: перевір поштову скриньку Gmail\n')
   }
 

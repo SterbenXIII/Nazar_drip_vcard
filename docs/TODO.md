@@ -249,22 +249,18 @@ logger.info({ msg })
 
 ---
 
-### 9. Turnstile integration is dead code — widget removed, token still expected `[@vcard/web]`
+### 9. Turnstile integration — resolved in Phase 4 `[@vcard/web]`
 
-**Problem:** `apps/web/src/components/Turnstile.astro` exists (with an always-pass test key `1x00000000000000000000AA`) but is not rendered in `ContactForm.astro`. However, `apps/web/src/scripts/contact-form.ts` still reads `formData.get(FORM_ELEMENTS.INPUT_TURNSTILE)` and sends `turnstileToken: null` in every submission.
+**Historical problem:** `apps/web/src/components/Turnstile.astro` existed (with an always-pass test key) but was not rendered in `ContactForm.astro`. The client still read the token field, so the configured server verifier could never receive a browser token.
 
-This means:
+**Phase 4 resolution:**
 
-- The Turnstile widget is silently absent from the UI
-- The backend will never receive a valid token (only `null` / empty)
-- Turnstile protection has no effect
+- `ContactForm.astro` renders `Turnstile.astro` only when the public site key is configured.
+- `contact-form.ts` includes the browser token when the widget is enabled.
+- No public test-key fallback remains.
+- Empty `PUBLIC_TURNSTILE_SITE_KEY` keeps the form functional without the widget.
 
-**Proposal:** Either:
-
-- **Enable Turnstile:** Uncomment the import + usage in `ContactForm.astro`, add `PUBLIC_TURNSTILE_SITE_KEY` to the web environment.
-- **Remove dead code:** Delete `Turnstile.astro`, remove `INPUT_TURNSTILE` reads from `contact-form.ts`, and remove `turnstileToken` from the lead schema if no longer used.
-
-**File:** `apps/web/src/components/ContactForm.astro`, `apps/web/src/components/Turnstile.astro`, `apps/web/src/scripts/contact-form.ts`
+**Files:** `apps/web/src/components/ContactForm.astro`, `apps/web/src/components/Turnstile.astro`, `apps/web/src/scripts/contact-form.ts`
 
 ---
 

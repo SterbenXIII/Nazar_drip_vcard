@@ -17,6 +17,7 @@ interface Props {
 }
 
 import { siteConfig } from '../config/site'
+import { getActiveLocale, getHreflang } from '../i18n/ui'
 
 const {
   title,
@@ -32,7 +33,8 @@ const {
 
 // Determine locale from URL
 const isRu = Astro.url.pathname.startsWith('/ru')
-const locale = isRu ? 'ru' : 'uk'
+const locale = getActiveLocale(isRu ? 'ru' : 'uk')
+const hreflang = getHreflang(locale)
 const ogLocale = isRu ? 'ru_UA' : 'uk_UA'
 const siteName = isRu ? 'Капельница Львов' : siteConfig.businessName
 
@@ -53,14 +55,17 @@ const finalImage = image ?? defaultOgImage
 const ogImageUrl = new URL(finalImage, siteBase).href
 
 // Ensure we have at least the current page and x-default if it's UK
-const allAlternateLinks = [...alternateLinks]
-if (!allAlternateLinks.find((l) => l.hreflang === locale)) {
-  allAlternateLinks.push({ hreflang: locale, href: canonicalUrl })
+const allAlternateLinks = alternateLinks.map((link) => ({
+  ...link,
+  hreflang: link.hreflang === 'uk' ? 'uk-UA' : link.hreflang === 'ru' ? 'ru-UA' : link.hreflang,
+}))
+if (!allAlternateLinks.find((l) => l.hreflang === hreflang)) {
+  allAlternateLinks.push({ hreflang, href: canonicalUrl })
 }
 if (!allAlternateLinks.find((l) => l.hreflang === 'x-default')) {
   // If we are in UK, it's the default. If RU, we'd need to know the UK partner.
   // The pages pass the partner in alternateLinks usually.
-  const ukLink = allAlternateLinks.find((l) => l.hreflang === 'uk')
+  const ukLink = allAlternateLinks.find((l) => l.hreflang === 'uk-UA')
   if (ukLink) {
     allAlternateLinks.push({ hreflang: 'x-default', href: ukLink.href })
   }

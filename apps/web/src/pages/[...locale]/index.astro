@@ -23,6 +23,7 @@ import {
   getLocalePrefix,
   getLocalizedUrl,
   getActiveLocale,
+  getHreflang,
 } from '../../i18n/ui'
 import { siteConfig } from '../../config/site'
 
@@ -54,18 +55,20 @@ const services = baseData.services
   title={t.seoTitle}
   description={t.seoDescription}
   locale={activeLocale}
-  alternateLinks={[{ hreflang: alternateLocale, href: alternateUrl }]}
+  alternateLinks={[{ hreflang: getHreflang(alternateLocale), href: alternateUrl }]}
   surzhykAlt={uiT('seo.home.surzhykAlt')}
 >
-  <main class="container" role="main">
+  <main id="main-content" class="container" tabindex="-1">
     <header class="main-header">
-      <div class="live-status" aria-live="polite">
-        <span class="pulse" aria-hidden="true"></span>
-        {t.status}
-      </div>
-      <div class="header-top-actions">
-        <ThemeToggle />
-        <ShareButton />
+      <div class="header-utility">
+        <div class="live-status" aria-live="polite">
+          <span class="pulse" aria-hidden="true"></span>
+          {t.status}
+        </div>
+        <div class="header-top-actions">
+          <ThemeToggle />
+          <ShareButton />
+        </div>
       </div>
       <h1>{t.title}</h1>
       <p class="tagline">{t.tagline}</p>
@@ -80,13 +83,7 @@ const services = baseData.services
         }
       </div>
 
-      <div class="header-badges" aria-hidden="true">
-        <span class="badge-item" role="listitem">
-          <a href="/certificate" class="badge-link" aria-label={t.certificate}>{t.certificate}</a>
-        </span>
-      </div>
-
-      <address class="contact-row" aria-label="Контакти" style="font-style: normal;">
+      <address class="contact-row" aria-label="Контакти">
         <div class="contact-item">
           <a class="contact-link" href={`tel:${phone}`} aria-label="Телефон">📞 {phone}</a>
         </div>
@@ -111,13 +108,7 @@ const services = baseData.services
             rel="noopener"
             aria-label="Telegram"
           >
-            <Image
-              src={TelegramLogo}
-              alt=""
-              class="contact-icon"
-              loading="eager"
-              fetchpriority="high"
-            />
+            <Image src={TelegramLogo} alt="" class="contact-icon" loading="lazy" />
             <span>{telegram}</span>
           </a>
         </div>
@@ -130,13 +121,7 @@ const services = baseData.services
             rel="noopener noreferrer"
             aria-label={t.whatsapp}
           >
-            <Image
-              src={WhatsAppLogo}
-              alt=""
-              class="contact-icon"
-              loading="eager"
-              fetchpriority="high"
-            />
+            <Image src={WhatsAppLogo} alt="" class="contact-icon" loading="lazy" />
             <span>{t.whatsapp}</span>
           </a>
         </div>
@@ -269,15 +254,12 @@ const services = baseData.services
       </ul>
     </section>
 
-    <footer class="main-footer" role="contentinfo">
+    <footer class="main-footer">
       <div class="trust-icons" role="list">
         {t.footerTrust.map((item) => <span role="listitem">{item}</span>)}
       </div>
       <p class="license">{baseData.profile.license}</p>
-      <div
-        class="disclaimer"
-        style="font-size: 0.8rem; color: var(--md-text); opacity: 0.8; margin-top: 1rem; text-align: center;"
-      >
+      <div class="disclaimer">
         <p>
           <em>{t.disclaimer}</em>
         </p>
@@ -321,25 +303,32 @@ const services = baseData.services
     border: 0;
   }
 
-  .header-top-actions {
+  .header-utility {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    margin-bottom: 1rem;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
   }
 
-  .main-header {
-    padding: 1rem 0 0.5rem;
+  main.container .main-header {
     display: flex;
     flex-direction: column;
+  }
+
+  .header-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    flex-shrink: 0;
   }
 
   .live-status {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: var(--md-accent);
     text-transform: uppercase;
@@ -380,8 +369,8 @@ const services = baseData.services
 
   .badge-item {
     font-size: 0.8125rem;
-    background: #f1f5f9;
-    color: black;
+    background: var(--md-blue-grey);
+    color: var(--md-navy);
     padding: 0.25rem 0.625rem;
     border-radius: 0.375rem;
     font-weight: 700;
@@ -406,7 +395,7 @@ const services = baseData.services
     border-radius: 0.75rem;
     padding: 1.5rem;
     margin-bottom: 2.5rem;
-    box-shadow: 0 0.125rem 0.25rem rgb(0 0 0 / 2%);
+    box-shadow: 0 0.125rem 0.25rem var(--md-shadow);
   }
 
   .seo-intro p {
@@ -434,7 +423,7 @@ const services = baseData.services
   .service-badge {
     display: inline-block;
     background: var(--md-teal);
-    color: #fff;
+    color: var(--md-on-teal);
     font-size: 0.6875rem;
     font-weight: 700;
     padding: 0.125rem 0.5rem;
@@ -469,7 +458,7 @@ const services = baseData.services
 
   .service-card:hover {
     transform: translateY(-0.125rem);
-    box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 5%);
+    box-shadow: 0 0.25rem 0.75rem var(--md-shadow);
     border-color: var(--md-teal);
   }
 
@@ -550,6 +539,9 @@ const services = baseData.services
     color: var(--md-text);
     line-height: 1.4;
     font-style: italic;
+    opacity: 0.8;
+    margin-top: 1rem;
+    text-align: center;
   }
 
   /* ── FAQ ── */
@@ -703,16 +695,16 @@ const services = baseData.services
 
   /* Contact row: compact mobile, two-per-row on large screens */
   .contact-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 1rem;
+    display: grid;
+    font-style: normal;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1.25rem;
     align-items: center;
   }
 
   .contact-item {
-    flex: 1 1 calc(50% - 0.5rem);
-    min-width: 12rem;
+    min-width: 0;
   }
 
   .contact-link {
@@ -721,7 +713,10 @@ const services = baseData.services
     align-items: center;
     gap: 0.5rem;
     font-weight: bold;
-    padding: 0.375rem 0.5rem;
+    width: 100%;
+    min-height: 3.25rem;
+    justify-content: flex-start;
+    padding: 0.625rem 0.875rem;
     border-radius: 0.5rem;
     color: var(--md-navy);
     text-decoration: none;
@@ -750,21 +745,29 @@ const services = baseData.services
     display: inline-block;
   }
 
-  @media (--xl-up) {
-    .contact-row {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.75rem;
-      align-items: center;
+  @media (width < 40rem) {
+    .header-utility {
+      align-items: flex-start;
+      flex-wrap: wrap;
     }
 
-    .contact-item {
-      flex: none;
-    }
-
-    .contact-link {
+    .header-top-actions {
       width: 100%;
-      justify-content: flex-start;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .header-top-actions > :global(.share-container),
+    .header-top-actions :global(.share-trigger) {
+      width: 100%;
+    }
+
+    .header-top-actions :global(.share-trigger) {
+      justify-content: center;
+    }
+
+    .contact-row {
+      grid-template-columns: 1fr;
     }
   }
 
@@ -775,7 +778,7 @@ const services = baseData.services
   :global(.dark) .contact-link:hover,
   :global(.dark) .contact-link:focus {
     background: color-mix(in srgb, var(--md-accent) 14%, transparent);
-    color: white;
+    color: var(--md-header-fg);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-accent) 12%, transparent);
   }
 
@@ -906,5 +909,182 @@ const services = baseData.services
   :global(.dark) .seo-link {
     background: var(--md-white); /* using var --md-white from dark theme */
     border-color: var(--md-border);
+  }
+
+  /* Mobile-first visual system: preserve the existing information architecture. */
+  .main-header {
+    margin: 0.75rem 0 0;
+    padding: clamp(1.5rem, 5vw, 3rem);
+    background: var(--md-header-bg);
+    color: var(--md-header-fg);
+    border: 1px solid var(--md-header-border);
+    border-bottom: 0.25rem solid var(--md-teal);
+    border-radius: 1.5rem;
+    box-shadow: var(--md-header-shadow);
+  }
+
+  main.container .main-header h1,
+  main.container .main-header .tagline,
+  main.container .main-header .contact-link,
+  main.container .main-header .live-status {
+    color: var(--md-header-fg);
+  }
+
+  main.container .main-header h1 {
+    font-size: clamp(1.8rem, 7vw, 2.8rem);
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+    max-width: 18ch;
+  }
+
+  main.container .main-header .tagline {
+    max-width: 42rem;
+    opacity: 0.86;
+  }
+
+  main.container .live-status {
+    align-self: flex-start;
+    background: var(--md-header-badge-bg);
+    border: 1px solid var(--md-header-border);
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    text-transform: none;
+  }
+
+  main.container .pulse {
+    background: var(--md-teal);
+  }
+
+  main.container .header-badges {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  main.container .badge-item {
+    background: var(--md-header-badge-bg);
+    border: 1px solid var(--md-header-border);
+    color: var(--md-header-fg);
+    font-weight: 600;
+  }
+
+  main.container .badge-link {
+    color: inherit;
+  }
+
+  main.container .contact-row {
+    gap: 0.625rem;
+  }
+
+  main.container .contact-item {
+    min-width: 0;
+  }
+
+  main.container .contact-link {
+    min-height: 2.75rem;
+    border-color: var(--md-header-border);
+    background: var(--md-header-surface);
+    font-size: 0.9rem;
+  }
+
+  main.container .contact-link:hover,
+  main.container .contact-link:focus {
+    background: var(--md-header-badge-bg);
+    color: var(--md-header-fg);
+  }
+
+  main.container .divider {
+    display: none;
+  }
+
+  main.container .seo-intro {
+    margin: 1.5rem 0 2rem;
+    padding: 1.15rem;
+    border-radius: 0.5rem;
+    border-left: 0.25rem solid var(--md-teal);
+    box-shadow: none;
+  }
+
+  main.container .section-title {
+    margin-bottom: 1rem;
+    font-size: clamp(1.35rem, 5vw, 1.75rem);
+    letter-spacing: -0.02em;
+  }
+
+  main.container .services-grid {
+    gap: 0.75rem;
+  }
+
+  main.container .service-card {
+    border-radius: 0.5rem;
+    padding: 1.15rem;
+    box-shadow: 0 0.25rem 1rem var(--md-shadow);
+  }
+
+  main.container .service-card::before {
+    width: 0.2rem;
+  }
+
+  main.container .service-card:hover {
+    transform: none;
+    box-shadow: 0 0.45rem 1.25rem var(--md-shadow);
+  }
+
+  main.container .price-tag {
+    background: var(--md-blue-grey);
+    border-color: transparent;
+  }
+
+  main.container .faq-list {
+    gap: 0.5rem;
+  }
+
+  main.container .faq-item {
+    border-radius: 0.5rem;
+  }
+
+  main.container .faq-toggle {
+    min-height: 3.25rem;
+    padding: 0.9rem 1rem;
+  }
+
+  main.container .city-links-section,
+  main.container .seo-links-section,
+  main.container .main-footer {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+  }
+
+  main.container .city-link,
+  main.container .seo-link {
+    min-height: 2.75rem;
+  }
+
+  @media (width >= 48rem) {
+    main.container .main-header {
+      margin: 0.75rem 0 0;
+      padding: 2rem 2.5rem 1.5rem;
+    }
+
+    main.container .main-header h1 {
+      max-width: 30ch;
+      font-size: clamp(2.15rem, 3.6vw, 2.5rem);
+    }
+
+    main.container .main-header .tagline {
+      margin: 0.5rem 0;
+    }
+
+    main.container .main-header .header-badges {
+      margin-top: 0.75rem;
+    }
+
+    main.container .contact-row {
+      max-width: none;
+      margin-top: 1rem;
+    }
+
+    main.container .services-grid {
+      gap: 1rem;
+    }
   }
 </style>

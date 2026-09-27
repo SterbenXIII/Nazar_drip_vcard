@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { DISTRICTS, REGEX, VALIDATION_LIMITS, VALIDATION_MESSAGES } from '../../constants'
+import { DISTRICTS, REGEX, VALIDATION_LIMITS, VALIDATION_MESSAGES } from '../../constants/index.js'
 
 export const leadSchema = z.object({
   name: z.string().min(VALIDATION_LIMITS.MIN_NAME_LENGTH, VALIDATION_MESSAGES.NAME_TOO_SHORT),

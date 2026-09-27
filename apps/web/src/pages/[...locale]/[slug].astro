@@ -18,6 +18,7 @@ import {
   getAlternateLocale,
   getLocalePrefix,
   getLocalizedUrl,
+  getHreflang,
   SUPPORTED_LOCALES,
   type Locale,
 } from '../../i18n/ui'
@@ -100,11 +101,17 @@ const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteC
       description={seo.description}
       schema={[schemaJson, medicalSchema]}
       dateModified={page.dateModified}
-      alternateLinks={[{ hreflang: alternateLocale, href: alternateUrl }]}
+      alternateLinks={[{ hreflang: getHreflang(alternateLocale), href: alternateUrl }]}
       surzhykAlt={surzhykAlt}
     />
     <ThemeScript />
     <style>
+      .theme-toggle-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 1rem;
+      }
+
       .breadcrumb {
         margin-bottom: 2rem;
         font-size: 0.9rem;
@@ -120,7 +127,7 @@ const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteC
 
       .breadcrumb li + li::before {
         content: '/';
-        color: #999;
+        color: var(--md-text-muted);
         margin-right: 0.5rem;
       }
 
@@ -161,14 +168,14 @@ const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteC
         display: grid;
         grid-template-columns: max-content auto;
         gap: 0.5rem 1.5rem;
-        background: rgb(0 0 0 / 5%);
+        background: var(--md-surface-subtle);
         padding: 1.5rem;
         border-radius: 8px;
         margin: 2rem 0;
       }
 
       :global(.dark) dl {
-        background: rgb(255 255 255 / 5%);
+        background: var(--md-surface-subtle);
       }
 
       dt {
@@ -202,7 +209,7 @@ const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteC
 
       .btn-tg {
         background: var(--md-teal);
-        color: white;
+        color: var(--md-on-teal);
       }
 
       details {
@@ -237,8 +244,8 @@ const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteC
     </style>
   </head>
   <body>
-    <main>
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+    <main id="main-content" tabindex="-1">
+      <div class="theme-toggle-row">
         <ThemeToggle />
       </div>
       <nav aria-label="Навігація" class="breadcrumb">
@@ -257,7 +264,7 @@ const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteC
         </ol>
       </nav>
 
-      <article itemscope itemtype="https://schema.org/Service" data-pagefind-body>
+      <article itemscope itemtype="https://schema.org/Service">
         <h1 itemprop="name" transition:name="main-heading">{h1}</h1>
 
         <div class="cta-block" aria-label="Контакти">
@@ -274,7 +281,7 @@ const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteC
           </a>
         </div>
 
-        <div data-pagefind-ignore>
+        <div>
           <TableOfContents headings={headings} locale={locale} />
         </div>
 
@@ -298,17 +305,12 @@ const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteC
         {
           page.howToSteps && (
             <div id="how-to">
-              <HowTo
-                data-pagefind-ignore
-                heading={t.howTo}
-                steps={page.howToSteps}
-                totalDuration="PT60M"
-              />
+              <HowTo heading={t.howTo} steps={page.howToSteps} totalDuration="PT60M" />
             </div>
           )
         }
 
-        <div data-pagefind-ignore>
+        <div>
           <CoverageArea serviceSlug={page.slug} locale={locale} />
         </div>
 
@@ -335,7 +337,7 @@ const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteC
 
         <ColloquialTerms terms={colloquialTerms} />
 
-        <div data-pagefind-ignore>
+        <div>
           <RelatedServices pages={relatedPages} locale={locale} />
         </div>
       </article>

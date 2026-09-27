@@ -18,13 +18,12 @@ const { phone } = Astro.props
       <h2 id="welcome-title">Вітаємо у Krapelnytsia!</h2>
       <p>
         Професійні медичні послуги у вас вдома. <br />
-        Зателефонуйте нам для консультації або встановіть додаток для швидкого доступу.
+        Зателефонуйте нам для консультації.
       </p>
 
       <p class="phone-display">{phone}</p>
       <div class="actions">
         <a href={`tel:${phone}`} class="btn btn-primary"> 📞 Зателефонувати </a>
-        <button id="install-btn" class="btn btn-secondary" hidden> 📲 Встановити додаток </button>
         <button id="modal-close" class="btn btn-text"> Продовжити перегляд </button>
       </div>
     </div>
@@ -36,12 +35,12 @@ const { phone } = Astro.props
     position: fixed;
     inset: 0;
     z-index: 9999;
-    background: rgb(0 0 0 / 60%);
+    background: var(--md-overlay);
     backdrop-filter: blur(4px);
     display: grid;
     place-items: center;
     padding: 1rem;
-    animation: fadeIn 0.3s ease-out;
+    animation: fade-in 0.3s ease-out;
   }
 
   .modal-backdrop[hidden] {
@@ -58,7 +57,7 @@ const { phone } = Astro.props
       0 4px 6px -4px rgb(0 0 0 / 10%),
       0 0 0 1px rgb(255 255 255 / 10%);
     overflow: hidden;
-    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .modal-content {
@@ -135,7 +134,7 @@ const { phone } = Astro.props
 
   .btn-primary {
     background: var(--md-teal);
-    color: white;
+    color: var(--md-on-teal);
     box-shadow: 0 4px 12px color-mix(in srgb, var(--md-teal) 40%, transparent);
   }
 
@@ -202,106 +201,90 @@ const { phone } = Astro.props
 </style>
 <script>
   const KEY = 'vcard:welcome-dismissed'
-  let deferredPrompt: BeforeInstallPromptEvent | null = null
-  let isInstallHandled = false // permanent lock — prevents any re-show after first click
 
-  const isFirefox = navigator.userAgent.includes('Firefox')
-
-  // Capture beforeinstallprompt ASAP — Chrome/Edge only, Firefox never fires this
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault()
-    if (isInstallHandled) return // ignore if user already clicked
-    deferredPrompt = e as BeforeInstallPromptEvent
-    console.log('[PWA] beforeinstallprompt captured')
-    const btn = document.getElementById('install-btn')
-    if (btn) btn.hidden = false
-  })
-
-  // Hide install button if app is already installed
-  window.addEventListener('appinstalled', () => {
-    console.log('[PWA] App installed successfully')
-    deferredPrompt = null
-    isInstallHandled = true
-    const btn = document.getElementById('install-btn')
-    if (btn) btn.hidden = true
-  })
-
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     const modal = document.getElementById('welcome-modal')
     const closeBtn = document.getElementById('modal-close')
-    const installBtn = document.getElementById('install-btn') as HTMLButtonElement | null
-    const actionsDiv = installBtn?.parentElement
 
-    if (!modal || !closeBtn) return
+    if (!(modal instanceof HTMLElement) || !(closeBtn instanceof HTMLButtonElement)) return
+    if (modal.dataset.welcomeReady === 'true') return
+    modal.dataset.welcomeReady = 'true'
 
-    // Firefox: no beforeinstallprompt — show a static hint in place of the button
-    if (isFirefox && actionsDiv && installBtn) {
-      installBtn.hidden = true
-      const firefoxTip = document.createElement('p')
-      firefoxTip.id = 'install-tip'
-      firefoxTip.style.cssText =
-        'font-size:0.8rem;color:var(--md-text);margin-top:0.5rem;opacity:0.8;text-align:center'
-      firefoxTip.textContent = 'У Firefox: натисніть іконку 🏠 в адресному рядку → «Встановити»'
-      installBtn.insertAdjacentElement('afterend', firefoxTip)
+    let previouslyFocused: HTMLElement | null = null
+    let showTimer: ReturnType<typeof setTimeout> | undefined
+
+    const cancelPendingShow = () => {
+      if (showTimer === undefined) return
+      clearTimeout(showTimer)
+      showTimer = undefined
     }
 
-    // If beforeinstallprompt already fired before DOMContentLoaded, show button
-    if (deferredPrompt && installBtn && !isInstallHandled) {
-      installBtn.hidden = false
-    }
-
-    // Show modal if not dismissed
-    if (!localStorage.getItem(KEY)) {
-      setTimeout(() => {
-        modal.hidden = false
-      }, 2000)
-    }
-
-    // Install button handler
-    installBtn?.addEventListener('click', async () => {
-      if (isInstallHandled) return // extra guard
-      isInstallHandled = true // lock permanently
-      installBtn.hidden = true // hide immediately — prevents any re-show
-
-      if (!deferredPrompt) {
-        showManualInstallTip()
-        return
-      }
-      deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
-      console.log('[PWA] Install prompt outcome:', outcome)
-      deferredPrompt = null
-    })
-
-    // Idempotent tip — can only exist once in the DOM
-    function showManualInstallTip() {
-      if (document.getElementById('install-tip')) return // guard against duplicates
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-      const tip = document.createElement('p')
-      tip.id = 'install-tip'
-      tip.style.cssText =
-        'font-size:0.8rem;color:var(--md-text);margin-top:0.5rem;opacity:0.8;text-align:center'
-      tip.textContent = isIOS
-        ? 'На iOS: натисніть Share → «На екран «Додому»»'
-        : 'У браузері: меню ⋮ → «Встановити застосунок»'
-      installBtn?.insertAdjacentElement('afterend', tip)
-    }
-
-    // Close button
-    closeBtn.addEventListener('click', () => {
+    const dismiss = () => {
+      cancelPendingShow()
       modal.hidden = true
+      document.documentElement.classList.remove('has-modal')
       try {
         localStorage.setItem(KEY, '1')
       } catch {}
+      previouslyFocused?.focus()
+    }
+
+    const show = () => {
+      if (!modal.isConnected) return
+      previouslyFocused =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null
+      modal.hidden = false
+      document.documentElement.classList.add('has-modal')
+      closeBtn.focus()
+    }
+
+    let isDismissed = false
+    try {
+      isDismissed = Boolean(localStorage.getItem(KEY))
+    } catch {}
+
+    if (!isDismissed) {
+      showTimer = setTimeout(() => {
+        showTimer = undefined
+        show()
+      }, 2000)
+    }
+
+    document.addEventListener(
+      'astro:before-swap',
+      () => {
+        cancelPendingShow()
+        document.documentElement.classList.remove('has-modal')
+      },
+      { once: true },
+    )
+
+    closeBtn.addEventListener('click', dismiss)
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) dismiss()
     })
 
-    // Close on backdrop click
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.hidden = true
-        try {
-          localStorage.setItem(KEY, '1')
-        } catch {}
+    modal.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        dismiss()
+        return
+      }
+
+      if (event.key !== 'Tab') return
+      const focusable = modal.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (!first || !last) return
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
       }
     })
   })

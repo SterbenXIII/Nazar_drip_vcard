@@ -3,7 +3,7 @@ import { type ConsoleMessage, expect, type Page, test } from '@playwright/test'
 test.describe('UX & Interactive Performance', () => {
   test('Table of Contents: Scrolling and Hash Update', async ({ page }: { page: Page }) => {
     // Visit a page with content (base service page usually has ToC)
-    await page.goto('/vyvedennya-iz-zapoyu')
+    await page.goto('/vyvedennya-iz-zapoyu-lviv')
 
     const toc = page.locator('nav[aria-label="Зміст"], nav[aria-label="Содержание"]')
     await expect(toc).toBeVisible()
@@ -25,7 +25,7 @@ test.describe('UX & Interactive Performance', () => {
   })
 
   test('Colloquial Terms Visibility', async ({ page }: { page: Page }) => {
-    await page.goto('/vyvedennya-iz-zapoyu')
+    await page.goto('/vyvedennya-iz-zapoyu-lviv')
 
     // Check for colloquial terms aside
     const colloquial = page.locator('aside[aria-labelledby="colloquial-heading"]')

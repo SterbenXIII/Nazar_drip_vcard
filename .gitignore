@@ -25,6 +25,18 @@ pnpm-debug.log*
 .env.local
 .env.production
 
+# Runtime data and private deployment material
+ops/certs/
+apps/api/data/
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.pem
+*.key
+
 # macOS
 .DS_Store
 
@@ -60,11 +72,9 @@ ops/ansible/*.log
 ops/ansible/inventory.local.ini
 ops/ansible/vars/secrets.yml
 
-# PWA dev build
-dev-dist/
-
 # Temp files
 tmp/
+.tmp/
 *.tmp
 
 # pnpm / npm stores
@@ -72,6 +82,7 @@ tmp/
 .alt-pnpm-store/
 .npm/
 .cache/
+.corepack-cache/
 
 # Python virtual env
 .venv/
@@ -79,6 +90,7 @@ venv/
 
 # Tooling (local MCP tools, not part of the app)
 tooling/
+.codebase-memory/
 
 # Misc
 todo/
@@ -91,6 +103,10 @@ gen-lang-client-*.json
 
 apps/web/.lighthouseci/
 
+# Generated Graphify output
+graphify-out/
+.secret-scan.*
+
 # Local pnpm store
 .pnpm-store-local/
 
@@ -98,3 +114,17 @@ apps/web/.lighthouseci/
 google-data/
 
 tooling/
+
+.trigger-tree
+.codebase-memory
+graphify-out/
+.codex/*
+!.codex/config.toml
+!.codex/agents/
+!.codex/agents/*.toml
+docs/
+docs/
+!docs/deployment/
+!docs/deployment/remote-ssh-compose.md
+prompts/
+.superpowers

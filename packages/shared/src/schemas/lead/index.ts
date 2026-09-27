@@ -1,1 +1,1 @@
-export * from './lead.schema'
+export * from './lead.schema.js'

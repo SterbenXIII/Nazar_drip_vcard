@@ -10,7 +10,7 @@ import rootConfig from '../../eslint.config.js'
 export default tseslint.config(
   // ── Ignores ───────────────────────────────────────────────────
   {
-    ignores: ['eslint.config.js', 'tsconfig.json', 'dev-dist/**'],
+    ignores: ['eslint.config.js', 'tsconfig.json'],
   },
 
   // Inherit root config
@@ -28,7 +28,6 @@ export default tseslint.config(
     languageOptions: {
       globals: {
         ...globals.browser,
-        ...globals.serviceworker,
       },
     },
   },

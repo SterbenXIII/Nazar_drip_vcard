@@ -119,12 +119,12 @@ echo ""
 
 # Test 4: SSH Banner
 print_test "SSH service response"
-if timeout 5 ssh -o ConnectTimeout=3 -o BatchMode=yes -o StrictHostKeyChecking=no \
+if timeout 5 ssh -o ConnectTimeout=3 -o BatchMode=yes -o StrictHostKeyChecking=yes \
     -p "$SSH_PORT" "nonexistentuser@$VPS_HOST" 2>&1 | grep -qE "(Permission denied|publickey|password)"; then
     print_pass "SSH service is responding"
 else
     ssh_result=$(timeout 5 ssh -o ConnectTimeout=3 -o BatchMode=yes \
-        -o StrictHostKeyChecking=no -p "$SSH_PORT" "nonexistentuser@$VPS_HOST" 2>&1 || true)
+        -o StrictHostKeyChecking=yes -p "$SSH_PORT" "nonexistentuser@$VPS_HOST" 2>&1 || true)
 
     if echo "$ssh_result" | grep -q "Connection refused"; then
         print_fail "SSH service refused connection (not running)"

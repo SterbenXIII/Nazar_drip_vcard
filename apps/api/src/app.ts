@@ -10,16 +10,12 @@ import { telegramAuth } from '@/middleware/auth'
 import leadRoutes from '@/routes/lead.routes'
 import { DatabaseService } from '@/services/database.service'
 
-type Bindings = {
-  TURNSTILE_SECRET_KEY?: string
-}
-
 type Variables = {
   requestId: string
   pinoLogger: typeof pinoLogger
 }
 
-const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
+const app = new Hono<{ Variables: Variables }>()
 
 // Middleware
 app.use('*', requestId())
@@ -95,10 +91,8 @@ const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
 const MAX_REQUESTS = 5
 
 app.use(`/api${API_ROUTES.LEAD_SUBMIT}`, async (c, next) => {
-  const ip =
-    c.req.header('CF-Connecting-IP') ??
-    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ??
-    'anon'
+  // Production Caddy overwrites this header and the API has no published host port.
+  const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'anon'
   const now = Date.now()
   const timestamps = (rateLimitMap.get(ip) ?? []).filter((t) => now - t < RATE_LIMIT_WINDOW)
 

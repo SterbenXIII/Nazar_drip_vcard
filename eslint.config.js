@@ -12,15 +12,25 @@ export default [
   {
     ignores: [
       '**/dist/**',
-      '**/dev-dist/**',
       '**/node_modules/**',
       '**/.astro/**',
+      '**/.tmp/**',
+      '**/tmp/**',
+      '**/coverage/**',
+      '**/playwright-report/**',
+      '**/test-results/**',
+      '**/blob-report/**',
+      '**/playwright/.cache/**',
+      '**/graphify-out/**',
+      '**/.codebase-memory/**',
+      '**/.secret-scan.*',
       '**/eslint.config.js', // App-specific configs
       'old/**',
       'scripts/**',
       'constants/**',
       'backups/**',
       'tooling/**',
+      '.corepack-cache/**',
       // Astro files are linted ONLY by apps/web config (which has the parser)
       '**/*.astro',
     ],

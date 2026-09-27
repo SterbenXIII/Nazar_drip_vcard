@@ -35,7 +35,7 @@ for (const relPath of REQUIRED_PATHS) {
 // 2. Check Sitemap & Hreflang (Basic check by reading files)
 console.log('🔗 Validating SEO markers...')
 const indexHtml = fs.readFileSync(path.join(DIST_DIR, 'index.html'), 'utf-8')
-if (indexHtml.includes('hreflang="uk"') && indexHtml.includes('hreflang="ru"')) {
+if (indexHtml.includes('hreflang="uk-UA"') && indexHtml.includes('hreflang="ru-UA"')) {
   console.log('✅ Hreflang tags detected in root index.html')
 } else {
   console.error('❌ Hreflang tags missing in root index.html')

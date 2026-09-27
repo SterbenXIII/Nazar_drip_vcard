@@ -14,6 +14,7 @@ import {
   useTranslations,
   getAlternateLocale,
   getLocalePrefix,
+  getHreflang,
   type Locale,
 } from '../../../../i18n/ui'
 import { siteConfig } from '../../../../config/site'
@@ -73,11 +74,17 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.d
       schema={schemaJson}
       dateModified={content.dateModified}
       canonicalUrl={canonicalUrl}
-      alternateLinks={[{ hreflang: alternateLocale, href: alternateUrl }]}
+      alternateLinks={[{ hreflang: getHreflang(alternateLocale), href: alternateUrl }]}
       surzhykAlt={surzhykAlt}
     />
     <ThemeScript />
     <style>
+      .theme-toggle-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 1rem;
+      }
+
       .breadcrumb {
         margin-bottom: 2rem;
         font-size: 0.9rem;
@@ -93,7 +100,7 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.d
 
       .breadcrumb li + li::before {
         content: '/';
-        color: #999;
+        color: var(--md-text-muted);
         margin-right: 0.5rem;
       }
 
@@ -134,14 +141,14 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.d
         display: grid;
         grid-template-columns: max-content auto;
         gap: 0.5rem 1.5rem;
-        background: rgb(0 0 0 / 5%);
+        background: var(--md-surface-subtle);
         padding: 1.5rem;
         border-radius: 8px;
         margin: 2rem 0;
       }
 
       :global(.dark) dl {
-        background: rgb(255 255 255 / 5%);
+        background: var(--md-surface-subtle);
       }
 
       dt {
@@ -175,7 +182,7 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.d
 
       .btn-tg {
         background: var(--md-teal);
-        color: white;
+        color: var(--md-on-teal);
       }
 
       details {
@@ -210,8 +217,8 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.d
     </style>
   </head>
   <body>
-    <main>
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+    <main id="main-content" tabindex="-1">
+      <div class="theme-toggle-row">
         <ThemeToggle />
       </div>
       <nav aria-label="Навігація" class="breadcrumb">
@@ -236,7 +243,7 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.d
         </ol>
       </nav>
 
-      <article itemscope itemtype="https://schema.org/Service" data-pagefind-body>
+      <article itemscope itemtype="https://schema.org/Service">
         <h1 itemprop="name">{content.h1}</h1>
 
         <div class="cta-block" aria-label="Контакти">
@@ -272,7 +279,7 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.d
 
         {
           location.citySlug === 'lviv' ? (
-            <div data-pagefind-ignore>
+            <div>
               <DistrictCoverage
                 currentServiceSlug={serviceSlug}
                 currentDistrictSlug={location.districtSlug}
@@ -282,7 +289,7 @@ const alternateUrl = `${siteConfig.url}${localePrefix}/${params.city}/${params.d
           ) : null
         }
 
-        <div data-pagefind-ignore>
+        <div>
           <CoverageArea serviceSlug={serviceSlug} locale={locale} />
         </div>
 

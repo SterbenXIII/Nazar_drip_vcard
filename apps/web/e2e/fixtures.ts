@@ -17,12 +17,12 @@ export interface RepresentativeUrl {
 export const REPRESENTATIVE_URLS: readonly RepresentativeUrl[] = [
   { label: 'Home UK', path: '/', lang: 'uk', ogLocale: 'uk_UA' },
   { label: 'Home RU', path: '/ru/', lang: 'ru', ogLocale: 'ru_UA' },
-  { label: 'Base Service UK', path: '/vyvedennya-iz-zapoyu', lang: 'uk', ogLocale: 'uk_UA' },
-  { label: 'Base Service RU', path: '/ru/vyvod-iz-zapoya', lang: 'ru', ogLocale: 'ru_UA' },
+  { label: 'Base Service UK', path: '/vyvedennya-iz-zapoyu-lviv', lang: 'uk', ogLocale: 'uk_UA' },
+  { label: 'Base Service RU', path: '/ru/vyvod-iz-zapoya-lvov', lang: 'ru', ogLocale: 'ru_UA' },
   { label: 'City Hub', path: '/lviv/', lang: 'uk', ogLocale: 'uk_UA' },
   {
     label: 'District Matrix',
-    path: '/lviv/syhivskyy/vyvedennya-iz-zapoyu',
+    path: '/lviv/syhivskyy/vyvedennya-iz-zapoyu-lviv',
     lang: 'uk',
     ogLocale: 'uk_UA',
   },

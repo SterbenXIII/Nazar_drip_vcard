@@ -24,6 +24,8 @@ export class EmailProvider extends BaseNotificationProvider {
         to: recipient,
         subject: EmailSubjects.NEW_LEAD,
         html: content,
+        disableFileAccess: true,
+        disableUrlAccess: true,
       })
 
       return { success: true, provider: this.name }

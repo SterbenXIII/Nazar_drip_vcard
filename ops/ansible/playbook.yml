@@ -19,6 +19,8 @@
     docker_network: "{{ lookup('env', 'DOCKER_NETWORK') | default('web-gateway', true) }}"
     timezone: "{{ lookup('env', 'TIMEZONE') | default('Europe/Kyiv', true) }}"
     image_registry: ''
+    image_tag: ''
+    rollback_mode: false
 
     # Git authentication — github_token is passed via environment variable from CI
     github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"
@@ -41,7 +43,11 @@
     # Override these via --extra-vars in GitHub Actions
     telegram_bot_token: "{{ lookup('env', 'TELEGRAM_BOT_TOKEN') }}"
     telegram_master_id: "{{ lookup('env', 'TELEGRAM_MASTER_ID') }}"
+    telegram_allowed_chat_ids: "{{ lookup('env', 'TELEGRAM_ALLOWED_CHAT_IDS') }}"
     smtp_user: "{{ lookup('env', 'SMTP_USER') }}"
+    smtp_host: "{{ lookup('env', 'SMTP_HOST') }}"
+    smtp_port: "{{ lookup('env', 'SMTP_PORT') }}"
+    smtp_pass: "{{ lookup('env', 'SMTP_PASS') }}"
     gmail_client_id: "{{ lookup('env', 'GMAIL_CLIENT_ID') }}"
     gmail_client_secret: "{{ lookup('env', 'GMAIL_CLIENT_SECRET') }}"
     gmail_refresh_token: "{{ lookup('env', 'GMAIL_REFRESH_TOKEN') }}"
@@ -60,6 +66,7 @@
     postgres_non_root_password: "{{ lookup('env', 'POSTGRES_NON_ROOT_PASSWORD') | default(postgres_password, true) }}"
     public_gsc_verification: "{{ lookup('env', 'PUBLIC_GSC_VERIFICATION') | default('', true) }}"
     telegram_notify_ids: "{{ lookup('env', 'TELEGRAM_NOTIFY_IDS') }}"
+    turnstile_secret_key: "{{ lookup('env', 'TURNSTILE_SECRET_KEY') }}"
 
     # Paths and project config (from inventory)
     project_dir: '{{ deploy_path }}'
@@ -90,6 +97,15 @@
       when: node_env == 'production'
       tags: [always]
 
+    - name: Validate immutable production image tag
+      ansible.builtin.assert:
+        that:
+          - image_tag is match('^[0-9a-f]{40}$')
+        fail_msg: 'FATAL: production image_tag must be a full lowercase 40-character commit SHA.'
+        success_msg: 'Immutable production image tag is configured.'
+      when: node_env == 'production'
+      tags: [always, deploy]
+
     - name: Validate required production encryption and database secrets
       ansible.builtin.assert:
         that:
@@ -102,6 +118,42 @@
       when: node_env == 'production'
       no_log: true
       tags: [always, env]
+
+    - name: Validate Telegram allowlist input
+      ansible.builtin.assert:
+        that:
+          - telegram_allowed_chat_ids | default('', true) | trim | length == 0 or (telegram_allowed_chat_ids | regex_replace('\\s+', '')) is match('^-?[0-9]+(,-?[0-9]+)*$')
+          - node_env != 'production' or telegram_allowed_chat_ids | default('', true) | trim | length > 0
+        fail_msg: >-
+          FATAL: TELEGRAM_ALLOWED_CHAT_IDS must be a comma-separated list of
+          numeric Telegram IDs and is required for production deployment.
+        success_msg: 'Telegram allowlist input is valid.'
+      no_log: true
+      tags: [always, env]
+
+    - name: Create SQLite backup before rollback mutation
+      become: true
+      become_user: '{{ ansible_user }}'
+      ansible.builtin.shell: |
+        set -euo pipefail
+        backup_path="/app/data/.rollback-backup-$(date -u +%Y%m%dT%H%M%SZ).db"
+        api_image=$(docker inspect -f '{% raw %}{{.Config.Image}}{% endraw %}' vcard-api)
+        docker run --rm --user node --volumes-from vcard-api --env "BACKUP_PATH=${backup_path}" "$api_image" node -e '
+          const Database = require("better-sqlite3")
+          const database = new Database("/app/data/leads.db", { readonly: true })
+          database.backup(process.env.BACKUP_PATH)
+            .then(() => database.close())
+            .catch(() => {
+              database.close()
+              process.exit(1)
+            })
+        '
+        docker run --rm --user node --volumes-from vcard-api "$api_image" test -s "${backup_path}"
+      args:
+        executable: /bin/bash
+      changed_when: true
+      when: rollback_mode | bool
+      tags: [rollback, backup]
 
     - name: Pre-deploy Cleanup
       ansible.builtin.shell: |

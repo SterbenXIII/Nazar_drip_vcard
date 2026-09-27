@@ -1,0 +1,11 @@
+{
+  email {$ACME_EMAIL}
+}
+
+{$CORE_HOST} {
+  reverse_proxy core:8000
+}
+
+{$EDGE_HOST} {
+  reverse_proxy edge:8080
+}

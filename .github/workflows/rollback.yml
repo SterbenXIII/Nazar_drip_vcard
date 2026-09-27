@@ -10,12 +10,13 @@ on:
 
 concurrency:
   group: deploy-production
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   DOMAIN_NAME: ${{ vars.DOMAIN_NAME || 'localhost' }}
   DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/emerald-recovery' }}
   VPS_IP: ${{ vars.VPS_IP || 'localhost' }}
+  SSH_KNOWN_HOSTS: ${{ secrets.HOSTINGER_SSH_KNOWN_HOSTS }}
 
 jobs:
   rollback:
@@ -26,12 +27,21 @@ jobs:
       url: https://${{ env.DOMAIN_NAME }}
     steps:
       - name: 🚚 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
+      - name: 🔎 Validate rollback commit SHA
+        env:
+          ROLLBACK_SHA: ${{ inputs.commit_sha }}
+        run: |
+          if ! [[ "$ROLLBACK_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo '❌ commit_sha must be a full lowercase 40-character commit SHA.'
+            exit 1
+          fi
+
       - name: 🔧 Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.11'
 
@@ -51,22 +61,27 @@ jobs:
           mkdir -p ~/.ssh
           printf "%s" "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          touch ~/.ssh/known_hosts
-          ssh-keyscan -T 10 -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          test -n "$SSH_KNOWN_HOSTS"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          ssh-keygen -F "$SSH_HOST" -f ~/.ssh/known_hosts >/dev/null
 
       - name: 🚀 Run Rollback with Ansible
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ANSIBLE_HOST_KEY_CHECKING: 'False'
+          ANSIBLE_HOST_KEY_CHECKING: 'True'
           HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
           DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
           DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
           NODE_ENV: 'production'
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_MASTER_ID: ${{ secrets.TELEGRAM_MASTER_ID }}
+          TELEGRAM_ALLOWED_CHAT_IDS: ${{ secrets.TELEGRAM_ALLOWED_CHAT_IDS }}
           TELEGRAM_NOTIFY_IDS: ${{ secrets.TELEGRAM_NOTIFY_IDS }}
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           ENABLED_PROVIDERS: 'TELEGRAM'
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           BACKEND_PORT: '5678'
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
@@ -92,6 +107,7 @@ jobs:
             --extra-vars "domain_name=${DOMAIN_NAME}" \
             --extra-vars "github_repository_path=${{ github.repository }}.git" \
             --extra-vars "image_registry=ghcr.io/${{ env.REPO_LC }}/" \
+            --extra-vars "rollback_mode=true" \
             --extra-vars "image_tag=${{ inputs.commit_sha }}"
 
       - name: 🔍 Verify rollback (smoke tests)
@@ -150,7 +166,7 @@ jobs:
 
       - name: 💬 Notify Telegram (success)
         if: success()
-        uses: appleboy/telegram-action@master
+        uses: appleboy/telegram-action@214f06cfa3d3a588c1472116889437e7c6fd29b1 # v1.1.1
         continue-on-error: true
         with:
           to: ${{ secrets.TELEGRAM_MASTER_ID }}
@@ -164,7 +180,7 @@ jobs:
 
       - name: 🚨 Notify Telegram (failure)
         if: failure()
-        uses: appleboy/telegram-action@master
+        uses: appleboy/telegram-action@214f06cfa3d3a588c1472116889437e7c6fd29b1 # v1.1.1
         continue-on-error: true
         with:
           to: ${{ secrets.TELEGRAM_MASTER_ID }}

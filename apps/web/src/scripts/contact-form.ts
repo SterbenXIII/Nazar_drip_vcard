@@ -12,14 +12,19 @@ document.addEventListener('astro:page-load', () => {
   const btn = document.getElementById(FORM_ELEMENTS.SUBMIT_BTN) as HTMLButtonElement
   const spinner = document.getElementById(FORM_ELEMENTS.SPINNER)
   const successMsg = document.getElementById(FORM_ELEMENTS.SUCCESS_MSG)
+  const formStatus = document.getElementById('form-status')
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault()
 
     // Скидання помилок
-    document
-      .querySelectorAll(FORM_ELEMENTS.ERROR_CLASS)
-      .forEach((errorElement) => errorElement.classList.add(FORM_ELEMENTS.HIDDEN_CLASS))
+    document.querySelectorAll(FORM_ELEMENTS.ERROR_CLASS).forEach((errorElement) => {
+      errorElement.classList.add(FORM_ELEMENTS.HIDDEN_CLASS)
+      errorElement.textContent = ''
+    })
+    form.querySelectorAll('[aria-invalid="true"]').forEach((field) => {
+      field.removeAttribute('aria-invalid')
+    })
 
     const formData = new FormData(form)
     const rawData: Record<string, unknown> = Object.fromEntries(formData.entries())
@@ -40,7 +45,14 @@ document.addEventListener('astro:page-load', () => {
           errorEl.textContent = issue.message
           errorEl.classList.remove(FORM_ELEMENTS.HIDDEN_CLASS)
         }
+
+        const field = form.elements.namedItem(fieldName)
+        if (field instanceof HTMLElement) field.setAttribute('aria-invalid', 'true')
+        if (field instanceof RadioNodeList) field[0]?.setAttribute('aria-invalid', 'true')
       })
+
+      const firstInvalidField = form.querySelector<HTMLElement>('[aria-invalid="true"]')
+      firstInvalidField?.focus()
       return
     }
 
@@ -67,7 +79,9 @@ document.addEventListener('astro:page-load', () => {
       }
     } catch (error) {
       console.error(error)
-      alert('Помилка відправки. Спробуйте ще раз або зателефонуйте нам.')
+      formStatus?.classList.remove(FORM_ELEMENTS.HIDDEN_CLASS)
+      if (formStatus)
+        formStatus.textContent = 'Помилка відправки. Спробуйте ще раз або зателефонуйте нам.'
     } finally {
       btn.disabled = false
       spinner?.classList.add(FORM_ELEMENTS.HIDDEN_CLASS)

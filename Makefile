@@ -24,7 +24,7 @@ YELLOW = \033[1;33m
 RED    = \033[1;31m
 NC     = \033[0m
 
-.PHONY: help init setup-net build dev dev-down dev-rebuild up down rebuild logs ps clean clean-all backup-to-tg db-check verify-deploy refresh deploy-setup
+.PHONY: help init setup-net build dev dev-down dev-rebuild up down rebuild logs ps clean clean-all backup-to-tg db-check verify-deploy refresh deploy-setup secret-scan secret-history-scan remote-preflight-dev remote-deploy-dev remote-preflight-prod remote-deploy-prod remote-status remote-logs remote-logs-follow remote-backup remote-recover remote-rollback
 
 # --- Допомога ---
 
@@ -41,6 +41,7 @@ help:
 	@echo "  $(GREEN)make db-check$(NC)       - Переглянути останні записи в БД всередині контейнера"
 	@echo "  $(GREEN)make logs$(NC)           - Переглянути логи всіх контейнерів"
 	@echo "  $(GREEN)make verify-deploy$(NC)  - Smoke тести (200 OK для web та /api/health)"
+	@echo "  $(GREEN)make secret-scan$(NC)    - Redacted current-tree Gitleaks scan"
 
 # --- Ініціалізація та Керування Пакетами ---
 
@@ -61,6 +62,9 @@ setup-net:
 build:
 	@echo "$(BLUE)🏗 Компіляція TypeScript проектів...$(NC)"
 	pnpm build:all
+
+lint:
+	@pnpm lint
 
 refresh:
 	@echo "$(RED)♻️ Повне перезавантаження: видалення node_modules та lock-файлу...$(NC)"
@@ -185,6 +189,45 @@ scan:
 		-v $(PWD):/project \
 		aquasec/trivy config /project --severity CRITICAL,HIGH --exit-code 1 \
 		--skip-dirs $$(git status --ignored --porcelain | grep '^!!' | grep '/$$' | cut -c 4- | sed 's/\/$$//' | tr '\n' ',' | sed 's/,$$//')
+
+secret-scan:
+	@./scripts/secret-scan.sh dir
+
+secret-history-scan:
+	@./scripts/secret-scan.sh history
+
+# --- Separate DefGuard SSH deployment (does not alter local targets above) ---
+
+remote-preflight-dev:
+	@./scripts/remote.sh preflight dev
+
+remote-deploy-dev:
+	@./scripts/remote.sh deploy dev
+
+remote-preflight-prod:
+	@./scripts/remote.sh preflight prod
+
+remote-deploy-prod:
+	@./scripts/remote.sh deploy prod
+
+remote-status:
+	@./scripts/remote.sh status
+
+remote-logs:
+	@./scripts/remote.sh logs
+
+remote-logs-follow:
+	@./scripts/remote.sh logs --follow
+
+remote-backup:
+	@./scripts/remote.sh backup
+
+remote-recover:
+	@if [ -n "$(RESTORE_ID)" ]; then ./scripts/remote.sh recover restore "$(RESTORE_ID)"; else ./scripts/remote.sh recover; fi
+
+remote-rollback:
+	@test -n "$(RELEASE_ID)" || (echo "BLOCKED: RELEASE_ID is required" >&2 && exit 2)
+	@./scripts/remote.sh rollback "$(RELEASE_ID)"
 
 debug:
 	@echo "Ignored directories: $$(git status --ignored --porcelain | grep '^!!' | grep '/$$' | cut -c 4- | sed 's/\/$$//' | tr '\n' ',' | sed 's/,$$//')"

@@ -19,7 +19,7 @@
   no_log: true
   tags: [docker, deploy]
 
-- name: Pull and Deploy
+- name: Validate and pull immutable images before service mutation
   become: true
   become_user: '{{ ansible_user }}'
   ansible.builtin.shell: |
@@ -29,7 +29,24 @@
       -f ops/docker/compose/docker-compose.proxy.yml config >/dev/null
     docker compose \
       -f ops/docker/compose/docker-compose.yml \
-      -f ops/docker/compose/docker-compose.proxy.yml pull
+      -f ops/docker/compose/docker-compose.proxy.yml pull --quiet
+  environment:
+    DOMAIN_NAME: '{{ domain_name }}'
+    NODE_ENV: '{{ node_env }}'
+    BACKEND_PORT: '{{ backend_port }}'
+    TELEGRAM_NOTIFY_IDS: '{{ telegram_notify_ids }}'
+    IMAGE_REGISTRY: '{{ image_registry }}'
+    IMAGE_TAG: '{{ image_tag }}'
+    ADMIN_EMAIL: '{{ admin_email }}'
+  register: image_pull_result
+  changed_when: true
+  tags: [docker, deploy, verify]
+
+- name: Recreate services from validated images
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    cd "{{ project_dir }}"
     docker compose \
       -f ops/docker/compose/docker-compose.yml \
       -f ops/docker/compose/docker-compose.proxy.yml \
@@ -40,7 +57,7 @@
     BACKEND_PORT: '{{ backend_port }}'
     TELEGRAM_NOTIFY_IDS: '{{ telegram_notify_ids }}'
     IMAGE_REGISTRY: '{{ image_registry }}'
-    IMAGE_TAG: '{{ image_tag | default("latest") }}'
+    IMAGE_TAG: '{{ image_tag }}'
     ADMIN_EMAIL: '{{ admin_email }}'
   register: compose_result
   changed_when: true

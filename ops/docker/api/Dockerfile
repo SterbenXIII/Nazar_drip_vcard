@@ -8,6 +8,7 @@ LABEL org.opencontainers.image.description="API Runtime for vcard monorepo"
 WORKDIR /app
 
 # Upgrade system packages for security and install curl for healthcheck
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
@@ -69,7 +70,9 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
-COPY --from=builder /app/apps/api/allowed_chats.json ./allowed_chats.json
+
+# Runtime allowlist is supplied through the read-only Compose bind mount.
+RUN printf '[]' > ./allowed_chats.json
 
 RUN mkdir -p data && chown node:node data
 USER node
