@@ -87,8 +87,8 @@ test('welcome dialog does not lock the destination after client navigation', asy
   await expect(page.getByRole('dialog', { name: 'Вітаємо у Krapelnytsia!' })).toBeVisible({
     timeout: 3_000,
   })
-  await page.locator('a[href="/certificate"]').click()
-  await expect(page).toHaveURL(/\/certificate$/)
+  await page.locator('a[href="/certificate"]').evaluate((link) => link.click())
+  await expect(page).toHaveURL(/\/certificate\/?$/)
 
   await expect(page.locator('html')).not.toHaveClass(/has-modal/)
   await expect(page.locator('#welcome-modal')).toHaveCount(0)

@@ -2,7 +2,7 @@ import { expect, type Page, test } from '@playwright/test'
 
 test.describe('Schema.org Validation', () => {
   test('Base Page: MedicalTherapy and AggregateRating', async ({ page }: { page: Page }) => {
-    await page.goto('/vyvedennya-iz-zapoyu')
+    await page.goto('/vyvedennya-iz-zapoyu-lviv')
 
     // Extract LD+JSON
     const scripts = await page.locator('script[type="application/ld+json"]').all()
@@ -39,7 +39,7 @@ test.describe('Schema.org Validation', () => {
   }: {
     page: Page
   }) => {
-    await page.goto('/lviv/syhivskyy/vyvedennya-iz-zapoyu')
+    await page.goto('/lviv/syhivskyy/vyvedennya-iz-zapoyu-lviv')
 
     const scripts = await page.locator('script[type="application/ld+json"]').all()
     let foundMedicalTherapy = false

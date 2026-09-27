@@ -64,7 +64,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'pnpm build && pnpm preview',
+    command:
+      'pnpm build && pnpm preview --background && preview_pid=$(sed -n \'s/.*"pid": \\([0-9]*\\).*/\\1/p\' .astro/preview.json) && trap \'kill "$preview_pid" 2>/dev/null\' EXIT && while kill -0 "$preview_pid" 2>/dev/null; do sleep 1; done',
     url: 'http://localhost:4321',
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
