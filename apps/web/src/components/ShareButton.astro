@@ -14,6 +14,11 @@ const {
   url = siteConfig.url,
   class: className = '',
 } = Astro.props
+
+const isRussian = Astro.url.pathname.startsWith('/ru')
+const shareLabel = isRussian ? 'Поделиться контактом' : 'Поділитися контактом'
+const shareOptionsLabel = isRussian ? 'Выберите способ' : 'Оберіть спосіб'
+const copyLabel = isRussian ? 'Скопировать адрес' : 'Скопіювати адресу'
 ---
 
 <div class={`share-container ${className}`}>
@@ -35,12 +40,12 @@ const {
       <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
       <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
     </svg>
-    <span>Поділитися</span>
+    <span>{shareLabel}</span>
   </button>
 
   <div id="share-modal" class="share-modal hidden">
     <div class="share-modal-header">
-      <p>Поділитися через</p>
+      <p>{shareOptionsLabel}</p>
     </div>
     <div class="share-options">
       <a
@@ -82,7 +87,7 @@ const {
           ><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path
             d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg
         >
-        <span>Копіювати лінк</span>
+        <span>{copyLabel}</span>
       </button>
     </div>
   </div>
@@ -100,7 +105,7 @@ const {
     gap: 0.5rem;
     padding: 0.625rem 1.25rem;
     background: var(--md-teal);
-    color: white;
+    color: var(--md-on-teal);
     font-size: 0.875rem;
     font-weight: 600;
     border-radius: 0.75rem;
@@ -193,11 +198,11 @@ const {
   }
 
   .icon-tg {
-    color: #08c;
+    color: var(--md-telegram);
   }
 
   .icon-fb {
-    color: #1877f2;
+    color: var(--md-facebook);
   }
 
   .copy-btn {
@@ -240,7 +245,8 @@ const {
     const shareModal = document.getElementById('share-modal')
     const copyLinkBtn = document.getElementById('copy-link-btn')
 
-    if (!shareBtn) return
+    if (!shareBtn || shareBtn.dataset.shareReady === 'true') return
+    shareBtn.dataset.shareReady = 'true'
 
     shareBtn.addEventListener('click', async (e) => {
       e.stopPropagation()

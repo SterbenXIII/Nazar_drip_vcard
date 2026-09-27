@@ -82,11 +82,11 @@ const localePrefix = getLocalePrefix(locale)
     border-top: 1px solid var(--md-border);
     background: var(--md-white);
     border-radius: 1rem;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 5%);
+    box-shadow: 0 4px 6px -1px var(--md-shadow);
   }
 
   :global(.dark) .district-coverage {
-    background: var(--md-secondary-bg, rgb(255 255 255 / 3%));
+    background: var(--md-secondary-bg);
   }
 
   .dc-header {
@@ -134,7 +134,7 @@ const localePrefix = getLocalePrefix(locale)
   .dc-card:not(.is-current):hover {
     border-color: var(--md-teal);
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 10%);
+    box-shadow: 0 4px 6px -1px var(--md-shadow);
   }
 
   .dc-card.is-current {

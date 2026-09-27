@@ -60,13 +60,15 @@ const services = baseData.services
 >
   <main id="main-content" class="container" tabindex="-1">
     <header class="main-header">
-      <div class="live-status" aria-live="polite">
-        <span class="pulse" aria-hidden="true"></span>
-        {t.status}
-      </div>
-      <div class="header-top-actions">
-        <ThemeToggle />
-        <ShareButton />
+      <div class="header-utility">
+        <div class="live-status" aria-live="polite">
+          <span class="pulse" aria-hidden="true"></span>
+          {t.status}
+        </div>
+        <div class="header-top-actions">
+          <ThemeToggle />
+          <ShareButton />
+        </div>
       </div>
       <h1>{t.title}</h1>
       <p class="tagline">{t.tagline}</p>
@@ -79,12 +81,6 @@ const services = baseData.services
             </span>
           ))
         }
-      </div>
-
-      <div class="header-badges" role="list">
-        <span class="badge-item" role="listitem">
-          <a href="/certificate" class="badge-link" aria-label={t.certificate}>{t.certificate}</a>
-        </span>
       </div>
 
       <address class="contact-row" aria-label="Контакти">
@@ -307,18 +303,25 @@ const services = baseData.services
     border: 0;
   }
 
-  .header-top-actions {
+  .header-utility {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    margin-bottom: 1rem;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
   }
 
   main.container .main-header {
-    padding: 1rem 0 0.5rem;
     display: flex;
     flex-direction: column;
+  }
+
+  .header-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    flex-shrink: 0;
   }
 
   .live-status {
@@ -366,8 +369,8 @@ const services = baseData.services
 
   .badge-item {
     font-size: 0.8125rem;
-    background: #f1f5f9;
-    color: black;
+    background: var(--md-blue-grey);
+    color: var(--md-navy);
     padding: 0.25rem 0.625rem;
     border-radius: 0.375rem;
     font-weight: 700;
@@ -392,7 +395,7 @@ const services = baseData.services
     border-radius: 0.75rem;
     padding: 1.5rem;
     margin-bottom: 2.5rem;
-    box-shadow: 0 0.125rem 0.25rem rgb(0 0 0 / 2%);
+    box-shadow: 0 0.125rem 0.25rem var(--md-shadow);
   }
 
   .seo-intro p {
@@ -420,7 +423,7 @@ const services = baseData.services
   .service-badge {
     display: inline-block;
     background: var(--md-teal);
-    color: #fff;
+    color: var(--md-on-teal);
     font-size: 0.6875rem;
     font-weight: 700;
     padding: 0.125rem 0.5rem;
@@ -455,7 +458,7 @@ const services = baseData.services
 
   .service-card:hover {
     transform: translateY(-0.125rem);
-    box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 5%);
+    box-shadow: 0 0.25rem 0.75rem var(--md-shadow);
     border-color: var(--md-teal);
   }
 
@@ -692,17 +695,16 @@ const services = baseData.services
 
   /* Contact row: compact mobile, two-per-row on large screens */
   .contact-row {
-    display: flex;
+    display: grid;
     font-style: normal;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1.25rem;
     align-items: center;
   }
 
   .contact-item {
-    flex: 1 1 calc(50% - 0.5rem);
-    min-width: 12rem;
+    min-width: 0;
   }
 
   .contact-link {
@@ -711,7 +713,10 @@ const services = baseData.services
     align-items: center;
     gap: 0.5rem;
     font-weight: bold;
-    padding: 0.375rem 0.5rem;
+    width: 100%;
+    min-height: 3.25rem;
+    justify-content: flex-start;
+    padding: 0.625rem 0.875rem;
     border-radius: 0.5rem;
     color: var(--md-navy);
     text-decoration: none;
@@ -740,21 +745,29 @@ const services = baseData.services
     display: inline-block;
   }
 
-  @media (--xl-up) {
-    .contact-row {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.75rem;
-      align-items: center;
+  @media (width < 40rem) {
+    .header-utility {
+      align-items: flex-start;
+      flex-wrap: wrap;
     }
 
-    .contact-item {
-      flex: none;
-    }
-
-    .contact-link {
+    .header-top-actions {
       width: 100%;
-      justify-content: flex-start;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .header-top-actions > :global(.share-container),
+    .header-top-actions :global(.share-trigger) {
+      width: 100%;
+    }
+
+    .header-top-actions :global(.share-trigger) {
+      justify-content: center;
+    }
+
+    .contact-row {
+      grid-template-columns: 1fr;
     }
   }
 
@@ -765,7 +778,7 @@ const services = baseData.services
   :global(.dark) .contact-link:hover,
   :global(.dark) .contact-link:focus {
     background: color-mix(in srgb, var(--md-accent) 14%, transparent);
-    color: white;
+    color: var(--md-header-fg);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-accent) 12%, transparent);
   }
 
@@ -900,11 +913,14 @@ const services = baseData.services
 
   /* Mobile-first visual system: preserve the existing information architecture. */
   .main-header {
-    margin: -1rem -1rem 0;
-    padding: 1rem;
+    margin: 0.75rem 0 0;
+    padding: clamp(1.5rem, 5vw, 3rem);
     background: var(--md-header-bg);
     color: var(--md-header-fg);
+    border: 1px solid var(--md-header-border);
     border-bottom: 0.25rem solid var(--md-teal);
+    border-radius: 1.5rem;
+    box-shadow: var(--md-header-shadow);
   }
 
   main.container .main-header h1,
@@ -928,15 +944,15 @@ const services = baseData.services
 
   main.container .live-status {
     align-self: flex-start;
-    background: transparent;
-    border: 1px solid rgb(255 255 255 / 28%);
+    background: var(--md-header-badge-bg);
+    border: 1px solid var(--md-header-border);
     border-radius: 999px;
     padding: 0.35rem 0.7rem;
     text-transform: none;
   }
 
   main.container .pulse {
-    background: #8dd8c8;
+    background: var(--md-teal);
   }
 
   main.container .header-badges {
@@ -945,9 +961,9 @@ const services = baseData.services
   }
 
   main.container .badge-item {
-    background: rgb(255 255 255 / 10%);
-    border: 1px solid rgb(255 255 255 / 18%);
-    color: #fff;
+    background: var(--md-header-badge-bg);
+    border: 1px solid var(--md-header-border);
+    color: var(--md-header-fg);
     font-weight: 600;
   }
 
@@ -965,14 +981,14 @@ const services = baseData.services
 
   main.container .contact-link {
     min-height: 2.75rem;
-    border-color: rgb(255 255 255 / 24%);
-    background: rgb(255 255 255 / 8%);
+    border-color: var(--md-header-border);
+    background: var(--md-header-surface);
     font-size: 0.9rem;
   }
 
   main.container .contact-link:hover,
   main.container .contact-link:focus {
-    background: rgb(255 255 255 / 16%);
+    background: var(--md-header-badge-bg);
     color: var(--md-header-fg);
   }
 
@@ -1001,7 +1017,7 @@ const services = baseData.services
   main.container .service-card {
     border-radius: 0.5rem;
     padding: 1.15rem;
-    box-shadow: 0 0.25rem 1rem rgb(18 48 74 / 5%);
+    box-shadow: 0 0.25rem 1rem var(--md-shadow);
   }
 
   main.container .service-card::before {
@@ -1010,7 +1026,7 @@ const services = baseData.services
 
   main.container .service-card:hover {
     transform: none;
-    box-shadow: 0 0.45rem 1.25rem rgb(18 48 74 / 9%);
+    box-shadow: 0 0.45rem 1.25rem var(--md-shadow);
   }
 
   main.container .price-tag {
@@ -1045,35 +1061,8 @@ const services = baseData.services
 
   @media (width >= 48rem) {
     main.container .main-header {
-      margin: -2rem -2.5rem 0;
+      margin: 0.75rem 0 0;
       padding: 2rem 2.5rem 1.5rem;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 0 1rem;
-    }
-
-    main.container .main-header .live-status {
-      grid-column: 1;
-      grid-row: 1;
-      justify-self: start;
-      width: max-content;
-      margin-bottom: 0.75rem;
-    }
-
-    main.container .main-header .header-top-actions {
-      grid-column: 2;
-      grid-row: 1;
-      width: auto;
-      margin-bottom: 0.75rem;
-      justify-content: flex-end;
-      gap: 0.75rem;
-    }
-
-    main.container .main-header h1,
-    main.container .main-header .tagline,
-    main.container .main-header .header-badges,
-    main.container .main-header .contact-row {
-      grid-column: 1 / -1;
     }
 
     main.container .main-header h1 {

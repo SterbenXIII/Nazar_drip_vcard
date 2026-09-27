@@ -32,6 +32,7 @@ export default defineConfig({
         'seo-matrix.spec.ts',
         'ux-performance.spec.ts',
         'contact-form.spec.ts',
+        'header-theme.spec.ts',
       ],
       use: { ...devices['Desktop Chrome'] },
     },

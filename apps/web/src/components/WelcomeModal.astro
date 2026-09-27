@@ -35,7 +35,7 @@ const { phone } = Astro.props
     position: fixed;
     inset: 0;
     z-index: 9999;
-    background: rgb(0 0 0 / 60%);
+    background: var(--md-overlay);
     backdrop-filter: blur(4px);
     display: grid;
     place-items: center;
@@ -134,7 +134,7 @@ const { phone } = Astro.props
 
   .btn-primary {
     background: var(--md-teal);
-    color: white;
+    color: var(--md-on-teal);
     box-shadow: 0 4px 12px color-mix(in srgb, var(--md-teal) 40%, transparent);
   }
 

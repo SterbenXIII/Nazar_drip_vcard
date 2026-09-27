@@ -127,7 +127,7 @@ const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteC
 
       .breadcrumb li + li::before {
         content: '/';
-        color: #999;
+        color: var(--md-text-muted);
         margin-right: 0.5rem;
       }
 
@@ -168,14 +168,14 @@ const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteC
         display: grid;
         grid-template-columns: max-content auto;
         gap: 0.5rem 1.5rem;
-        background: rgb(0 0 0 / 5%);
+        background: var(--md-surface-subtle);
         padding: 1.5rem;
         border-radius: 8px;
         margin: 2rem 0;
       }
 
       :global(.dark) dl {
-        background: rgb(255 255 255 / 5%);
+        background: var(--md-surface-subtle);
       }
 
       dt {
@@ -209,7 +209,7 @@ const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteC
 
       .btn-tg {
         background: var(--md-teal);
-        color: white;
+        color: var(--md-on-teal);
       }
 
       details {

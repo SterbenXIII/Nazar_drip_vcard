@@ -61,7 +61,7 @@ const t = {
     align-items: center;
     gap: 1.5rem;
     padding: 1rem;
-    background: rgb(0 0 0 / 5%);
+    background: var(--md-surface-subtle);
     border-radius: 8px;
     text-decoration: none;
     color: inherit;
@@ -69,15 +69,15 @@ const t = {
   }
 
   :global(.dark) a {
-    background: rgb(255 255 255 / 5%);
+    background: var(--md-surface-subtle);
   }
 
   a:hover {
-    background: rgb(0 0 0 / 10%);
+    background: var(--md-surface-hover);
   }
 
   :global(.dark) a:hover {
-    background: rgb(255 255 255 / 10%);
+    background: var(--md-surface-hover);
   }
 
   span:first-child {

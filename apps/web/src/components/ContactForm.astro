@@ -145,10 +145,10 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
     border-radius: 0.5rem;
     padding: 1.15rem;
     margin: 2rem 0;
-    box-shadow: 0 0.45rem 1.25rem rgb(18 48 74 / 7%);
+    box-shadow: 0 0.45rem 1.25rem var(--md-shadow);
 
     @media (prefers-contrast: more) {
-      border: 0.125rem solid black;
+      border: 0.125rem solid var(--md-border);
     }
   }
 
@@ -229,7 +229,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
     transition: all 0.2s ease;
 
     @media (prefers-contrast: more) {
-      border: 0.125rem solid black !important;
+      border: 0.125rem solid var(--md-border) !important;
     }
   }
 
@@ -239,7 +239,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
     color: var(--md-navy);
 
     @media (prefers-contrast: more) {
-      color: black;
+      color: var(--md-navy);
     }
   }
 
@@ -250,7 +250,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
     white-space: nowrap;
 
     @media (prefers-contrast: more) {
-      color: black;
+      color: var(--md-navy);
     }
   }
 
@@ -286,7 +286,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
     }
 
     @media (prefers-contrast: more) {
-      border: 0.125rem solid black !important;
+      border: 0.125rem solid var(--md-border) !important;
     }
   }
 
@@ -311,7 +311,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
   .submit-btn {
     width: 100%;
     background: var(--md-teal);
-    color: var(--md-white);
+    color: var(--md-on-teal);
     border: none;
     padding: 1rem;
     border-radius: 0.5rem;
@@ -332,8 +332,8 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
     }
 
     @media (prefers-contrast: more) {
-      background: black;
-      border: 0.125rem solid black;
+      background: var(--md-teal);
+      border: 0.125rem solid var(--md-border);
     }
   }
 
@@ -398,7 +398,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
     }
 
     ::placeholder {
-      color: rgb(255 255 255 / 40%);
+      color: var(--md-text-muted);
     }
   }
 </style>
