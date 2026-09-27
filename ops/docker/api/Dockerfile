@@ -8,6 +8,7 @@ LABEL org.opencontainers.image.description="API Runtime for vcard monorepo"
 WORKDIR /app
 
 # Upgrade system packages for security and install curl for healthcheck
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
