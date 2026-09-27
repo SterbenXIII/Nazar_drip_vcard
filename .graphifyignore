@@ -1,7 +1,6 @@
 .git/
 node_modules/
 dist/
-dev-dist/
 .astro/
 coverage/
 playwright-report/

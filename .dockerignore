@@ -6,7 +6,6 @@ node_modules
 # 2. Build outputs - Тільки готові білди
 dist/
 .astro/
-dev-dist/
 .next/
 out/
 bin/

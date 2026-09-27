@@ -18,9 +18,9 @@
         Content-Language "uk"
     }
 
-    # HTML documents and service worker must never be cached
+    # HTML documents must never be cached
     @nocache {
-        path *.html /sw.js /
+        path *.html /
         not path /_astro/*
     }
     header @nocache Cache-Control "no-store, no-cache, must-revalidate"

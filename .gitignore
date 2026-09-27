@@ -72,9 +72,6 @@ ops/ansible/*.log
 ops/ansible/inventory.local.ini
 ops/ansible/vars/secrets.yml
 
-# PWA dev build
-dev-dist/
-
 # Temp files
 tmp/
 .tmp/
