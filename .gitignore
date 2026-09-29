@@ -29,6 +29,8 @@ pnpm-debug.log*
 ops/certs/
 apps/api/data/
 data/
+!apps/web/src/data/
+!apps/web/src/data/pricing.ts
 *.db
 *.db-shm
 *.db-wal

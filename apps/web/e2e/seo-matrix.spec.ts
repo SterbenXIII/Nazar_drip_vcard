@@ -44,4 +44,17 @@ test.describe('SEO Matrix & Hreflang', () => {
       }
     })
   }
+
+  test('uses the confirmed intoxication price across visible content and schema', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await expect(page.locator('body')).toContainText('2000')
+    await expect(page.locator('body')).not.toContainText('1800')
+
+    await page.goto('/krapelnytsia-vid-alkoholnoi-intoksykatsii')
+    await expect(page.locator('body')).toContainText('2000')
+    await expect(page.locator('body')).not.toContainText('1800')
+    await expect(page.locator('meta[itemprop="price"]').first()).toHaveAttribute('content', '2000')
+  })
 })

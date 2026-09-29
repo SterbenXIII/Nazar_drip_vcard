@@ -1,9 +1,12 @@
 ---
-import data from '../data/content.json'
+import rawData from '../data/content.json'
 import { DISTRICTS, FORM_ELEMENTS } from '@vcard/shared'
 import { siteConfig } from '../config/site'
 import Turnstile from './Turnstile.astro'
+import { formatServicePrice } from '../data/pricing'
+import { parseContent } from '../types/content'
 
+const data = parseContent(rawData)
 const isSingleService = data.services.length === 1
 const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
 ---
@@ -42,8 +45,11 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
               />
               <div class="option-content">
                 <span class="option-title">{service.title}</span>
-                <span class="option-price" aria-label={`Ціна: ${service.price}`}>
-                  {service.price}
+                <span
+                  class="option-price"
+                  aria-label={`Ціна: ${formatServicePrice(service.priceKey, 'uk')}`}
+                >
+                  {formatServicePrice(service.priceKey, 'uk')}
                 </span>
               </div>
             </label>

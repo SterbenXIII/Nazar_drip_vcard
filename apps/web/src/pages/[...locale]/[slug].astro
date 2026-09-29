@@ -13,6 +13,7 @@ import CoverageArea from '../../components/CoverageArea.astro'
 import { buildServicePageSchema } from '../../utils/schema'
 import { buildMedicalWebPageSchema } from '../../utils/medical-schema'
 import { siteConfig } from '../../config/site'
+import { formatPriceText, formatServicePrice, SERVICE_PRICES } from '../../data/pricing'
 import {
   useTranslations,
   getAlternateLocale,
@@ -50,7 +51,12 @@ interface Props {
 
 const { page, locale } = Astro.props
 const localeData = page[locale]
-const { seo, h1, price, description, faq, surzhykAlt, colloquialTerms } = localeData
+const { seo, h1, description, surzhykAlt, colloquialTerms } = localeData
+const price = formatServicePrice(page.priceKey, locale)
+const faq = localeData.faq.map((item) => ({
+  ...item,
+  answer: formatPriceText(item.answer, page.priceKey, locale),
+}))
 
 const schemaJson = buildServicePageSchema(page, Astro.url.href, locale)
 
@@ -289,7 +295,7 @@ const alternateUrl = getLocalizedUrl(alternateLocale, `/${alternateSlug}`, siteC
           <dl>
             <dt>{t.price}</dt>
             <dd itemprop="offers" itemscope itemtype="https://schema.org/Offer">
-              <meta itemprop="price" content={String(page.priceNumeric)} />
+              <meta itemprop="price" content={String(SERVICE_PRICES[page.priceKey].amount)} />
               <span>{price}</span>
               <meta itemprop="priceCurrency" content="UAH" />
               <link itemprop="availability" href="https://schema.org/InStock" />

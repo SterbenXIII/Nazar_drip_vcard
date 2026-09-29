@@ -2,6 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { formatServicePrice, SERVICE_PRICES } from '../src/data/pricing'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DIST_DIR = path.resolve(__dirname, '../dist')
 
@@ -49,7 +51,54 @@ if (indexHtml.includes('application/ld+json')) {
   failed = true
 }
 
-// 3. Final Result
+// 3. Check the single-source price catalog is reflected in built pages.
+console.log('💳 Validating service prices...')
+const PRICE_CHECKS = [
+  { path: 'index.html', text: formatServicePrice('intoxication', 'uk') },
+  { path: 'ru/index.html', text: formatServicePrice('intoxication', 'ru') },
+  {
+    path: 'krapelnytsia-vid-alkoholnoi-intoksykatsii/index.html',
+    text: formatServicePrice('intoxication', 'uk'),
+  },
+  {
+    path: 'ru/kapelnitsa-ot-alkogolnoy-intoksikatsii/index.html',
+    text: formatServicePrice('intoxication', 'ru'),
+  },
+]
+
+for (const { path: relPath, text } of PRICE_CHECKS) {
+  const html = fs.readFileSync(path.join(DIST_DIR, relPath), 'utf-8')
+  if (html.includes(text)) {
+    console.log(`✅ Price detected: ${relPath} (${text})`)
+  } else {
+    console.error(`❌ Price missing: ${relPath} (${text})`)
+    failed = true
+  }
+}
+
+const stalePrice = '1800 грн'
+const builtHtml = PRICE_CHECKS.map(({ path: relPath }) =>
+  fs.readFileSync(path.join(DIST_DIR, relPath), 'utf-8'),
+).join('\n')
+if (builtHtml.includes(stalePrice)) {
+  console.error(`❌ Stale price detected in built pages: ${stalePrice}`)
+  failed = true
+} else {
+  console.log(`✅ Stale price absent: ${stalePrice}`)
+}
+
+const baseServiceHtml = fs.readFileSync(
+  path.join(DIST_DIR, 'krapelnytsia-vid-alkoholnoi-intoksykatsii/index.html'),
+  'utf-8',
+)
+if (!baseServiceHtml.includes(`"price":${SERVICE_PRICES.intoxication.amount}`)) {
+  console.error('❌ Intoxication numeric price missing from service JSON-LD')
+  failed = true
+} else {
+  console.log(`✅ Numeric price detected in service JSON-LD: ${SERVICE_PRICES.intoxication.amount}`)
+}
+
+// 4. Final Result
 if (failed) {
   console.error('\n🛑 Build validation FAILED. Please check the logs above.')
   process.exit(1)

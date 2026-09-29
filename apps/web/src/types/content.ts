@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { PRICE_KEYS } from '../data/pricing'
+
 const SeoBusinessSchema = z.object({
   type: z.literal('MedicalBusiness'),
   medicalSpecialty: z.string(),
@@ -28,7 +30,7 @@ const ServiceSchema = z.object({
   id: z.number(),
   title: z.string(),
   description: z.string(),
-  price: z.string(),
+  priceKey: z.enum(PRICE_KEYS),
   badge: z.string().nullable(),
   duration: z.string(),
 })

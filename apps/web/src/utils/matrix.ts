@@ -1,6 +1,7 @@
 import { siteConfig } from '../config/site'
 import type { City, District } from '../data/locations'
 import { lvivCity, oblastCities } from '../data/locations'
+import { formatPriceText, formatServicePrice, SERVICE_PRICES } from '../data/pricing'
 import { seoPages } from '../data/seo-pages'
 import { getLocalePrefix, getStaticLocaleParam, type Locale } from '../i18n/ui'
 import type { FaqItem, MatrixPage, SeoPage } from '../types/seo'
@@ -52,7 +53,7 @@ export function expandToMatrixPage(
     cityLocative: city.nameLocative[locale],
     district: district?.name[locale] || '',
     districtLocative: district?.nameLocative[locale] || '',
-    price: localeData.price,
+    price: formatServicePrice(page.priceKey, locale),
     travelTime: district ? `${district.travelMinutes} хв` : '30-60 хв',
     phone: siteConfig.phone.display, // Placeholder or from config
   }
@@ -94,11 +95,17 @@ export function expandToMatrixPage(
     },
     content: {
       h1,
-      price: localeData.price,
-      priceNumeric: page.priceNumeric,
+      price: formatServicePrice(page.priceKey, locale),
+      priceNumeric: SERVICE_PRICES[page.priceKey].amount,
       duration: page.duration,
       description: body,
-      faq: [...localeData.faq, locationFaq],
+      faq: [
+        ...localeData.faq.map((item) => ({
+          ...item,
+          answer: formatPriceText(item.answer, page.priceKey, locale),
+        })),
+        locationFaq,
+      ],
       dateModified: page.dateModified,
       relatedSlugs: page.relatedSlugs,
       badge: page.badge,
