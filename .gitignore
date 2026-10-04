@@ -130,3 +130,4 @@ docs/
 !docs/deployment/remote-ssh-compose.md
 prompts/
 .superpowers
+output/*
