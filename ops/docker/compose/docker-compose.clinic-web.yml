@@ -1,0 +1,10 @@
+name: vcard-clinic-local
+
+services:
+  clinic-web:
+    image: vcard-clinic-web:local
+    build:
+      context: ../../..
+      dockerfile: apps/clinic-web/Dockerfile
+    ports:
+      - '127.0.0.1:4323:8080'

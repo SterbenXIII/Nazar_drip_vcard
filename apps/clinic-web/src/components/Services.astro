@@ -1,0 +1,20 @@
+<section class="services" id="services" aria-labelledby="services-title">
+  <div class="wrap">
+    <div class="section-intro">
+      <h2 id="services-title">Напрями допомоги</h2>
+      <p>Назви, кількість напрямів і описи заповнюються тільки після погодження.</p>
+    </div>
+    <div class="cards">
+      {
+        ['01', '02', '03'].map((number) => (
+          <article>
+            <span class="card-index">{number}</span>
+            <h3>Напрям {number}</h3>
+            <p>Назва й короткий опис очікують погодження.</p>
+            <span class="service-status">Деталі після погодження</span>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>

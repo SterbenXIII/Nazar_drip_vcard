@@ -1,0 +1,36 @@
+<section class="service-cta wrap" id="contact" aria-labelledby="service-contact-title">
+  <div>
+    <p class="eyebrow">КОНТАКТ · ПЛЕЙСХОЛДЕР</p>
+    <h2 id="service-contact-title">Контактна інформація після погодження</h2>
+  </div>
+  <a class="button" href="/#contact">Переглянути стан звернень <span aria-hidden="true">→</span></a>
+</section>
+
+<style>
+  .service-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    margin-block: 2rem 4rem;
+    padding-block: 2rem;
+    border-radius: 1.5rem;
+    background: var(--surface-muted);
+  }
+
+  h2 {
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    margin: 0;
+  }
+
+  .button {
+    flex-shrink: 0;
+  }
+
+  @media (width <= 767px) {
+    .service-cta {
+      align-items: start;
+      flex-direction: column;
+    }
+  }
+</style>

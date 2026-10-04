@@ -1,0 +1,29 @@
+---
+interface Props {
+  siteKey: string
+  action?: string
+}
+
+const { action = 'contact', siteKey } = Astro.props
+---
+
+<div class="turnstile-container">
+  <div
+    class="cf-turnstile"
+    data-sitekey={siteKey}
+    data-action={action}
+    data-language="uk"
+    data-theme="auto"
+  >
+  </div>
+</div>
+
+<script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<style>
+  .turnstile-container {
+    display: flex;
+    justify-content: center;
+    min-height: 65px;
+  }
+</style>

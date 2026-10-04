@@ -1,0 +1,19 @@
+<section class="process" id="process" aria-labelledby="process-title">
+  <div class="wrap">
+    <div class="section-intro">
+      <h2 id="process-title">Як звернутися</h2>
+      <p>Кроки та спосіб зв’язку мають бути підтверджені замовником.</p>
+    </div>
+    <ol class="steps">
+      {
+        ['01', '02', '03'].map((number) => (
+          <li>
+            <span class="step-number">{number}</span>
+            <h3>Крок {number}</h3>
+            <p>Опис етапу буде додано після погодження.</p>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>

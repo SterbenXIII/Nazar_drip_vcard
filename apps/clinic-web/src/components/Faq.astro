@@ -1,0 +1,16 @@
+<section class="faq" id="faq" aria-labelledby="faq-title">
+  <div class="wrap faq-content">
+    <h2 id="faq-title">Поширені запитання</h2>
+    <p>Питання та відповіді потребують погоджених матеріалів.</p>
+    <div class="faq-list">
+      {
+        ['01', '02', '03'].map((number) => (
+          <details>
+            <summary>Запитання {number}</summary>
+            <p>Відповідь буде додано після погодження.</p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>

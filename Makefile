@@ -16,6 +16,8 @@ NETWORK        = web-gateway
 BACKUP_DIR     = ./backups
 DB_PATH        = ./apps/api/data/leads.db
 TG_SEND_DOC    = https://api.telegram.org/bot$(TELEGRAM_BOT_TOKEN)/sendDocument
+CLINIC_PNPM    = env -i PATH="$$PATH" HOME="$$HOME" pnpm --filter @vcard/clinic-web
+DC_CLINIC      = env -i PATH="$$PATH" HOME="$$HOME" docker compose --env-file /dev/null -p vcard-clinic-local -f ops/docker/compose/docker-compose.clinic-web.yml
 
 # Кольори для терміналу
 BLUE   = \033[1;34m
@@ -24,15 +26,26 @@ YELLOW = \033[1;33m
 RED    = \033[1;31m
 NC     = \033[0m
 
-.PHONY: help init setup-net build dev dev-down dev-rebuild up down rebuild logs ps clean clean-all backup-to-tg db-check verify-deploy refresh deploy-setup secret-scan secret-history-scan remote-preflight-dev remote-deploy-dev remote-preflight-prod remote-deploy-prod remote-status remote-logs remote-logs-follow remote-backup remote-recover remote-rollback
+.PHONY: help init setup-net build dev dev-down dev-rebuild up down rebuild logs ps clean clean-all backup-to-tg db-check verify-deploy refresh deploy-setup secret-scan secret-history-scan remote-preflight-dev remote-deploy-dev remote-preflight-prod remote-deploy-prod remote-status remote-logs remote-logs-follow remote-backup remote-recover remote-rollback clinic-dev clinic-build clinic-preview clinic-content-preview clinic-check clinic-acceptance clinic-docker-build clinic-docker-up clinic-docker-down clinic-docker-logs clinic-docker-check
 
 # --- Допомога ---
 
 help:
 	@echo "$(BLUE)Доступні команди:$(NC)"
 	@echo "  $(GREEN)make init$(NC)           - Підготувати структуру проєкту та встановити залежності"
-	@echo "  $(GREEN)make build$(NC)          - Скомпілювати всі пакети воркспейсу (shared, api, web)"
+	@echo "  $(GREEN)make build$(NC)          - Скомпілювати всі пакети воркспейсу (shared, api, web, clinic-web)"
 	@echo "  $(GREEN)make dev$(NC)            - Запустити весь стек LOCAL (Astro + Hono + n8n + Proxy)"
+	@echo "  $(GREEN)make clinic-dev$(NC)     - Локальний Astro dev server на 127.0.0.1:4322"
+	@echo "  $(GREEN)make clinic-build$(NC)   - Зібрати звичайну clinic-web версію"
+	@echo "  $(GREEN)make clinic-preview$(NC) - Зібрати normal і переглянути її на 127.0.0.1:4322"
+	@echo "  $(GREEN)make clinic-content-preview$(NC) - Локальне opt-in демо контенту, noindex"
+	@echo "  $(GREEN)make clinic-check$(NC)   - Astro check, ESLint, Stylelint, Prettier"
+	@echo "  $(GREEN)make clinic-acceptance$(NC) - Повне локальне приймання з mock даними"
+	@echo "  $(GREEN)make clinic-docker-build$(NC) - Зібрати ізольований static clinic image"
+	@echo "  $(GREEN)make clinic-docker-up$(NC) - Запустити clinic на http://127.0.0.1:4323"
+	@echo "  $(GREEN)make clinic-docker-down$(NC) - Зупинити лише clinic project"
+	@echo "  $(GREEN)make clinic-docker-logs$(NC) - Логи clinic project"
+	@echo "  $(GREEN)make clinic-docker-check$(NC) - HTTP і браузерний smoke clinic container"
 	@echo "  $(GREEN)make refresh$(NC)        - Ядерне очищення: видалення node_modules та перевстановлення"
 	@echo ""
 	@echo "  $(RED)make deploy-setup$(NC)     - 🔴 ONE-TIME: автоматична підготовка VPS та GitHub secrets"
@@ -62,6 +75,42 @@ setup-net:
 build:
 	@echo "$(BLUE)🏗 Компіляція TypeScript проектів...$(NC)"
 	pnpm build:all
+
+# The root .env is exported for existing targets; clinic children receive only PATH and HOME.
+clinic-dev:
+	@$(CLINIC_PNPM) dev
+
+clinic-build:
+	@$(CLINIC_PNPM) build:normal
+
+clinic-preview:
+	@$(CLINIC_PNPM) preview:normal
+
+clinic-content-preview:
+	@$(CLINIC_PNPM) preview:content
+
+clinic-check:
+	@$(CLINIC_PNPM) check
+
+clinic-acceptance:
+	@$(CLINIC_PNPM) acceptance
+
+clinic-docker-build:
+	@$(DC_CLINIC) build clinic-web
+
+clinic-docker-up:
+	@$(DC_CLINIC) up -d --no-build --wait --wait-timeout 60 clinic-web
+
+clinic-docker-down:
+	@$(DC_CLINIC) down
+
+clinic-docker-logs:
+	@$(DC_CLINIC) logs --tail=50 clinic-web
+
+clinic-docker-check:
+	@container_id=$$($(DC_CLINIC) ps -q clinic-web); \
+		test -n "$$container_id" && test "$$(env -i PATH="$$PATH" HOME="$$HOME" docker inspect --format '{{.State.Health.Status}}' "$$container_id")" = healthy
+	@$(CLINIC_PNPM) exec node scripts/docker-check.mjs
 
 lint:
 	@pnpm lint
