@@ -1,3 +1,7 @@
+---
+import { consultationCta, mainSiteCta } from '../content/customer-materials'
+---
+
 <section class="hero" aria-labelledby="hero-title">
   <div class="wrap hero-grid">
     <div class="hero-copy">
@@ -7,8 +11,20 @@
         стиль подачі.
       </p>
       <div class="hero-actions">
-        <a class="button" href="#services">Переглянути структуру</a>
-        <a class="button secondary" href="#process">Як звернутися</a>
+        <div class="hero-action-group">
+          <a
+            class="button"
+            href={consultationCta.href}
+            aria-label="Безкоштовна консультація телефоном"
+          >
+            {consultationCta.label}
+          </a>
+          <small class="hero-action-note">{consultationCta.publicationNote}</small>
+        </div>
+        <div class="hero-action-group">
+          <span class="button secondary main-site-unavailable">{mainSiteCta.label}</span>
+          <small class="hero-action-note">{mainSiteCta.missingUrlNote}</small>
+        </div>
       </div>
     </div>
     <div class="hero-geometry" aria-hidden="true"><span></span></div>

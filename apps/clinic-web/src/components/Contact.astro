@@ -1,5 +1,6 @@
 ---
 import Turnstile from './Turnstile.astro'
+import { hotline, telegram } from '../content/customer-materials'
 
 const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
 ---
@@ -12,6 +13,23 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
         Перелік напрямів і географія роботи ще не підтверджені. Тому форму не можна надіслати до
         появи погоджених значень.
       </p>
+      <dl class="contact-methods">
+        <div>
+          <dt>Гаряча лінія</dt>
+          <dd>
+            <a
+              href={hotline.href}
+              aria-label={`Зателефонувати на гарячу лінію: ${hotline.display}`}
+            >
+              {hotline.display}
+            </a>
+          </dd>
+        </div>
+        <div>
+          <dt>{telegram.label}</dt>
+          <dd><a href={telegram.href} aria-label={telegram.accessibleName}>{telegram.label}</a></dd>
+        </div>
+      </dl>
     </div>
     <form id="clinic-lead-form" data-clinic-ready="false" novalidate>
       <input type="hidden" name="source" value="clinic-web" />
@@ -161,6 +179,35 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
     margin: 0;
     font-size: var(--font-help);
     line-height: 1.5;
+  }
+
+  .contact-methods {
+    display: grid;
+    gap: 0.75rem;
+    margin: 1.5rem 0 0;
+  }
+
+  .contact-methods div {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .contact-methods dt {
+    color: #cfe3e4;
+    font-size: var(--font-label);
+    font-weight: 700;
+  }
+
+  .contact-methods dd {
+    margin: 0;
+  }
+
+  .contact-methods a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    color: #fff;
+    text-underline-offset: 0.2em;
   }
 
   .field-error,

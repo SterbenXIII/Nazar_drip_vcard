@@ -1,7 +1,15 @@
+---
+import { hotline, telegram } from '../content/customer-materials'
+---
+
 <footer class="footer">
   <div class="wrap">
-    <a class="identity" href="/" aria-label="HAVENHUB — головна">HAVENHUB</a><p>
-      Контент і контакти будуть додані після погодження.
-    </p>
+    <a class="identity" href="/" aria-label="HAVENHUB — головна">HAVENHUB</a>
+    <div class="footer-contacts" aria-label="Контакти HAVENHUB">
+      <a href={hotline.href} aria-label={`Зателефонувати на гарячу лінію: ${hotline.display}`}>
+        {hotline.display}
+      </a>
+      <a href={telegram.href} aria-label={telegram.accessibleName}>{telegram.label}</a>
+    </div>
   </div>
 </footer>

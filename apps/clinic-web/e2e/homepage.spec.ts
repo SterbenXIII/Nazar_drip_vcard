@@ -25,9 +25,14 @@ test('renders the approved prototype landmarks and navigation', async ({ page })
     .evaluateAll((links) => links.map((link) => link.getAttribute('href')!))) {
     if (href.startsWith('#')) {
       expect(await page.locator(href).count()).toBeGreaterThan(0)
+    } else if (href.startsWith('tel:')) {
+      expect(href).toBe('tel:+380779742422')
     } else {
       const target = new URL(href, page.url())
-      expect(target.origin).toBe(new URL(page.url()).origin)
+      if (target.origin !== new URL(page.url()).origin) {
+        expect(href).toBe('https://t.me/HavenRehub')
+        continue
+      }
       const response = await page.request.get(target.href)
       expect(response.ok()).toBe(true)
     }
@@ -39,6 +44,52 @@ test('renders the approved prototype landmarks and navigation', async ({ page })
   expect(results.violations).toEqual([])
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'auto')
+})
+
+test('shows proposed service names and approved contact routes without fake site links', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+
+  await expect(page.locator('.cards h3')).toHaveText([
+    'Амбулаторна програма',
+    'Стаціонарна програма',
+    'Виїзд до дому',
+  ])
+  await expect(page.locator('.cards a, .cards button')).toHaveCount(0)
+  await expect(page.locator('.service-status')).toHaveCount(3)
+  await expect(
+    page
+      .locator('.section-intro')
+      .filter({ has: page.getByRole('heading', { name: 'Напрями допомоги' }) }),
+  ).toContainText('Робочі назви від замовника')
+
+  const heroActions = page.locator('.hero-actions')
+  const consultation = heroActions.getByRole('link', { name: 'Безкоштовна консультація' })
+  await expect(consultation).toHaveAttribute('href', 'tel:+380779742422')
+  await expect(
+    heroActions.getByText('Підтвердіть безкоштовність і умови перед публікацією.'),
+  ).toBeVisible()
+
+  const mainSite = heroActions.locator('.main-site-unavailable')
+  await expect(mainSite).toHaveText('Перейти на основний сайт')
+  await expect(mainSite).not.toHaveAttribute('href', /./)
+  expect(await mainSite.evaluate((element) => (element as HTMLElement).tabIndex)).toBe(-1)
+  await expect(heroActions.getByText('Адреса основного сайту очікує підтвердження.')).toBeVisible()
+
+  const contact = page.locator('#contact')
+  await expect(contact.getByText('+380 77 974 24 22')).toBeVisible()
+  await expect(
+    contact.getByRole('link', { name: 'Зателефонувати на гарячу лінію: +380 77 974 24 22' }),
+  ).toHaveAttribute('href', 'tel:+380779742422')
+  await expect(contact.getByRole('link', { name: 'Telegram HAVENHUB' })).toHaveAttribute(
+    'href',
+    'https://t.me/HavenRehub',
+  )
+
+  await expect(page.getByRole('button', { name: 'Надіслати звернення' })).toBeDisabled()
+  await expect(page.locator('#clinic-lead-form')).toHaveAttribute('data-clinic-ready', 'false')
 })
 
 test('opens the keyboard-operable mobile menu', async ({ page }, testInfo) => {

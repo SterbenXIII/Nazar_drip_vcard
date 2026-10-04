@@ -24,9 +24,14 @@ test('renders the demonstration template with accessible links and controls', as
     .evaluateAll((links) => links.map((link) => link.getAttribute('href')!))) {
     if (href.startsWith('#')) {
       expect(await page.locator(href).count()).toBeGreaterThan(0)
+    } else if (href.startsWith('tel:')) {
+      expect(href).toBe('tel:+380779742422')
     } else {
       const target = new URL(href, page.url())
-      expect(target.origin).toBe(new URL(page.url()).origin)
+      if (target.origin !== new URL(page.url()).origin) {
+        expect(href).toBe('https://t.me/HavenRehub')
+        continue
+      }
       const response = await page.request.get(target.href)
       expect(response.ok(), href).toBe(true)
     }

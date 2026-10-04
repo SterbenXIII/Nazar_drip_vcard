@@ -4,6 +4,7 @@ interface Props {
 }
 
 const { hrefPrefix = '' } = Astro.props
+import { consultationCta } from '../content/customer-materials'
 ---
 
 <header class="site-header">
@@ -15,7 +16,13 @@ const { hrefPrefix = '' } = Astro.props
       <a href={`${hrefPrefix}#about`}>Про заклад</a><a href={`${hrefPrefix}#services`}>Напрями</a><a
         href={`${hrefPrefix}#process`}>Як звернутися</a
       ><a href={`${hrefPrefix}#faq`}>Запитання</a>
-    </nav><a class="header-action" href={`${hrefPrefix}#contact`}>Звернення</a>
+    </nav><a
+      class="header-action"
+      href={consultationCta.href}
+      aria-label="Безкоштовна консультація телефоном"
+    >
+      {consultationCta.label}
+    </a>
     <button
       class="mobile-menu-toggle"
       id="mobile-menu-toggle"

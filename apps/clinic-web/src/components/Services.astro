@@ -1,17 +1,20 @@
+---
+import { proposedDirectionNames } from '../content/customer-materials'
+---
+
 <section class="services" id="services" aria-labelledby="services-title">
   <div class="wrap">
     <div class="section-intro">
       <h2 id="services-title">Напрями допомоги</h2>
-      <p>Назви, кількість напрямів і описи заповнюються тільки після погодження.</p>
+      <p>Робочі назви від замовника; описи й публікація напрямів ще не погоджені.</p>
     </div>
     <div class="cards">
       {
-        ['01', '02', '03'].map((number) => (
+        proposedDirectionNames.map((name, index) => (
           <article>
-            <span class="card-index">{number}</span>
-            <h3>Напрям {number}</h3>
-            <p>Назва й короткий опис очікують погодження.</p>
-            <span class="service-status">Деталі після погодження</span>
+            <span class="card-index">{String(index + 1).padStart(2, '0')}</span>
+            <h3>{name}</h3>
+            <span class="service-status">Запропонована назва · опис очікує погодження</span>
           </article>
         ))
       }

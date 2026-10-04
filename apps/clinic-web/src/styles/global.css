@@ -231,6 +231,26 @@ a {
   margin-top: 1.625rem;
 }
 
+.hero-action-group {
+  display: grid;
+  justify-items: start;
+  gap: 0.375rem;
+}
+
+.hero-action-note {
+  max-width: 15rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.button.secondary.main-site-unavailable {
+  border-style: dashed;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: default;
+}
+
 .hero-geometry {
   position: relative;
   height: 20.3125rem;
@@ -474,6 +494,21 @@ a {
   margin: 0;
   color: #b4d1d3;
   font-size: 0.75rem;
+}
+
+.footer-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.footer-contacts a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  color: #d8e9ea;
+  font-size: 0.8125rem;
+  text-underline-offset: 0.2em;
 }
 
 @media (width <= 1080px) {
