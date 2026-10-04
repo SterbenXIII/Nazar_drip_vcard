@@ -79,6 +79,7 @@ test('keeps unapproved product controls unavailable and does not request the API
   const submit = page.getByRole('button', { name: 'Надіслати звернення' })
   await expect(submit).toBeDisabled()
   await expect(submit).toHaveAttribute('aria-describedby', 'clinic-product-status')
+  await expect(page.locator('.cf-turnstile')).toHaveCount(0)
   await expect(page.locator('#clinic-product-status')).toContainText(
     'потрібні погоджені напрями та територія',
   )

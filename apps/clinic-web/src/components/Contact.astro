@@ -3,6 +3,7 @@ import Turnstile from './Turnstile.astro'
 import { hotline, telegram } from '../content/customer-materials'
 
 const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
+const clinicReady = false
 ---
 
 <section class="contact" id="contact" aria-labelledby="contact-title">
@@ -31,7 +32,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
         </div>
       </dl>
     </div>
-    <form id="clinic-lead-form" data-clinic-ready="false" novalidate>
+    <form id="clinic-lead-form" data-clinic-ready={String(clinicReady)} novalidate>
       <input type="hidden" name="source" value="clinic-web" />
 
       <div class="field">
@@ -81,14 +82,17 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
         <p id="district-error" class="field-error" aria-live="polite"></p>
       </div>
 
-      {turnstileSiteKey && <Turnstile siteKey={turnstileSiteKey} />}
+      {clinicReady && turnstileSiteKey && <Turnstile siteKey={turnstileSiteKey} />}
 
       <p id="clinic-product-status" class="form-status" role="status" aria-live="polite">
         Відправлення тимчасово недоступне: потрібні погоджені напрями та територія.
       </p>
       <p id="clinic-request-status" class="form-status" role="status" aria-live="polite"></p>
-      <button type="submit" id="clinic-submit" aria-describedby="clinic-product-status" disabled
-        >Надіслати звернення</button
+      <button
+        type="submit"
+        id="clinic-submit"
+        aria-describedby="clinic-product-status"
+        disabled={!clinicReady}>Надіслати звернення</button
       >
     </form>
   </div>

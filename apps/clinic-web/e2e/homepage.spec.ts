@@ -46,7 +46,7 @@ test('renders the approved prototype landmarks and navigation', async ({ page })
   await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'auto')
 })
 
-test('shows proposed service names and approved contact routes without fake site links', async ({
+test('shows proposed service names and contact routes without fake site links', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
@@ -66,11 +66,21 @@ test('shows proposed service names and approved contact routes without fake site
   ).toContainText('Робочі назви від замовника')
 
   const heroActions = page.locator('.hero-actions')
-  const consultation = heroActions.getByRole('link', { name: 'Безкоштовна консультація' })
+  const consultation = heroActions.getByRole('link', {
+    name: 'Зателефонувати на гарячу лінію',
+  })
+  await expect(consultation).toHaveText('Зателефонувати')
   await expect(consultation).toHaveAttribute('href', 'tel:+380779742422')
-  await expect(
-    heroActions.getByText('Підтвердіть безкоштовність і умови перед публікацією.'),
-  ).toBeVisible()
+  await expect(heroActions).not.toContainText('Безкоштовна консультація')
+  await expect(heroActions).not.toContainText('Підтвердіть безкоштовність')
+
+  const headerAction = page.locator('.site-header .header-action')
+  await expect(headerAction).toHaveText('Зателефонувати')
+  await expect(headerAction).toHaveAttribute('aria-label', 'Зателефонувати на гарячу лінію')
+  await expect(headerAction).toHaveAttribute('href', 'tel:+380779742422')
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await expect(headerAction).toBeVisible()
+  await expect(headerAction).toHaveText('Зателефонувати')
 
   const mainSite = heroActions.locator('.main-site-unavailable')
   await expect(mainSite).toHaveText('Перейти на основний сайт')

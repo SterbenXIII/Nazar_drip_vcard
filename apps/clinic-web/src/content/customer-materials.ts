@@ -45,9 +45,8 @@ export const telegram = {
 } as const
 
 export const consultationCta = {
-  label: 'Безкоштовна консультація',
+  label: 'Зателефонувати',
   href: hotline.href,
-  publicationNote: 'Підтвердіть безкоштовність і умови перед публікацією.',
 } as const
 
 export const mainSiteCta = {
