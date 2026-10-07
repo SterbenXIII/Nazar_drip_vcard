@@ -55,11 +55,11 @@ jobs:
       - name: Build normal clinic site
         run: make clinic-build
 
-      - name: Run clinic acceptance checks
-        run: make clinic-acceptance
-
       - name: Install Chromium
         run: pnpm --filter @vcard/clinic-web exec playwright install --with-deps chromium
+
+      - name: Run clinic acceptance checks
+        run: make clinic-acceptance
 
       - name: Run clinic browser tests
         run: pnpm --filter @vcard/clinic-web test:e2e
