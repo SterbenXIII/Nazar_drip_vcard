@@ -47,6 +47,7 @@ body {
 h1,
 h2,
 h3,
+h4,
 p {
   margin-top: 0;
 }
@@ -71,6 +72,12 @@ h2 {
 h3 {
   font-size: 1.1875rem;
   letter-spacing: -0.02em;
+}
+
+h4 {
+  font-size: 1.1875rem;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
 p {
@@ -317,6 +324,15 @@ a {
   margin-bottom: 0;
 }
 
+.service-groups {
+  display: grid;
+  gap: 2.5rem;
+}
+
+.service-axis > h3 {
+  margin-bottom: 1rem;
+}
+
 .cards,
 .steps {
   display: grid;
@@ -352,6 +368,7 @@ a {
 }
 
 .cards h3,
+.cards h4,
 .steps h3 {
   margin-bottom: 0.625rem;
 }
@@ -614,6 +631,10 @@ a {
     font-size: 1.3125rem;
   }
 
+  .header-row {
+    gap: 0.5rem;
+  }
+
   .hero-grid,
   .contact-grid {
     grid-template-columns: 1fr;
@@ -639,7 +660,7 @@ a {
 
   .cards,
   .steps {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.75rem;
   }
 
@@ -659,6 +680,7 @@ a {
 
   .steps li {
     padding: 1.25rem;
+    overflow-wrap: anywhere;
   }
 
   .contact-grid {
@@ -668,6 +690,12 @@ a {
   .footer .wrap {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media (width <= 240px) {
+  :root {
+    --gutter: 0.75rem;
   }
 }
 

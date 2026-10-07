@@ -1,5 +1,5 @@
 import { siteConfig } from '../config/site'
-import { SERVICE_PRICES } from '../data/pricing'
+import { formatPriceText, SERVICE_PRICES } from '../data/pricing'
 import { type Locale, useTranslations } from '../i18n/ui'
 import type { BreadcrumbItem, MatrixPage, ReviewData, SeoPage } from '../types/seo'
 
@@ -330,7 +330,10 @@ export function buildServicePageSchema(
         mainEntity: localeData.faq.map((item) => ({
           '@type': 'Question',
           name: item.question,
-          acceptedAnswer: { '@type': 'Answer', text: item.answer },
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: formatPriceText(item.answer, page.priceKey, locale),
+          },
         })),
       },
       buildBreadcrumbSchema([

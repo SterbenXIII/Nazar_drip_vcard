@@ -52,18 +52,8 @@ test('shows proposed service names and contact routes without fake site links', 
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
 
-  await expect(page.locator('.cards h3')).toHaveText([
-    'Амбулаторна програма',
-    'Стаціонарна програма',
-    'Виїзд до дому',
-  ])
-  await expect(page.locator('.cards a, .cards button')).toHaveCount(0)
-  await expect(page.locator('.service-status')).toHaveCount(3)
-  await expect(
-    page
-      .locator('.section-intro')
-      .filter({ has: page.getByRole('heading', { name: 'Напрями допомоги' }) }),
-  ).toContainText('Робочі назви від замовника')
+  await expect(page.locator('.dependency-types')).toBeVisible()
+  await expect(page.locator('.care-formats')).toBeVisible()
 
   const heroActions = page.locator('.hero-actions')
   const consultation = heroActions.getByRole('link', {
@@ -100,6 +90,57 @@ test('shows proposed service names and contact routes without fake site links', 
 
   await expect(page.getByRole('button', { name: 'Надіслати звернення' })).toBeDisabled()
   await expect(page.locator('#clinic-lead-form')).toHaveAttribute('data-clinic-ready', 'false')
+})
+
+test('keeps dependency types separate from care formats', async ({ page }) => {
+  await page.goto('/')
+
+  const dependencyTypes = page.locator('.dependency-types')
+  await expect(dependencyTypes).toContainText('Напрями залежності')
+  await expect(dependencyTypes).toContainText('Алкогольна залежність')
+  await expect(dependencyTypes).toContainText('Ігрова залежність')
+  await expect(dependencyTypes).toContainText('Наркотична залежність')
+  await expect(dependencyTypes.locator('a')).toHaveCount(0)
+
+  const careFormats = page.locator('.care-formats')
+  await expect(careFormats).toContainText('Формати допомоги')
+  await expect(careFormats).toContainText('Стаціонарна програма')
+  await expect(careFormats).toContainText('Амбулаторна програма')
+  await expect(careFormats).toContainText('Виїзд додому')
+  await expect(careFormats.locator('a')).toHaveCount(0)
+
+  await expect(page.locator('.main-site-unavailable')).not.toHaveAttribute('href', /./)
+  await expect(page.locator('a[href^="/services/"], a[href*="/city/"]')).toHaveCount(0)
+  await expect(page.locator('.services')).not.toContainText('Адреса')
+})
+
+test('limits hotline hours and free consultation', async ({ page }) => {
+  await page.goto('/')
+
+  await expect(page.getByText('Гаряча лінія 24/7')).toBeVisible()
+  await expect(page.getByText('Перша первинна консультація безкоштовна').first()).toBeVisible()
+  await expect(page.getByText('Безкоштовне лікування')).toHaveCount(0)
+
+  await expect(page.locator('.site-header .header-action')).toHaveAttribute(
+    'href',
+    'tel:+380779742422',
+  )
+  await expect(
+    page.locator('.hero-actions').getByRole('link', { name: 'Зателефонувати на гарячу лінію' }),
+  ).toHaveAttribute('href', 'tel:+380779742422')
+
+  const process = page.locator('#process')
+  await expect(process).toContainText('гарячу лінію')
+  await expect(process).toContainText('Telegram')
+  await expect(process).toContainText('Форма звернення поки недоступна')
+  await expect(process.locator('a[href="#clinic-lead-form"]')).toHaveCount(0)
+
+  const contact = page.locator('#contact')
+  await expect(contact.getByRole('link', { name: 'Telegram HAVENHUB' })).toHaveAttribute(
+    'href',
+    'https://t.me/HavenRehub',
+  )
+  await expect(contact).toContainText('Форма звернення поки недоступна')
 })
 
 test('opens the keyboard-operable mobile menu', async ({ page }, testInfo) => {
@@ -145,6 +186,18 @@ test('keeps every mobile menu item reachable in a short viewport', async ({ page
   await expect(navigation.getByRole('link', { name: 'Звернення' })).toBeInViewport()
 })
 
+test('keeps the layout inside a narrow zoomed viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 195, height: 422 })
+  await page.goto('/')
+
+  const width = await page.evaluate(() => window.innerWidth)
+  const documentWidth = await page.locator('html').evaluate((element) => element.scrollWidth)
+  expect(documentWidth).toBeLessThanOrEqual(width)
+  const menu = await page.locator('#mobile-menu-toggle').boundingBox()
+  expect(menu).not.toBeNull()
+  expect(menu!.x + menu!.width).toBeLessThanOrEqual(width)
+})
+
 test('resets mobile navigation and focus across the desktop breakpoint', async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 900 })
   await page.goto('/')
@@ -179,9 +232,9 @@ test('resets mobile navigation and focus across the desktop breakpoint', async (
 test('shows unavailable service actions as noninteractive statuses', async ({ page }) => {
   await page.goto('/')
 
-  await expect(page.locator('.cards a')).toHaveCount(0)
-  await expect(page.locator('.service-status')).toHaveCount(3)
-  await expect(page.locator('.service-status').first()).toContainText('погодження')
+  await expect(page.locator('.dependency-types a, .care-formats a')).toHaveCount(0)
+  await expect(page.locator('.dependency-types button, .care-formats button')).toHaveCount(0)
+  await expect(page.locator('.dependency-types, .care-formats')).toHaveCount(2)
 })
 
 test('sizes mobile service cards to their content', async ({ page }) => {
@@ -194,13 +247,13 @@ test('sizes mobile service cards to their content', async ({ page }) => {
     return {
       minHeight: style.minHeight,
       padding: style.padding,
-      statusMarginTop: getComputedStyle(element.querySelector('.service-status')!).marginTop,
+      headingMarginBottom: getComputedStyle(element.querySelector('h4')!).marginBottom,
     }
   })
 
   expect(metrics.minHeight).toBe('0px')
   expect(metrics.padding).not.toBe('0px')
-  expect(Number.parseFloat(metrics.statusMarginTop)).toBeGreaterThan(0)
+  expect(Number.parseFloat(metrics.headingMarginBottom)).toBeGreaterThan(0)
 })
 
 test('keeps FAQ disclosures native and gives each summary a clear hit area', async ({ page }) => {
