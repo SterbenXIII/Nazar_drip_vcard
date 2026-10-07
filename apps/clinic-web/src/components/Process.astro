@@ -1,19 +1,32 @@
+---
+import { hotline, telegram } from '../content/customer-materials'
+---
+
 <section class="process" id="process" aria-labelledby="process-title">
   <div class="wrap">
     <div class="section-intro">
       <h2 id="process-title">Як звернутися</h2>
-      <p>Кроки та спосіб зв’язку мають бути підтверджені замовником.</p>
+      <p>Зараз звернення приймаємо телефоном або в Telegram. Форма звернення поки недоступна.</p>
     </div>
     <ol class="steps">
-      {
-        ['01', '02', '03'].map((number) => (
-          <li>
-            <span class="step-number">{number}</span>
-            <h3>Крок {number}</h3>
-            <p>Опис етапу буде додано після погодження.</p>
-          </li>
-        ))
-      }
+      <li>
+        <span class="step-number">01</span>
+        <h3>Зателефонуйте або напишіть</h3>
+        <p>
+          <a href={hotline.href}>Зателефонуйте на гарячу лінію</a> або{' '}
+          <a href={telegram.href}>напишіть у Telegram</a>.
+        </p>
+      </li>
+      <li>
+        <span class="step-number">02</span>
+        <h3>Коротка первинна консультація</h3>
+        <p>Перша первинна консультація безкоштовна. Уточнюємо ситуацію.</p>
+      </li>
+      <li>
+        <span class="step-number">03</span>
+        <h3>Узгодження формату</h3>
+        <p>Узгоджуємо формат і вартість: виїзд додому або програма в центрі.</p>
+      </li>
     </ol>
   </div>
 </section>

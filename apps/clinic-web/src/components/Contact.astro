@@ -11,8 +11,8 @@ const clinicReady = false
     <div class="contact-copy">
       <h2 id="contact-title">Звернення</h2>
       <p>
-        Перелік напрямів і географія роботи ще не підтверджені. Тому форму не можна надіслати до
-        появи погоджених значень.
+        Зверніться телефоном або в Telegram. Форма звернення поки недоступна: потрібна окрема
+        специфікація доставки й конфіденційності.
       </p>
       <dl class="contact-methods">
         <div>
@@ -64,7 +64,8 @@ const clinicReady = false
       <fieldset aria-describedby="clinic-services-empty services-error clinic-product-status">
         <legend>Напрям звернення</legend>
         <p id="clinic-services-empty" class="empty-state">
-          Напрями будуть додані після погодження.
+          Варіанти звернення для форми буде додано після окремої специфікації доставки й
+          конфіденційності.
         </p>
         <p id="services-error" class="field-error" aria-live="polite"></p>
       </fieldset>
@@ -77,7 +78,9 @@ const clinicReady = false
           disabled
           aria-describedby="district-error clinic-product-status"
         >
-          <option value="">Територію буде додано після погодження</option>
+          <option value=""
+            >Варіанти території визначить окрема специфікація доставки й конфіденційності</option
+          >
         </select>
         <p id="district-error" class="field-error" aria-live="polite"></p>
       </div>
@@ -85,7 +88,7 @@ const clinicReady = false
       {clinicReady && turnstileSiteKey && <Turnstile siteKey={turnstileSiteKey} />}
 
       <p id="clinic-product-status" class="form-status" role="status" aria-live="polite">
-        Відправлення тимчасово недоступне: потрібні погоджені напрями та територія.
+        Відправлення тимчасово недоступне: потрібна окрема специфікація доставки й конфіденційності.
       </p>
       <p id="clinic-request-status" class="form-status" role="status" aria-live="polite"></p>
       <button

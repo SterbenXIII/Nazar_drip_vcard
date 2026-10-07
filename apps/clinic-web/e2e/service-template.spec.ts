@@ -43,6 +43,12 @@ test('renders the demonstration template with accessible links and controls', as
   await page.keyboard.press('Enter')
   await expect(page.getByText('Ні. Це демонстраційні дані')).toBeVisible()
 
+  const contactFaq = page.getByText('Чи можна надіслати звернення з цієї сторінки?')
+  await contactFaq.click()
+  await expect(
+    page.getByText('після окремої специфікації доставки й конфіденційності'),
+  ).toBeVisible()
+
   const results = await new AxeBuilder({ page }).analyze()
   expect(results.violations).toEqual([])
 })

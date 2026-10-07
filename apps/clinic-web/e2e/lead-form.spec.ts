@@ -63,7 +63,7 @@ const enableTestFixture = async (page: Page, turnstileToken?: string, timeoutMs?
   await page.locator('select[name="district"]').selectOption('Центр')
 }
 
-test('keeps unapproved product controls unavailable and does not request the API', async ({
+test('keeps form controls unavailable until delivery and privacy requirements are specified', async ({
   page,
 }) => {
   let requests = 0
@@ -73,15 +73,16 @@ test('keeps unapproved product controls unavailable and does not request the API
   })
   await page.goto('/')
 
+  await expect(page.locator('#clinic-lead-form')).toHaveAttribute('data-clinic-ready', 'false')
   await expect(page.locator('input[name="services"]')).toHaveCount(0)
-  await expect(page.locator('.empty-state')).toContainText('погодження')
+  await expect(page.locator('.empty-state')).toContainText('окремої специфікації доставки')
   await expect(page.getByLabel('Територія звернення')).toBeDisabled()
   const submit = page.getByRole('button', { name: 'Надіслати звернення' })
   await expect(submit).toBeDisabled()
   await expect(submit).toHaveAttribute('aria-describedby', 'clinic-product-status')
   await expect(page.locator('.cf-turnstile')).toHaveCount(0)
   await expect(page.locator('#clinic-product-status')).toContainText(
-    'потрібні погоджені напрями та територія',
+    'потрібна окрема специфікація доставки й конфіденційності',
   )
   await page.evaluate(() =>
     document.querySelector<HTMLFormElement>('#clinic-lead-form')!.requestSubmit(),

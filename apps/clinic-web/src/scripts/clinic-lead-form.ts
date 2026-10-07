@@ -41,7 +41,10 @@ form?.addEventListener('submit', async (event) => {
   setStatus()
 
   if (form.dataset.clinicReady !== 'true') {
-    setStatus('Відправлення стане доступним після погодження напрямів і території.', 'error')
+    setStatus(
+      'Відправлення стане доступним після окремої специфікації доставки й конфіденційності.',
+      'error',
+    )
     return
   }
 

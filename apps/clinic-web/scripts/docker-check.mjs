@@ -87,7 +87,7 @@ try {
     })
     assert.match(
       await page.locator('#clinic-request-status').innerText(),
-      /Відправлення стане доступним після погодження/,
+      /Відправлення стане доступним після окремої специфікації доставки й конфіденційності/,
     )
     await page.locator('#clinic-submit').evaluate((button) => {
       button.disabled = true
@@ -114,12 +114,15 @@ try {
           return {
             minHeight: style.minHeight,
             padding: style.padding,
-            statusMarginTop: getComputedStyle(element.querySelector('.service-status')).marginTop,
+            headingMarginBottom: getComputedStyle(element.querySelector('h4')).marginBottom,
           }
         })
       assert.equal(cardMetrics.minHeight, '0px')
       assert.notEqual(cardMetrics.padding, '0px')
-      assert.ok(Number.parseFloat(cardMetrics.statusMarginTop) > 0)
+      assert.ok(Number.parseFloat(cardMetrics.headingMarginBottom) > 0)
+      assert.equal(await page.locator('.dependency-types, .care-formats').count(), 2)
+      assert.equal(await page.locator('.dependency-types h3').innerText(), 'Напрями залежності')
+      assert.equal(await page.locator('.care-formats h3').innerText(), 'Формати допомоги')
     } else {
       assert.equal(await page.locator('#mobile-menu-toggle').isHidden(), true)
       assert.equal(
