@@ -22,11 +22,15 @@ for (const width of [320, 390, 768, 1440]) {
     await page.goto('http://127.0.0.1:4333/programa/')
     await page.evaluate(() => document.fonts.ready)
     await page.screenshot({ path: `qa/task5/programa-${width}-full.png`, fullPage: true })
-    console.log('programa', width, await page.evaluate(() => ({
-      document: document.documentElement.scrollWidth,
-      viewport: window.innerWidth,
-      primary: getComputedStyle(document.querySelector('.support-contact')).backgroundColor,
-    })))
+    console.log(
+      'programa',
+      width,
+      await page.evaluate(() => ({
+        document: document.documentElement.scrollWidth,
+        viewport: window.innerWidth,
+        primary: getComputedStyle(document.querySelector('.support-contact')).backgroundColor,
+      })),
+    )
   }
   await page.close()
 }
