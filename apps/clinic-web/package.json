@@ -1,0 +1,37 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vcard/clinic-web",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1 --port 4322",
+    "build": "astro build",
+    "build:normal": "CLINIC_SITE_MODE=normal CLINIC_ENABLE_SERVICE_PREVIEW=false astro build",
+    "build:content": "CLINIC_SITE_MODE=normal CLINIC_ENABLE_SERVICE_PREVIEW=true astro build",
+    "build:staging": "CLINIC_SITE_MODE=staging CLINIC_ENABLE_SERVICE_PREVIEW=false astro build",
+    "build:production": "CLINIC_SITE_MODE=production CLINIC_ENABLE_SERVICE_PREVIEW=false astro build",
+    "preview": "astro preview --host 127.0.0.1 --port 4322",
+    "preview:normal": "pnpm run build:normal && pnpm run preview",
+    "preview:content": "pnpm run build:content && pnpm run preview",
+    "check": "astro check && pnpm run lint && pnpm exec stylelint 'src/**/*.{css,astro}' && pnpm exec prettier --check 'src/**/*.{astro,js,mjs,json,ts}' 'e2e/**/*.{astro,js,mjs,json,ts}' 'scripts/**/*.{astro,js,mjs,json,ts}' '*.{js,mjs,json,ts}'",
+    "acceptance": "node scripts/acceptance.mjs",
+    "lint": "eslint .",
+    "check:metadata": "node scripts/check-metadata.mjs",
+    "test:e2e": "playwright test --config playwright.config.ts",
+    "test:publication": "CLINIC_PUBLICATION_MATRIX=true playwright test --config playwright.config.ts e2e/publication.spec.ts --workers=1"
+  },
+  "dependencies": {
+    "@astrojs/check": "0.9.10",
+    "@vcard/shared": "workspace:*",
+    "astro": "7.3.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.11.1",
+    "@playwright/test": "1.58.2",
+    "@typescript-eslint/parser": "8.68.0",
+    "eslint-plugin-astro": "1.5.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

@@ -1,3 +1,4 @@
+import type { PriceKey } from '../data/pricing'
 import type { Locale } from '../i18n/ui'
 import type { HowToStep } from '../utils/schema'
 
@@ -32,8 +33,8 @@ export interface LocalizedSeoContent {
   h1: string
   /** Short service name for use in templates (e.g. "Крапельниця від алкоголю"). */
   serviceName: string
-  /** Display price. Format: "від XXX грн" or "от XXX грн". */
-  price: string
+  /** Price catalog key used to render the localized display price. */
+  priceKey: PriceKey
   /**
    * Unique body copy. 2–4 sentences.
    * Must contain relevant LSI keywords naturally.
@@ -64,7 +65,7 @@ export interface SeoPage {
   ru: LocalizedSeoContent
 
   /** Shared technical and structural data. */
-  priceNumeric: number
+  priceKey: PriceKey
   duration: string
   dateModified: string
   /** Reference slugs for internal linking (use base identification slugs). */

@@ -1,0 +1,29 @@
+---
+import { landingSections } from '../content/landing'
+
+const copy = landingSections[6]
+const detailRoutesAvailable = (process.env.CLINIC_SITE_MODE ?? 'normal') !== 'normal'
+---
+
+<section class="landing-section family" id="family" aria-labelledby="family-title">
+  <div class="wrap editorial-grid">
+    <div class="section-intro">
+      <h2 id="family-title">{copy.title}</h2>
+      <p>{copy.introduction}</p>
+      {
+        detailRoutesAvailable && (
+          <a class="text-link" href="/rodyni/">
+            Дізнатися для родини <span aria-hidden="true">→</span>
+          </a>
+        )
+      }
+    </div>
+    <div class="editorial-copy">
+      <p>
+        Ви можете звернутися, навіть якщо поки не знаєте, як почати розмову вдома. Під час
+        консультації можна запитати про доступну підтримку для рідних і наступний крок.
+      </p>
+      <p>Рішення про участь іншої людини не приймають за неї.</p>
+    </div>
+  </div>
+</section>

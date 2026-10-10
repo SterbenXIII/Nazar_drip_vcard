@@ -1,0 +1,39 @@
+---
+import { hotline, telegram } from '../content/customer-materials'
+import { landingSections } from '../content/landing'
+
+const copy = landingSections[5]
+---
+
+<section class="landing-section process" id="process" aria-labelledby="process-title">
+  <div class="wrap">
+    <div class="section-intro">
+      <h2 id="process-title">{copy.title}</h2>
+      <p>{copy.introduction}</p>
+    </div>
+    <ol class="process-list">
+      {
+        copy.items.map((item, index) => (
+          <li>
+            <>
+              <span class="process-number" aria-hidden="true">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <div>
+                <>
+                  <h3>{item.title}</h3>
+                  <p>{item.description[0]}</p>
+                </>
+              </div>
+            </>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="process-note">
+      Перша первинна консультація безкоштовна. Вартість визначають після консультації. <a
+        href={hotline.href}>Зателефонуйте</a
+      > або <a href={telegram.href}>напишіть у Telegram</a>.
+    </p>
+  </div>
+</section>

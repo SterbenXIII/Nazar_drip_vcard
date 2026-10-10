@@ -26,6 +26,7 @@ import {
   getHreflang,
 } from '../../i18n/ui'
 import { siteConfig } from '../../config/site'
+import { formatPriceText, formatServicePrice, type PriceKey } from '../../data/pricing'
 
 const baseData = parseContent(rawData)
 
@@ -103,8 +104,8 @@ const services = baseData.services
         <div class="contact-item">
           <a
             class="contact-link"
-            href={`tg://resolve?domain=${telegram}`}
-            target="_parent"
+            href={siteConfig.telegramUrl}
+            target="_blank"
             rel="noopener"
             aria-label="Telegram"
           >
@@ -146,7 +147,7 @@ const services = baseData.services
               badge: string | null
               title: string
               description: string
-              price: string
+              priceKey: PriceKey
               duration: string
             }) => (
               <article class="service-card">
@@ -161,8 +162,11 @@ const services = baseData.services
                     <p>{service.description}</p>
                   </div>
                   <div class="card-side">
-                    <span class="price-tag" aria-label={`Ціна: ${service.price}`}>
-                      {service.price}
+                    <span
+                      class="price-tag"
+                      aria-label={`Ціна: ${formatServicePrice(service.priceKey, activeLocale)}`}
+                    >
+                      {formatServicePrice(service.priceKey, activeLocale)}
                     </span>
                   </div>
                 </div>
@@ -202,7 +206,7 @@ const services = baseData.services
                 </button>
               </dt>
               <dd class="faq-answer" id={`faq-a-${i}`} hidden>
-                {item.answer}
+                {formatPriceText(item.answer, 'intoxication', activeLocale)}
               </dd>
             </div>
           ))
@@ -764,6 +768,9 @@ const services = baseData.services
 
     .header-top-actions :global(.share-trigger) {
       justify-content: center;
+      padding: 0.75rem 0.875rem;
+      font-size: 0.8125rem;
+      white-space: nowrap;
     }
 
     .contact-row {
@@ -1061,7 +1068,7 @@ const services = baseData.services
 
   @media (width >= 48rem) {
     main.container .main-header {
-      margin: 0.75rem 0 0;
+      margin: 0;
       padding: 2rem 2.5rem 1.5rem;
     }
 
@@ -1085,6 +1092,12 @@ const services = baseData.services
 
     main.container .services-grid {
       gap: 1rem;
+    }
+  }
+
+  @media (width < 48rem) {
+    main.container .main-header {
+      margin-top: 0;
     }
   }
 </style>

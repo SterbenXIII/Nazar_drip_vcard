@@ -1,0 +1,42 @@
+---
+import { landingSections } from '../content/landing'
+
+const copy = landingSections[4]
+const detailRoutesAvailable = (process.env.CLINIC_SITE_MODE ?? 'normal') !== 'normal'
+---
+
+<section class="landing-section program" id="program" aria-labelledby="program-title">
+  <div class="wrap editorial-grid">
+    <div class="section-intro">
+      <h2 id="program-title">{copy.title}</h2>
+      <p>
+        Програма може включати різні форми роботи. Її наповнення залежить від потреб людини й
+        узгодженого формату.
+      </p>
+      {
+        detailRoutesAvailable && (
+          <a class="text-link" href="/programa/">
+            Як побудована програма <span aria-hidden="true">→</span>
+          </a>
+        )
+      }
+    </div>
+    <ul class="editorial-list">
+      <li>
+        <h3>Індивідуальна та групова робота</h3><p>
+          Зміст і доступність цих форм можна уточнити під час консультації.
+        </p>
+      </li>
+      <li>
+        <h3>Підтримка близьких</h3><p>
+          Рідні можуть обговорити власні запитання та можливу участь у підтримці.
+        </p>
+      </li>
+      <li>
+        <h3>Соціалізація та ресоціалізація</h3><p>
+          Можливі кроки програми обговорюють з урахуванням конкретної ситуації.
+        </p>
+      </li>
+    </ul>
+  </div>
+</section>

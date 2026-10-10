@@ -1,0 +1,54 @@
+---
+interface Props {
+  steps: string[]
+}
+
+const { steps } = Astro.props
+---
+
+<section class="service-section wrap" id="process" aria-labelledby="service-process-title">
+  <h2 id="service-process-title">Як відбувається звернення</h2>
+  <ol class="service-steps">
+    {
+      steps.map((step, index) => (
+        <li>
+          <span aria-hidden="true">{index + 1}</span>
+          {step}
+        </li>
+      ))
+    }
+  </ol>
+</section>
+
+<style>
+  .service-section {
+    padding-block: 4rem;
+    border-top: 1px solid var(--border);
+  }
+
+  h2 {
+    max-width: 17ch;
+  }
+
+  .service-steps {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0 0;
+  }
+
+  li {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    padding: 0.85rem 0;
+  }
+
+  li span {
+    display: grid;
+    place-items: center;
+    flex: 0 0 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: #e2f4f3;
+  }
+</style>

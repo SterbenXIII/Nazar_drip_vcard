@@ -1,0 +1,22 @@
+---
+import { consultationCta, telegram } from '../content/customer-materials'
+import { landingSections } from '../content/landing'
+
+const copy = landingSections[0]
+---
+
+<section class="hero" id="hero" aria-labelledby="hero-title">
+  <div class="wrap hero-inner">
+    <h1 id="hero-title">{copy.title}</h1>
+    <p class="hero-lead">{copy.introduction}</p>
+    <div class="hero-actions">
+      <a class="button" href={consultationCta.href} aria-label="Зателефонувати на гарячу лінію">
+        {consultationCta.label}
+      </a>
+      <a class="button secondary" href={telegram.href} aria-label={telegram.accessibleName}>
+        Написати в Telegram
+      </a>
+    </div>
+    <p class="hero-note"><strong>{copy.items[0].title}.</strong> {copy.items[0].description[0]}</p>
+  </div>
+</section>

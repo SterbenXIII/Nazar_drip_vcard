@@ -1,0 +1,144 @@
+---
+import Footer from './Footer.astro'
+import Header from './Header.astro'
+import ServiceContactCta from './ServiceContactCta.astro'
+import ServiceFaq from './ServiceFaq.astro'
+import ServiceProcess from './ServiceProcess.astro'
+import Layout from '../layouts/Layout.astro'
+import type { ServiceContent } from '../content/services'
+
+interface Props {
+  service: ServiceContent
+  preview?: boolean
+}
+
+const { service, preview = false } = Astro.props
+---
+
+<Layout
+  title={`${service.title} — HAVENHUB`}
+  description={service.introduction}
+  routePolicy="closed"
+>
+  <Header hrefPrefix="/" />
+  <main id="content">
+    {preview && <p class="preview-note wrap">ДЕМО · непогоджений вміст · лише локальний preview</p>}
+    <article>
+      <header class="service-hero wrap">
+        <nav aria-label="Навігаційний ланцюжок" class="breadcrumbs">
+          <a href="/">Головна</a><span aria-hidden="true">/</span><span aria-current="page"
+            >{service.title}</span
+          >
+        </nav>
+        <div class="hero-grid">
+          <div>
+            <p class="eyebrow">ПОСЛУГА {preview && '· ДЕМО'}</p>
+            <h1>{service.title}</h1>
+            <p class="lead">{service.introduction}</p>
+            <a class="button" href="#contact">Контактна секція <span aria-hidden="true">→</span></a>
+          </div>
+          <div class="service-art" aria-hidden="true"><span></span></div>
+        </div>
+      </header>
+      <section class="service-facts wrap" aria-labelledby="service-facts-title">
+        <div><h2 id="service-facts-title">Що варто знати</h2></div>
+        <ul>{service.facts.map((fact) => <li>{fact}</li>)}</ul>
+      </section>
+      <ServiceProcess steps={service.process} />
+      <ServiceFaq items={service.faq} />
+      <ServiceContactCta />
+    </article>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .preview-note {
+    background: var(--surface-muted);
+    color: var(--text);
+    font-weight: 750;
+    margin-block: 0;
+    padding-block: 0.65rem;
+  }
+
+  .service-hero {
+    padding-block: 1.5rem 4rem;
+  }
+
+  .breadcrumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: center;
+    margin-top: 2.5rem;
+  }
+
+  h1 {
+    max-width: 18ch;
+    font-size: clamp(2.25rem, 3.8vw, 3.375rem);
+  }
+
+  .lead {
+    max-width: 37rem;
+    margin-bottom: 2rem;
+  }
+
+  .service-art {
+    min-height: 19rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(145deg, #d8f1ef, #a2d8d7);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .service-art span {
+    display: block;
+    width: 70%;
+    aspect-ratio: 1;
+    border: 1px solid var(--primary);
+    border-radius: 50%;
+    position: absolute;
+    left: -25%;
+    bottom: -60%;
+  }
+
+  .service-facts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    padding-block: 4rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .service-facts ul {
+    margin: 0;
+    padding-left: 1.3rem;
+  }
+
+  .service-facts li {
+    padding: 0.5rem 0;
+  }
+
+  .service-facts li::marker {
+    color: var(--primary);
+  }
+
+  @media (width <= 767px) {
+    .hero-grid,
+    .service-facts {
+      grid-template-columns: 1fr;
+    }
+
+    .service-art {
+      min-height: 13rem;
+    }
+  }
+</style>

@@ -1,0 +1,14 @@
+---
+import type { GetStaticPaths } from 'astro'
+import ServicePage from '../../../components/ServicePage.astro'
+import { servicePreview } from '../../../content/services'
+
+export const getStaticPaths = (() =>
+  process.env.CLINIC_ENABLE_SERVICE_PREVIEW === 'true'
+    ? [{ params: { slug: servicePreview.slug }, props: { service: servicePreview } }]
+    : []) satisfies GetStaticPaths
+
+const { service } = Astro.props
+---
+
+<ServicePage service={service} preview />

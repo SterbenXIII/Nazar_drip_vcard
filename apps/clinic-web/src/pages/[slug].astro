@@ -1,0 +1,235 @@
+---
+import Layout from '../layouts/Layout.astro'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+import StagingIllustration from '../components/StagingIllustration.astro'
+import { hotline, telegram } from '../content/customer-materials'
+import { supportingPages, type SupportingPage } from '../content/supporting-pages'
+
+export function getStaticPaths() {
+  const siteMode = process.env.CLINIC_SITE_MODE ?? 'normal'
+  if (siteMode === 'normal') return []
+
+  return supportingPages.map((page) => ({
+    params: { slug: page.slug },
+    props: { page },
+  }))
+}
+
+const { page } = Astro.props as { page: SupportingPage }
+---
+
+<Layout title={page.title} description={page.description} routePolicy="supporting">
+  <Header hrefPrefix="/" />
+  <main id="content" tabindex="-1" class="support-page">
+    <div class="wrap">
+      <header class="support-intro">
+        <h1>{page.h1}</h1>
+        <p class="support-description">{page.description}</p>
+      </header>
+
+      <div class="support-sections">
+        {
+          page.sections.map((section, index) => (
+            <section
+              class:list={['support-section', index % 2 === 1 && 'support-section-muted']}
+              aria-labelledby={`section-${page.slug}-${index}`}
+            >
+              <div class="support-section-content">
+                <h2 id={`section-${page.slug}-${index}`}>{section.heading}</h2>
+                {section.paragraphs.map((paragraph) => (
+                  <p>{paragraph}</p>
+                ))}
+                {section.illustrationSlot && (
+                  <StagingIllustration slot={section.illustrationSlot} />
+                )}
+                {section.items && (
+                  <ul class="support-items">
+                    {section.items.map((item) => (
+                      <li>
+                        <h3>{item.title}</h3>
+                        <p>{item.description}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
+          ))
+        }
+      </div>
+
+      <section class="support-contact" aria-labelledby="support-contact-title">
+        <div>
+          <h2 id="support-contact-title">Обговорімо наступний крок</h2>
+          <p>Перша первинна консультація безкоштовна. Вартість визначають після консультації.</p>
+        </div>
+        <div class="support-contact-actions">
+          <a class="support-primary-action" href={hotline.href}>Зателефонувати</a>
+          <a class="support-secondary-action" href={telegram.href}>Написати в Telegram</a>
+        </div>
+      </section>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .support-page {
+    padding-block: clamp(2.5rem, 7vw, 6rem);
+  }
+
+  .support-intro {
+    max-width: 52rem;
+    margin: 0 auto clamp(2rem, 5vw, 4rem);
+    text-align: center;
+  }
+
+  h1 {
+    max-width: 15ch;
+    margin: 0 auto;
+    color: var(--text);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    line-height: 1.12;
+  }
+
+  .support-description {
+    max-width: 42rem;
+    margin: 1.25rem auto 0;
+    color: var(--text-muted);
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    line-height: 1.7;
+  }
+
+  .support-sections {
+    max-width: 58rem;
+    margin: 0 auto;
+  }
+
+  .support-section {
+    padding: clamp(1.5rem, 4vw, 2.75rem) clamp(0.25rem, 3vw, 2rem);
+    border-top: 1px solid var(--border);
+  }
+
+  .support-section-muted {
+    border-radius: var(--radius-md);
+    background: var(--surface-muted);
+    border-top-color: transparent;
+  }
+
+  .support-section-content {
+    max-width: 48rem;
+    margin-inline: auto;
+  }
+
+  h2 {
+    margin: 0 0 1rem;
+    color: var(--text);
+    font-size: clamp(1.35rem, 3vw, 1.8rem);
+    line-height: 1.25;
+  }
+
+  .support-section p {
+    max-width: 68ch;
+    margin: 0 0 0.875rem;
+    color: var(--text-muted);
+    line-height: 1.75;
+  }
+
+  .support-section p:last-child {
+    margin-bottom: 0;
+  }
+
+  .support-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .support-items li {
+    min-width: 0;
+    padding: 1.125rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+
+  h3 {
+    margin: 0 0 0.5rem;
+    color: var(--text);
+    font-size: 1rem;
+  }
+
+  .support-items p {
+    font-size: 0.9375rem;
+  }
+
+  .support-contact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1.5rem;
+    max-width: 58rem;
+    margin: clamp(2rem, 5vw, 4rem) auto 0;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    border-radius: var(--radius-lg);
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .support-contact h2,
+  .support-contact p {
+    color: inherit;
+  }
+
+  .support-contact p {
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  .support-contact-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .support-contact-actions a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.125rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .support-primary-action {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .support-secondary-action {
+    border-color: currentcolor;
+    color: inherit;
+  }
+
+  .support-contact-actions a:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  @media (width <= 700px) {
+    .support-contact {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .support-contact-actions {
+      display: grid;
+    }
+  }
+</style>

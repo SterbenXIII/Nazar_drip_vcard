@@ -1,6 +1,7 @@
 ---
 import type { SeoPage } from '../types/seo'
 import { useTranslations, getLocalePrefix, type Locale } from '../i18n/ui'
+import { formatServicePrice } from '../data/pricing'
 
 interface Props {
   pages: SeoPage[]
@@ -27,7 +28,9 @@ const t = {
           <li>
             <a href={`${prefix}/${data.slug}`} rel="noopener">
               <span>{data.h1}</span>
-              <span aria-label={uiT('service.price')}>{data.price}</span>
+              <span aria-label={uiT('service.price')}>
+                {formatServicePrice(page.priceKey, locale)}
+              </span>
             </a>
           </li>
         )

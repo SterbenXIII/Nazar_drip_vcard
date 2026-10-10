@@ -1,4 +1,5 @@
 import { siteConfig } from '../config/site'
+import { formatPriceText, SERVICE_PRICES } from '../data/pricing'
 import { type Locale, useTranslations } from '../i18n/ui'
 import type { BreadcrumbItem, MatrixPage, ReviewData, SeoPage } from '../types/seo'
 
@@ -317,7 +318,7 @@ export function buildServicePageSchema(
         provider: { '@id': BUSINESS_ID },
         offers: {
           '@type': 'Offer',
-          price: page.priceNumeric,
+          price: SERVICE_PRICES[page.priceKey].amount,
           priceCurrency: 'UAH',
           availability: 'https://schema.org/InStock',
           validFrom: page.dateModified,
@@ -329,7 +330,10 @@ export function buildServicePageSchema(
         mainEntity: localeData.faq.map((item) => ({
           '@type': 'Question',
           name: item.question,
-          acceptedAnswer: { '@type': 'Answer', text: item.answer },
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: formatPriceText(item.answer, page.priceKey, locale),
+          },
         })),
       },
       buildBreadcrumbSchema([

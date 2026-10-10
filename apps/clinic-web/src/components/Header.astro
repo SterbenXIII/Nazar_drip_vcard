@@ -1,0 +1,124 @@
+---
+interface Props {
+  hrefPrefix?: string
+}
+
+const { hrefPrefix = '' } = Astro.props
+import { consultationCta, hotline, telegram } from '../content/customer-materials'
+
+const supportingPagesAvailable = (process.env.CLINIC_SITE_MODE ?? 'normal') !== 'normal'
+const navigation = supportingPagesAvailable
+  ? [
+      { href: '/programa/', label: 'Програма' },
+      { href: '/umovy/', label: 'Про центр' },
+      { href: '/rodyni/', label: 'Для родини' },
+      { href: '/napriamy/', label: 'Напрями' },
+    ]
+  : [
+      { href: `${hrefPrefix}#conditions`, label: 'Про центр' },
+      { href: `${hrefPrefix}#dependencies`, label: 'Напрями' },
+      { href: `${hrefPrefix}#process`, label: 'Як звернутися' },
+      { href: `${hrefPrefix}#family`, label: 'Для родини' },
+    ]
+---
+
+<header class="site-header">
+  <div class="wrap header-row">
+    <a class="identity" href="/" aria-label="HAVENHUB — головна">HAVENHUB</a><nav
+      class="desktop-nav"
+      aria-label="Основна навігація"
+    >
+      {navigation.map(({ href, label }) => <a href={href}>{label}</a>)}
+    </nav><a
+      class="header-action"
+      href={consultationCta.href}
+      aria-label="Зателефонувати на гарячу лінію"
+    >
+      {consultationCta.label}
+    </a>
+    <button
+      class="mobile-menu-toggle"
+      id="mobile-menu-toggle"
+      type="button"
+      aria-label="Меню навігації"
+      aria-controls="mobile-navigation"
+      aria-expanded="false"
+    >
+      <span class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+    </button>
+    <nav id="mobile-navigation" class="mobile-navigation" aria-label="Мобільна навігація" hidden>
+      {navigation.map(({ href, label }) => <a href={href}>{label}</a>)}
+      <a href={`${hrefPrefix}#contact`}>Звернення</a>
+      <a href={hotline.href} aria-label={`Зателефонувати на гарячу лінію: ${hotline.display}`}
+        >{hotline.display}</a
+      >
+      <a href={telegram.href} aria-label={telegram.accessibleName}>{telegram.label}</a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const menuToggle = document.querySelector<HTMLButtonElement>('#mobile-menu-toggle')
+  const mobileNavigation = document.querySelector<HTMLElement>('#mobile-navigation')
+  const identity = document.querySelector<HTMLAnchorElement>('.site-header .identity')
+  const desktopNavigation = document.querySelector<HTMLElement>('.desktop-nav')
+  const headerAction = document.querySelector<HTMLAnchorElement>('.header-action')
+  const desktopBreakpoint = window.matchMedia('(min-width: 1081px)')
+  let desktopHeaderHadFocus = false
+
+  const setMenuOpen = (open: boolean) => {
+    if (!menuToggle || !mobileNavigation) return
+    menuToggle.setAttribute('aria-expanded', String(open))
+    mobileNavigation.hidden = !open
+  }
+
+  menuToggle?.addEventListener('click', () => {
+    setMenuOpen(menuToggle.getAttribute('aria-expanded') !== 'true')
+  })
+
+  document.addEventListener('focusin', (event) => {
+    desktopHeaderHadFocus = Boolean(
+      desktopNavigation?.contains(event.target as Node) || event.target === headerAction,
+    )
+  })
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || menuToggle?.getAttribute('aria-expanded') !== 'true') return
+    setMenuOpen(false)
+    menuToggle.focus()
+  })
+
+  mobileNavigation?.addEventListener('click', (event) => {
+    const link = (event.target as Element).closest('a')
+    if (!link) return
+
+    setMenuOpen(false)
+    const targetUrl = new URL(link.href)
+    if (targetUrl.origin !== location.origin || targetUrl.pathname !== location.pathname) return
+
+    const target = document.getElementById(decodeURIComponent(targetUrl.hash.slice(1)))
+    if (!target) return
+    target.tabIndex = -1
+    target.focus({ preventScroll: true })
+  })
+
+  desktopBreakpoint.addEventListener('change', ({ matches }) => {
+    if (matches) {
+      const menuWasOpen = menuToggle?.getAttribute('aria-expanded') === 'true'
+      const focusIsInMobileHeader =
+        mobileNavigation?.contains(document.activeElement) || document.activeElement === menuToggle
+      setMenuOpen(false)
+      if (menuWasOpen || focusIsInMobileHeader) identity?.focus()
+      return
+    }
+
+    if (
+      desktopHeaderHadFocus ||
+      desktopNavigation?.contains(document.activeElement) ||
+      document.activeElement === headerAction
+    ) {
+      desktopHeaderHadFocus = false
+      identity?.focus()
+    }
+  })
+</script>

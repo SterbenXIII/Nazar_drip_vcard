@@ -1,0 +1,27 @@
+---
+import { hotline, telegram } from '../content/customer-materials'
+import { landingSections } from '../content/landing'
+
+const copy = landingSections[8]
+---
+
+<section class="contact" id="contact" aria-labelledby="contact-title">
+  <div class="wrap contact-grid">
+    <div class="contact-copy">
+      <h2 id="contact-title">{copy.title}</h2>
+      <p>{copy.introduction}</p>
+    </div>
+    <div class="contact-actions">
+      <a
+        class="button"
+        href={hotline.href}
+        aria-label={`Зателефонувати на гарячу лінію: ${hotline.display}`}
+      >
+        Зателефонувати: {hotline.display}
+      </a>
+      <a class="button secondary" href={telegram.href} aria-label={telegram.accessibleName}>
+        Написати в Telegram
+      </a>
+    </div>
+  </div>
+</section>

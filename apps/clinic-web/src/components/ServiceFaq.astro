@@ -1,0 +1,39 @@
+---
+interface Props {
+  items: { question: string; answer: string }[]
+}
+
+const { items } = Astro.props
+---
+
+<section class="service-section wrap" id="faq" aria-labelledby="service-faq-title">
+  <p class="eyebrow">ЗАПИТАННЯ</p>
+  <h2 id="service-faq-title">Поширені запитання</h2>
+  <div class="service-questions">
+    {
+      items.map(({ question, answer }) => (
+        <details>
+          <>
+            <summary>{question}</summary>
+            <p>{answer}</p>
+          </>
+        </details>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .service-section {
+    border-top: 1px solid var(--border);
+    padding-block: var(--section-space);
+  }
+
+  .service-questions {
+    margin-top: 2rem;
+  }
+
+  p {
+    color: var(--text-muted);
+  }
+</style>
