@@ -1,18 +1,41 @@
 ---
+import { resolveTheme } from '../config/theme.mjs'
+import { resolvePageSeo } from '../config/seo.mjs'
+
 interface Props {
   title: string
+  description: string
+  routePolicy: 'closed' | 'home' | 'supporting'
 }
 
-const { title } = Astro.props
+const { title, description, routePolicy } = Astro.props
+const theme = resolveTheme()
+const seo = resolvePageSeo(routePolicy)
 import '../styles/global.css'
 ---
 
 <!doctype html>
-<html lang="uk">
+<html lang="uk" data-theme={theme}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="robots" content="noindex,nofollow" />
+    <meta name="robots" content={seo.robots} />
+    <meta name="description" content={description} />
+    {seo.canonical && <link rel="canonical" href={seo.canonical} />}
+    {
+      seo.social && (
+        <>
+          <meta property="og:type" content="website" />
+          <meta property="og:locale" content="uk_UA" />
+          <meta property="og:url" content={seo.canonical} />
+          <meta property="og:title" content={title} />
+          <meta property="og:description" content={description} />
+          <meta name="twitter:card" content="summary" />
+          <meta name="twitter:title" content={title} />
+          <meta name="twitter:description" content={description} />
+        </>
+      )
+    }
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
   </head>

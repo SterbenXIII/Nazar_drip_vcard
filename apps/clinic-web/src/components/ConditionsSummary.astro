@@ -1,0 +1,33 @@
+---
+import { landingSections } from '../content/landing'
+import StagingIllustration from './StagingIllustration.astro'
+
+const detailRoutesAvailable = (process.env.CLINIC_SITE_MODE ?? 'normal') !== 'normal'
+---
+
+<section class="landing-section conditions" id="conditions" aria-labelledby="conditions-title">
+  <div class="wrap editorial-grid">
+    <div class="section-intro">
+      <h2 id="conditions-title">Простір і щоденні умови</h2>
+      <p>
+        Центр розташований у Львівській області. Конкретні умови перебування варто уточнити для
+        обраної програми.
+      </p>
+      {
+        detailRoutesAvailable && (
+          <a class="text-link" href="/umovy/">
+            Про центр та умови <span aria-hidden="true">→</span>
+          </a>
+        )
+      }
+    </div>
+    <div class="editorial-copy">
+      <p>
+        У матеріалах центру описані чотириразове харчування, спортзал, сауна, ігрові зони та групове
+        дозвілля. Актуальність окремих можливостей уточнюють під час консультації.
+      </p>
+      <p>{landingSections[7].introduction}</p>
+      <StagingIllustration slot="IMG_0905" />
+    </div>
+  </div>
+</section>

@@ -15,7 +15,11 @@ interface Props {
 const { service, preview = false } = Astro.props
 ---
 
-<Layout title={`${service.title} — HAVENHUB`}>
+<Layout
+  title={`${service.title} — HAVENHUB`}
+  description={service.introduction}
+  routePolicy="closed"
+>
   <Header hrefPrefix="/" />
   <main id="content">
     {preview && <p class="preview-note wrap">ДЕМО · непогоджений вміст · лише локальний preview</p>}

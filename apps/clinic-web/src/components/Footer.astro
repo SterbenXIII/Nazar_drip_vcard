@@ -1,10 +1,29 @@
 ---
 import { hotline, telegram } from '../content/customer-materials'
+
+const supportingPagesAvailable = (process.env.CLINIC_SITE_MODE ?? 'normal') !== 'normal'
+const navigation = supportingPagesAvailable
+  ? [
+      { href: '/programa/', label: 'Програма' },
+      { href: '/umovy/', label: 'Про центр' },
+      { href: '/rodyni/', label: 'Для родини' },
+      { href: '/napriamy/', label: 'Напрями' },
+    ]
+  : []
 ---
 
 <footer class="footer">
   <div class="wrap">
     <a class="identity" href="/" aria-label="HAVENHUB — головна">HAVENHUB</a>
+    {
+      navigation.length > 0 && (
+        <nav class="footer-navigation" aria-label="Навігація внизу сторінки">
+          {navigation.map(({ href, label }) => (
+            <a href={href}>{label}</a>
+          ))}
+        </nav>
+      )
+    }
     <div class="footer-contacts" aria-label="Контакти HAVENHUB">
       <a href={hotline.href} aria-label={`Зателефонувати на гарячу лінію: ${hotline.display}`}>
         {hotline.display}

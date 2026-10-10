@@ -1,0 +1,43 @@
+---
+import { landingSections } from '../content/landing'
+
+const copy = landingSections[1]
+const detailRoutesAvailable = (process.env.CLINIC_SITE_MODE ?? 'normal') !== 'normal'
+---
+
+<section class="landing-section audience" id="audience" aria-labelledby="audience-title">
+  <div class="wrap">
+    <div class="section-intro">
+      <h2 id="audience-title">{copy.title}</h2>
+      <p>{copy.introduction}</p>
+    </div>
+    <div class="choice-grid">
+      <article>
+        <h3>{copy.items[0].title}</h3>
+        <p>
+          Розкажіть, що вас турбує. Під час першої розмови можна запитати про подальші кроки й
+          доступний формат допомоги.
+        </p>
+        <a href="#process">Як звернутися <span aria-hidden="true">→</span></a>
+      </article>
+      <article>
+        <h3>{copy.items[1].title}</h3>
+        <p>
+          Можна обговорити своє занепокоєння та підтримку для рідних, не приймаючи рішення за іншу
+          людину.
+        </p>
+        {
+          detailRoutesAvailable ? (
+            <a href="/rodyni/">
+              Підтримка для родини <span aria-hidden="true">→</span>
+            </a>
+          ) : (
+            <a href="#family">
+              Підтримка для родини <span aria-hidden="true">→</span>
+            </a>
+          )
+        }
+      </article>
+    </div>
+  </div>
+</section>

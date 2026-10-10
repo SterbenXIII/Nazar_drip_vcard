@@ -4,7 +4,22 @@ interface Props {
 }
 
 const { hrefPrefix = '' } = Astro.props
-import { consultationCta } from '../content/customer-materials'
+import { consultationCta, hotline, telegram } from '../content/customer-materials'
+
+const supportingPagesAvailable = (process.env.CLINIC_SITE_MODE ?? 'normal') !== 'normal'
+const navigation = supportingPagesAvailable
+  ? [
+      { href: '/programa/', label: 'Програма' },
+      { href: '/umovy/', label: 'Про центр' },
+      { href: '/rodyni/', label: 'Для родини' },
+      { href: '/napriamy/', label: 'Напрями' },
+    ]
+  : [
+      { href: `${hrefPrefix}#about`, label: 'Про заклад' },
+      { href: `${hrefPrefix}#services`, label: 'Напрями' },
+      { href: `${hrefPrefix}#process`, label: 'Як звернутися' },
+      { href: `${hrefPrefix}#faq`, label: 'Запитання' },
+    ]
 ---
 
 <header class="site-header">
@@ -13,9 +28,7 @@ import { consultationCta } from '../content/customer-materials'
       class="desktop-nav"
       aria-label="Основна навігація"
     >
-      <a href={`${hrefPrefix}#about`}>Про заклад</a><a href={`${hrefPrefix}#services`}>Напрями</a><a
-        href={`${hrefPrefix}#process`}>Як звернутися</a
-      ><a href={`${hrefPrefix}#faq`}>Запитання</a>
+      {navigation.map(({ href, label }) => <a href={href}>{label}</a>)}
     </nav><a
       class="header-action"
       href={consultationCta.href}
@@ -34,11 +47,12 @@ import { consultationCta } from '../content/customer-materials'
       <span class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
     </button>
     <nav id="mobile-navigation" class="mobile-navigation" aria-label="Мобільна навігація" hidden>
-      <a href={`${hrefPrefix}#about`}>Про заклад</a>
-      <a href={`${hrefPrefix}#services`}>Напрями</a>
-      <a href={`${hrefPrefix}#process`}>Як звернутися</a>
-      <a href={`${hrefPrefix}#faq`}>Запитання</a>
+      {navigation.map(({ href, label }) => <a href={href}>{label}</a>)}
       <a href={`${hrefPrefix}#contact`}>Звернення</a>
+      <a href={hotline.href} aria-label={`Зателефонувати на гарячу лінію: ${hotline.display}`}
+        >{hotline.display}</a
+      >
+      <a href={telegram.href} aria-label={telegram.accessibleName}>{telegram.label}</a>
     </nav>
   </div>
 </header>

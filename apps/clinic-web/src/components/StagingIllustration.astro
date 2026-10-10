@@ -1,0 +1,72 @@
+---
+import { resolveStagingIllustration } from '../content/staging-media.mjs'
+
+interface Props {
+  slot: 'IMG_0905' | 'IMG_0907'
+}
+
+const { slot } = Astro.props
+const source = resolveStagingIllustration(slot, process.env.CLINIC_SITE_MODE ?? 'normal')
+
+const descriptions = {
+  IMG_0905: 'Ілюстративна візуалізація інтер’єру, не фото приміщення HAVENHUB',
+  IMG_0907: 'Ілюстративна візуалізація індивідуальної бесіди, не фото працівників HAVENHUB',
+}
+---
+
+{
+  source && (
+    <figure class="staging-illustration" data-staging-illustration={slot}>
+      <img
+        src={source}
+        alt={descriptions[slot]}
+        loading="lazy"
+        decoding="async"
+        width="960"
+        height="640"
+      />
+      <figcaption>
+        Візуалізація, не фото приміщення центру
+        {slot === 'IMG_0907' && '. Не фото працівників HAVENHUB.'}
+      </figcaption>
+    </figure>
+  )
+}
+
+<script>
+  for (const image of document.querySelectorAll<HTMLImageElement>(
+    '[data-staging-illustration] img',
+  )) {
+    const removeBrokenIllustration = () => {
+      image.closest('[data-staging-illustration]')?.remove()
+    }
+
+    image.addEventListener('error', removeBrokenIllustration, { once: true })
+    if (image.complete && image.naturalWidth === 0) removeBrokenIllustration()
+  }
+</script>
+
+<style>
+  .staging-illustration {
+    margin: 1.5rem 0 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-muted);
+  }
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+  }
+
+  figcaption {
+    padding: 0.75rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+</style>

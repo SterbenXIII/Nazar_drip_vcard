@@ -35,7 +35,8 @@ export const dependencyTypes = [
 
 export const careFormats = ['Стаціонарна програма', 'Амбулаторна програма', 'Виїзд додому'] as const
 
-export const geography = 'Працюємо по всій Україні; локальний фокус — Львів і Львівська область.'
+export const geography =
+  'Центр розташований у Львівській області. Виїзд додому — у Львові та Львівській області.'
 
 export const hotline = {
   display: '+380 77 974 24 22',

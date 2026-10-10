@@ -183,9 +183,7 @@ try {
     },
   )
 
-  await run('normal-build', 'pnpm', ['--filter', packageName, 'build'], {
-    CLINIC_ENABLE_SERVICE_PREVIEW: 'false',
-  })
+  await run('normal-build', 'pnpm', ['--filter', packageName, 'build:normal'])
   await run('normal-metadata', 'pnpm', ['--filter', packageName, 'check:metadata'], {
     CLINIC_ENABLE_SERVICE_PREVIEW: 'false',
   })
@@ -195,17 +193,13 @@ try {
     false,
   )
 
-  await run('preview-build', 'pnpm', ['--filter', packageName, 'build'], {
-    CLINIC_ENABLE_SERVICE_PREVIEW: 'true',
-  })
+  await run('preview-build', 'pnpm', ['--filter', packageName, 'build:content'])
   await run('preview-metadata', 'pnpm', ['--filter', packageName, 'check:metadata'], {
     CLINIC_ENABLE_SERVICE_PREVIEW: 'true',
   })
   await browser('preview-browser', ['e2e/service-template.spec.ts'], true)
 
-  await run('restore-normal-build', 'pnpm', ['--filter', packageName, 'build'], {
-    CLINIC_ENABLE_SERVICE_PREVIEW: 'false',
-  })
+  await run('restore-normal-build', 'pnpm', ['--filter', packageName, 'build:normal'])
   await run('restored-metadata', 'pnpm', ['--filter', packageName, 'check:metadata'], {
     CLINIC_ENABLE_SERVICE_PREVIEW: 'false',
   })
