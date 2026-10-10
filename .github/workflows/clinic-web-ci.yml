@@ -64,8 +64,14 @@ jobs:
       - name: Run clinic acceptance checks
         run: make clinic-acceptance
 
+      - name: Verify isolated E2E test inventories
+        run: node --test apps/clinic-web/scripts/e2e-inventory.test.mjs
+
       - name: Run clinic browser tests
         run: pnpm --filter @vcard/clinic-web test:e2e
+
+      - name: Run isolated publication mode matrix
+        run: pnpm --filter @vcard/clinic-web test:publication
 
       - name: Build clinic Docker image
         run: make clinic-docker-build

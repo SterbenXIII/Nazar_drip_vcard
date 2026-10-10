@@ -17,7 +17,8 @@
     "acceptance": "node scripts/acceptance.mjs",
     "lint": "eslint .",
     "check:metadata": "node scripts/check-metadata.mjs",
-    "test:e2e": "playwright test --config playwright.config.ts"
+    "test:e2e": "playwright test --config playwright.config.ts",
+    "test:publication": "CLINIC_PUBLICATION_MATRIX=true playwright test --config playwright.config.ts e2e/publication.spec.ts --workers=1"
   },
   "dependencies": {
     "@astrojs/check": "0.9.10",

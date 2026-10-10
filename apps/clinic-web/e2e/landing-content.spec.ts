@@ -83,9 +83,10 @@ test('tracks source receipt, service currentness, and production approval separa
 test('renders only the confirmed center location and home-visit coverage', async ({ page }) => {
   await page.goto('/')
 
-  const formats = page.locator('.services')
-  await expect(formats).toContainText('Центр розташований у Львівській області')
-  await expect(formats).toContainText('Виїзд додому — у Львові та Львівській області')
-  await expect(formats).not.toContainText('по всій Україні')
-  await expect(formats).not.toContainText('Адреса:')
+  const conditions = page.locator('#conditions')
+  const formats = page.locator('#formats')
+  await expect(conditions).toContainText('Центр розташований у Львівській області')
+  await expect(formats).toContainText('Виїзд додому у Львові та Львівській області.')
+  await expect(page.locator('main')).not.toContainText('по всій Україні')
+  await expect(conditions).not.toContainText('Адреса:')
 })
