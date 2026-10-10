@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HAVENHUB — порівняння робочих тем</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Serif:wght@600;700&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 30px; background: #e9e6e4; color: #292529; font: 16px/1.65 'IBM Plex Sans', Arial, sans-serif; }
+    h1 { margin: 0 0 24px; font-size: 22px; }
+    h2, h3 { font-family: 'IBM Plex Serif', Georgia, serif; line-height: 1.16; }
+    h2 { font-size: clamp(34px, 3vw, 54px); }
+    h3 { font-size: 28px; }
+    p { max-width: 53ch; }
+    .boards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    .board { --ink:#12394b; --muted:#526e78; --accent:#087f78; --pale:#f3faf9; --line:#dce9e9; min-width:0; background:#fff; box-shadow:0 8px 28px #29252918; }
+    .board.burgundy { --ink:#3b232c; --muted:#685961; --accent:#762d46; --pale:#f8f1f3; --line:#e8d9de; }
+    .board header, .board section { padding: 28px 38px; }
+    .board header { color:var(--ink); border-bottom:1px solid var(--line); font-weight:700; letter-spacing:.03em; }
+    .board .hero { min-height:430px; background:linear-gradient(150deg, var(--pale), #fff 72%); }
+    .board .hero h2 { max-width: 13ch; color:var(--ink); letter-spacing:-.035em; }
+    .board p { color:var(--muted); }
+    .actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:25px; }
+    .actions span { display:inline-flex; min-height:46px; align-items:center; padding:10px 18px; border-radius:8px; background:var(--accent); color:#fff; font-weight:700; }
+    .actions span + span { background:transparent; color:var(--ink); border:1px solid var(--accent); }
+    .board .body { min-height:390px; }
+    .board .body h3 { color:var(--ink); }
+    .board .body ul { padding-left:20px; color:var(--ink); }
+    .board .contact { min-height:240px; background:var(--ink); }
+    .board .contact h3, .board .contact p { color:#fff; }
+    .board .contact .actions span { background:#fff; color:var(--ink); }
+    .board .contact .actions span + span { background:transparent; color:#fff; border-color:#fff; }
+    .label { margin:0 0 8px; font:700 13px/1.4 'IBM Plex Sans', Arial, sans-serif; text-transform:uppercase; letter-spacing:.08em; }
+    @media (max-width:900px) { .boards { grid-template-columns:1fr; } .board header, .board section { padding:24px; } }
+  </style>
+</head>
+<body>
+  <h1>Порівняння тем — однакові тексти й компонування, робочі зразки</h1>
+  <div class="boards">
+    <article class="board navy">
+      <header>HAVENHUB · NAVY / TEAL</header>
+      <section class="hero"><p class="label">Перший екран</p><h2>Допомога людям із залежностями та їхнім близьким</h2><p>Якщо ви шукаєте підтримки для себе або близької людини, зателефонуйте чи напишіть у Telegram. Під час першої розмови можна обговорити запит і наступний крок.</p><div class="actions"><span>Зателефонувати</span><span>Написати в Telegram</span></div><p>Гаряча лінія 24/7. Перша первинна консультація безкоштовна.</p></section>
+      <section class="body"><p class="label">Довгий текст</p><h3>Підтримка для рідних і близьких</h3><p>Рідні можуть звернутися, щоб обговорити власні запитання та можливі наступні кроки. Родина теж може потребувати підтримки. У програмі передбачені інформаційно терапевтичні групи для рідних та розмова про труднощі, з якими вони стикаються.</p><ul><li>Розповісти, що хвилює.</li><li>Уточнити доступні формати підтримки.</li><li>Обговорити наступний крок.</li></ul></section>
+      <section class="contact"><h3>Поговорімо про наступний крок</h3><p>Перша первинна консультація безкоштовна. Вартість визначають після консультації.</p><div class="actions"><span>Зателефонувати</span><span>Написати в Telegram</span></div></section>
+    </article>
+    <article class="board burgundy">
+      <header>HAVENHUB · СТРИМАНИЙ БОРДОВИЙ</header>
+      <section class="hero"><p class="label">Перший екран</p><h2>Допомога людям із залежностями та їхнім близьким</h2><p>Якщо ви шукаєте підтримки для себе або близької людини, зателефонуйте чи напишіть у Telegram. Під час першої розмови можна обговорити запит і наступний крок.</p><div class="actions"><span>Зателефонувати</span><span>Написати в Telegram</span></div><p>Гаряча лінія 24/7. Перша первинна консультація безкоштовна.</p></section>
+      <section class="body"><p class="label">Довгий текст</p><h3>Підтримка для рідних і близьких</h3><p>Рідні можуть звернутися, щоб обговорити власні запитання та можливі наступні кроки. Родина теж може потребувати підтримки. У програмі передбачені інформаційно терапевтичні групи для рідних та розмова про труднощі, з якими вони стикаються.</p><ul><li>Розповісти, що хвилює.</li><li>Уточнити доступні формати підтримки.</li><li>Обговорити наступний крок.</li></ul></section>
+      <section class="contact"><h3>Поговорімо про наступний крок</h3><p>Перша первинна консультація безкоштовна. Вартість визначають після консультації.</p><div class="actions"><span>Зателефонувати</span><span>Написати в Telegram</span></div></section>
+    </article>
+  </div>
+</body>
+</html>
