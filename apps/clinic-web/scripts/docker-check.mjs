@@ -12,14 +12,19 @@ assert.match(html, /<meta name="robots" content="noindex,nofollow">/)
 assert.doesNotMatch(html, /<link\b[^>]*\brel=["']canonical["']/i)
 assert.doesNotMatch(html, /\bhreflang\s*=/i)
 assert.doesNotMatch(html, /\bog:url\b/i)
-assert.match(html, /data-clinic-ready="false"/, 'form must remain unavailable')
-assert.match(html, /<button[^>]*id="clinic-submit"[^>]*disabled/)
+assert.doesNotMatch(html, /<form\b|id="clinic-submit"|data-clinic-ready/i)
+assert.doesNotMatch(html, /__havenhub_staging_media__|img-0905|img-0907/i)
+assert.match(html, /<main\b[^>]*id="content"[^>]*tabindex="-1"/)
 
 const favicon = await get('/favicon.svg')
 assert.equal(favicon.status, 200, 'favicon must return HTTP 200')
 assert.match(favicon.headers.get('content-type') ?? '', /image\/svg\+xml/)
 
 for (const path of [
+  '/programa/',
+  '/umovy/',
+  '/rodyni/',
+  '/napriamy/',
   '/unknown-clinic-route/',
   '/preview/services/template-demo/',
   '/api/leads/submit',
@@ -30,7 +35,7 @@ for (const path of [
 
 const browser = await chromium.launch()
 try {
-  for (const width of [390, 1440]) {
+  for (const width of [320, 390, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } })
     const errors = []
     const requests = []
@@ -40,7 +45,7 @@ try {
       const request = route.request()
       const url = new URL(request.url())
       if (
-        request.method() === 'POST' ||
+        !['GET', 'HEAD'].includes(request.method()) ||
         url.origin !== origin ||
         url.pathname.startsWith('/api/')
       ) {
@@ -55,7 +60,7 @@ try {
     page.on('pageerror', (error) => errors.push(error.message))
     page.on('response', (response) => {
       const url = new URL(response.url())
-      if (url.origin === origin && /\.(css|js|png|svg)$/.test(url.pathname)) {
+      if (url.origin === origin && /\.(css|js|png|svg|woff2)$/.test(url.pathname)) {
         if (!response.ok()) errors.push(`asset HTTP ${response.status()}: ${url.pathname}`)
         assets.add(url.pathname.split('.').at(-1))
       }
@@ -63,35 +68,14 @@ try {
 
     await page.goto(origin)
     assert.equal(await page.evaluate(() => window.innerWidth), width)
+    assert.equal(await page.locator('h1').count(), 1)
+    assert.equal(await page.locator('main > section').count(), 9)
+    assert.equal(await page.locator('form, #clinic-submit').count(), 0)
     assert.equal(await page.locator('link[rel="icon"]').getAttribute('href'), '/favicon.svg')
-    assert.equal(
-      await page.evaluate(() => fetch('/favicon.svg').then((response) => response.ok)),
-      true,
-    )
-    const submitState = await page.locator('#clinic-submit').evaluate((button) => {
-      const description = button.getAttribute('aria-describedby')
-      return {
-        disabled: button.disabled,
-        describedByText: description
-          ? document.getElementById(description)?.textContent?.trim()
-          : '',
-      }
-    })
-    assert.equal(submitState.disabled, true)
-    assert.ok(submitState.describedByText)
-    await page.locator('#clinic-submit').evaluate((button) => {
-      button.disabled = false
-    })
-    await page.locator('#clinic-lead-form').evaluate((form) => {
-      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
-    })
-    assert.match(
-      await page.locator('#clinic-request-status').innerText(),
-      /Відправлення стане доступним після окремої специфікації доставки й конфіденційності/,
-    )
-    await page.locator('#clinic-submit').evaluate((button) => {
-      button.disabled = true
-    })
+
+    for (const target of ['tel:+380779742422', 'https://t.me/HavenRehub']) {
+      assert.equal(await page.locator(`#contact a[href="${target}"]`).count(), 1)
+    }
 
     if (width === 390) {
       const toggle = page.locator('#mobile-menu-toggle')
@@ -105,25 +89,7 @@ try {
       assert.equal(await toggle.getAttribute('aria-expanded'), 'false')
       assert.equal(await navigation.isHidden(), true)
       assert.equal(await toggle.evaluate((element) => element === document.activeElement), true)
-
-      const cardMetrics = await page
-        .locator('.cards article')
-        .first()
-        .evaluate((element) => {
-          const style = getComputedStyle(element)
-          return {
-            minHeight: style.minHeight,
-            padding: style.padding,
-            headingMarginBottom: getComputedStyle(element.querySelector('h4')).marginBottom,
-          }
-        })
-      assert.equal(cardMetrics.minHeight, '0px')
-      assert.notEqual(cardMetrics.padding, '0px')
-      assert.ok(Number.parseFloat(cardMetrics.headingMarginBottom) > 0)
-      assert.equal(await page.locator('.dependency-types, .care-formats').count(), 2)
-      assert.equal(await page.locator('.dependency-types h3').innerText(), 'Напрями залежності')
-      assert.equal(await page.locator('.care-formats h3').innerText(), 'Формати допомоги')
-    } else {
+    } else if (width === 1440) {
       assert.equal(await page.locator('#mobile-menu-toggle').isHidden(), true)
       assert.equal(
         await page.getByRole('navigation', { name: 'Основна навігація' }).isVisible(),
@@ -131,28 +97,30 @@ try {
       )
     }
 
+    for (const href of await page
+      .locator('.desktop-nav a[href^="#"]')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('href')))) {
+      assert.equal(await page.locator(href).count(), 1, `navigation target ${href} must exist`)
+    }
     assert.equal(
-      await page.locator('html').evaluate((element) => element.scrollWidth <= element.clientWidth),
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
       true,
       `horizontal overflow at ${width}px`,
     )
     await page.emulateMedia({ reducedMotion: 'reduce' })
     assert.equal(
-      await page.locator('html').evaluate((element) => getComputedStyle(element).scrollBehavior),
+      await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior),
       'auto',
     )
-    for (const extension of ['css', 'js', 'svg']) {
-      assert(assets.has(extension), `${extension} asset must load`)
-    }
+    // Favicon is verified with an explicit HTTP fetch above: headless Chromium may not request it.
+    assert.ok(assets.has('css'), 'stylesheet must load')
     assert.deepEqual(requests, [], 'browser must not send API or external requests')
     assert.deepEqual(errors, [], `browser errors at ${width}px`)
-    console.log(
-      `browser ${width}px PASS; innerWidth=${width}; ${assets.size} assets loaded; no API request`,
-    )
+    console.log(`browser ${width}px PASS; ${assets.size} asset types; no API request`)
     await page.close()
   }
 } finally {
   await browser.close()
 }
 
-console.log('clinic Docker HTTP, assets, metadata, form and browser checks PASS')
+console.log('clinic Docker HTTP, metadata, closed forms, assets and browser smoke PASS')

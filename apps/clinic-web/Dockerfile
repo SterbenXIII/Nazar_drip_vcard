@@ -18,7 +18,7 @@ COPY tsconfig.base.json ./
 COPY apps/clinic-web/astro.config.mjs apps/clinic-web/tsconfig.json ./apps/clinic-web/
 COPY apps/clinic-web/src ./apps/clinic-web/src
 COPY apps/clinic-web/public ./apps/clinic-web/public
-COPY apps/clinic-web/scripts/check-metadata.mjs ./apps/clinic-web/scripts/
+COPY apps/clinic-web/scripts/check-metadata.mjs apps/clinic-web/scripts/emit-seo-artifacts.mjs ./apps/clinic-web/scripts/
 RUN pnpm --filter @vcard/shared build && \
     pnpm --filter @vcard/clinic-web build:normal && \
     pnpm --filter @vcard/clinic-web check:metadata
@@ -27,7 +27,7 @@ FROM nginx:1.25.4-alpine@sha256:31bad00311cb5eeb8a6648beadcf67277a175da89989f147
 
 RUN touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/run/nginx.pid /var/cache/nginx /var/log/nginx
-COPY apps/clinic-web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chown=nginx:nginx --chmod=644 apps/clinic-web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder --chown=nginx:nginx /app/apps/clinic-web/dist/ /usr/share/nginx/html/
 
 USER nginx

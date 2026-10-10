@@ -21,7 +21,7 @@ const { page } = Astro.props as { page: SupportingPage }
 
 <Layout title={page.title} description={page.description} routePolicy="supporting">
   <Header hrefPrefix="/" />
-  <main id="content" class="support-page">
+  <main id="content" tabindex="-1" class="support-page">
     <div class="wrap">
       <header class="support-intro">
         <h1>{page.h1}</h1>

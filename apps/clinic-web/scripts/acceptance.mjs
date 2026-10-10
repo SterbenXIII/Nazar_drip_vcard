@@ -92,7 +92,7 @@ async function findFreePort() {
   return address.port
 }
 
-async function browser(label, files, preview) {
+async function browser(label, files, preview, siteMode = 'normal') {
   const port = await findFreePort()
   await run(
     label,
@@ -115,6 +115,7 @@ async function browser(label, files, preview) {
       CLINIC_ACCEPTANCE_ARTIFACT_DIR: join(diagnosticDir, label),
       CLINIC_ACCEPTANCE_USE_BUILD: 'true',
       CLINIC_ENABLE_SERVICE_PREVIEW: String(preview),
+      CLINIC_SITE_MODE: siteMode,
     },
   )
 }
@@ -189,7 +190,14 @@ try {
   })
   await browser(
     'normal-browser',
-    ['e2e/homepage.spec.ts', 'e2e/lead-form.spec.ts', 'e2e/service-content.spec.ts'],
+    [
+      'e2e/homepage.spec.ts',
+      'e2e/shared-chrome.spec.ts',
+      'e2e/accessibility.spec.ts',
+      'e2e/theme.spec.ts',
+      'e2e/lead-form.spec.ts',
+      'e2e/service-content.spec.ts',
+    ],
     false,
   )
 
@@ -198,6 +206,23 @@ try {
     CLINIC_ENABLE_SERVICE_PREVIEW: 'true',
   })
   await browser('preview-browser', ['e2e/service-template.spec.ts'], true)
+
+  await run('staging-build', 'pnpm', ['--filter', packageName, 'build:staging'])
+  await run('staging-metadata', 'pnpm', ['--filter', packageName, 'check:metadata'], {
+    CLINIC_SITE_MODE: 'staging',
+    CLINIC_ENABLE_SERVICE_PREVIEW: 'false',
+  })
+  await browser(
+    'staging-browser',
+    [
+      'e2e/homepage.spec.ts',
+      'e2e/shared-chrome.spec.ts',
+      'e2e/supporting-pages.spec.ts',
+      'e2e/accessibility.spec.ts',
+    ],
+    false,
+    'staging',
+  )
 
   await run('restore-normal-build', 'pnpm', ['--filter', packageName, 'build:normal'])
   await run('restored-metadata', 'pnpm', ['--filter', packageName, 'check:metadata'], {

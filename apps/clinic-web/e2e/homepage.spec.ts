@@ -108,3 +108,21 @@ for (const width of [320, 390, 768, 1440]) {
     await expect(page.locator('#contact')).toBeVisible()
   })
 }
+
+test('skip link transfers keyboard focus into the main content', async ({ page }) => {
+  await page.goto('/')
+  await page.keyboard.press('Tab')
+  await expect(page.locator('.skip-link')).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page.locator('main#content')).toBeFocused()
+})
+
+test('normal navigation anchors point to sections that exist', async ({ page }) => {
+  test.skip(staging, 'staging has dedicated supporting routes')
+  await page.goto('/')
+  for (const href of await page
+    .locator('.desktop-nav a[href^="#"]')
+    .evaluateAll((links) => links.map((link) => link.getAttribute('href')!))) {
+    await expect(page.locator(href)).toHaveCount(1)
+  }
+})
