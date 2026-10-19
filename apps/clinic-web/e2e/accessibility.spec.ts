@@ -3,11 +3,14 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from './fixtures'
 
 const isStaging = process.env.CLINIC_SITE_MODE === 'staging'
-const routes = ['/site/', '/programa/', '/umovy/', '/rodyni/', '/napriamy/'] as const
+const routes = ['/', '/site/', '/programa/', '/umovy/', '/rodyni/', '/napriamy/'] as const
 
 for (const route of routes) {
   test(`${route} supports axe, skip-to-main, and 320px reflow`, async ({ page }) => {
-    test.skip(route !== '/site/' && !isStaging, 'supporting routes are absent in normal')
+    test.skip(
+      route !== '/' && route !== '/site/' && !isStaging,
+      'supporting routes are absent in normal',
+    )
     await page.setViewportSize({ width: 320, height: 720 })
     await page.goto(route)
 
@@ -27,6 +30,14 @@ for (const route of routes) {
     expect(results.violations).toEqual([])
   })
 }
+
+test('wide HAVENHUB landing has no axe accessibility violations', async ({ page }) => {
+  await page.setViewportSize({ width: 2560, height: 1440 })
+  await page.goto('/')
+
+  const results = await new AxeBuilder({ page }).analyze()
+  expect(results.violations).toEqual([])
+})
 
 test('200%-equivalent reduced CSS viewport plus 200% text resizing retains access to contacts', async ({
   page,

@@ -117,10 +117,13 @@ const highlights = [
   }
 
   .entry-content {
+    display: flex;
     z-index: 1;
+    flex-direction: column;
+    justify-content: center;
     grid-column: 1;
     grid-row: 1;
-    padding: clamp(12rem, 20vh, 14rem) 2.5rem 14.5rem clamp(2rem, 8.5vw, 8.125rem);
+    padding: 10rem 2.5rem 11rem clamp(2rem, 8.5vw, 8.125rem);
   }
 
   .entry-values {
@@ -134,7 +137,7 @@ const highlights = [
     padding: 0 0 0 1.75rem;
     border-left: 1px solid #b9e9ed;
     color: #b9e9ed;
-    font-size: 0.875rem;
+    font-size: 1rem;
     letter-spacing: 0.2em;
     line-height: 1.4;
     text-transform: uppercase;
@@ -156,7 +159,7 @@ const highlights = [
     margin: 0;
     color: #f4f7f2;
     font-family: var(--font-display);
-    font-size: clamp(2.75rem, 4vw, 4.25rem);
+    font-size: clamp(3.25rem, 4.5vw, 4.5rem);
     font-weight: 600;
     letter-spacing: -0.035em;
     line-height: 1.05;
@@ -173,9 +176,9 @@ const highlights = [
 
   .entry-introduction {
     max-width: 42rem;
-    margin: 1.25rem 0 0;
+    margin: 1.5rem 0 0;
     color: #e5efea;
-    font-size: clamp(1rem, 1.45vw, 1.1875rem);
+    font-size: clamp(1.25rem, 1.6vw, 1.625rem);
     line-height: 1.65;
   }
 
@@ -183,7 +186,7 @@ const highlights = [
     display: grid;
     max-width: 43rem;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    margin: 2rem 0 1.75rem;
+    margin: 2.5rem 0 0;
     padding: 0;
     list-style: none;
   }
@@ -214,21 +217,21 @@ const highlights = [
 
   .entry-highlight-title {
     color: #d9f1f1;
-    font-size: 0.9375rem;
+    font-size: 1.125rem;
     font-weight: 700;
   }
 
   .entry-highlight-copy {
     margin-top: 0.375rem;
     color: #e5efea;
-    font-size: 0.8125rem;
+    font-size: 1rem;
     line-height: 1.45;
   }
 
   .entry-contact {
     position: absolute;
     z-index: 2;
-    bottom: 6.75rem;
+    bottom: 5.25rem;
     left: clamp(2rem, 8.5vw, 8.125rem);
     display: flex;
     width: min(62vw, 60rem);
@@ -253,7 +256,7 @@ const highlights = [
     margin: 0;
     padding: 0;
     color: #c8e7e6;
-    font-size: 0.8125rem;
+    font-size: 1rem;
     list-style: none;
   }
 
@@ -301,7 +304,7 @@ const highlights = [
 
   .entry-phone-copy span {
     color: #b9e9ed;
-    font-size: 0.8125rem;
+    font-size: 1rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
@@ -316,7 +319,7 @@ const highlights = [
   .entry-phone-copy .entry-telegram {
     align-self: flex-start;
     color: #b9e9ed;
-    font-size: 0.8125rem;
+    font-size: 1rem;
     font-weight: 500;
     text-decoration: underline;
   }
@@ -332,7 +335,7 @@ const highlights = [
     border-radius: 999px;
     background: #86d2df;
     color: #0a3934;
-    font-size: 0.8125rem;
+    font-size: 1rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-decoration: none;
@@ -357,7 +360,7 @@ const highlights = [
   .entry-telegram {
     display: inline-block;
     color: #b9e9ed;
-    font-size: 0.8125rem;
+    font-size: 1rem;
     text-underline-offset: 0.2em;
   }
 
@@ -368,19 +371,20 @@ const highlights = [
     outline-offset: 4px;
   }
 
-  @media (width <= 900px) {
+  @media (width <= 1080px) {
     .entry-hero {
       display: flex;
-      min-height: 100svh;
+      min-height: 0;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 2rem;
       padding: 8.5rem var(--gutter) 1.5rem;
     }
 
     .entry-content {
       position: relative;
       z-index: 1;
-      flex: 1;
+      flex: 0 0 auto;
+      justify-content: flex-start;
       padding: 0;
     }
 
@@ -390,12 +394,13 @@ const highlights = [
       max-width: 100%;
       margin: 0 0 1.25rem auto;
       padding-left: 0.875rem;
-      font-size: 0.6875rem;
+      font-size: 0.9375rem;
     }
 
     .entry-visual {
       position: absolute;
       inset: 0;
+      grid-area: auto;
       min-height: 100%;
       background-image:
         linear-gradient(90deg, rgb(5 31 27 / 96%), rgb(5 31 27 / 80%) 68%, rgb(5 31 27 / 38%)),
@@ -446,7 +451,7 @@ const highlights = [
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 0.75rem 1rem;
-      font-size: 0.75rem;
+      font-size: 0.9375rem;
     }
 
     .entry-phone-copy a {
@@ -461,6 +466,102 @@ const highlights = [
     .entry-site-button {
       grid-column: 1 / -1;
       width: 100%;
+    }
+  }
+
+  @media (width > 1080px) and (width <= 1600px) {
+    .entry-hero {
+      min-height: 0;
+      grid-template-rows: auto auto auto;
+      align-content: start;
+      row-gap: 2rem;
+    }
+
+    .entry-visual {
+      position: absolute;
+      inset: 0 0 0 53%;
+      grid-area: auto;
+      min-height: 0;
+    }
+
+    .entry-content {
+      min-height: 0;
+      justify-content: flex-start;
+      padding: clamp(10rem, 18vh, 14rem) 2.5rem 2rem clamp(2rem, 8.5vw, 8.125rem);
+    }
+
+    .entry-hero h1 {
+      font-size: clamp(3rem, 3.4vw, 3.25rem);
+    }
+
+    .entry-contact {
+      position: relative;
+      inset: auto;
+      grid-column: 1;
+      grid-row: 2;
+      width: min(70vw, 64rem);
+      margin-left: clamp(2rem, 8.5vw, 8.125rem);
+    }
+
+    .entry-trust {
+      position: relative;
+      inset: auto;
+      grid-column: 1;
+      grid-row: 3;
+      width: min(62vw, 60rem);
+      margin-left: clamp(2rem, 8.5vw, 8.125rem);
+    }
+
+    .entry-phone-copy span,
+    .entry-phone-copy a[href^='tel:'] {
+      white-space: nowrap;
+    }
+
+    .entry-phone-copy a[href^='tel:'] {
+      font-size: clamp(1.25rem, 2vw, 1.75rem);
+    }
+
+    .entry-site-button {
+      gap: 0.75rem;
+      padding-inline: 1rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  @media (width > 1600px) {
+    .entry-hero {
+      min-height: 0;
+      grid-template-rows: auto auto auto;
+      align-content: start;
+      row-gap: 2rem;
+    }
+
+    .entry-visual {
+      position: absolute;
+      inset: 0 0 0 53%;
+      grid-area: auto;
+      min-height: 0;
+    }
+
+    .entry-content {
+      justify-content: flex-start;
+      padding-bottom: 2rem;
+    }
+
+    .entry-contact {
+      position: relative;
+      inset: auto;
+      grid-column: 1;
+      grid-row: 2;
+      margin-left: clamp(2rem, 8.5vw, 8.125rem);
+    }
+
+    .entry-trust {
+      position: relative;
+      inset: auto;
+      grid-column: 1;
+      grid-row: 3;
+      margin-left: clamp(2rem, 8.5vw, 8.125rem);
     }
   }
 
@@ -501,13 +602,13 @@ const highlights = [
     }
 
     .entry-highlight-title {
-      font-size: 0.875rem;
+      font-size: 1.125rem;
     }
 
     .entry-highlight-copy {
       grid-column: 2;
       margin-top: 0;
-      font-size: 0.8125rem;
+      font-size: 1rem;
     }
 
     .entry-contact {
@@ -516,13 +617,13 @@ const highlights = [
     }
 
     .entry-phone-copy span {
-      font-size: 0.6875rem;
+      font-size: 1rem;
     }
 
     .entry-site-button {
       gap: 0.5rem;
       padding: 0.75rem 0.875rem;
-      font-size: 0.75rem;
+      font-size: 0.875rem;
       letter-spacing: 0.04em;
     }
 
@@ -530,7 +631,7 @@ const highlights = [
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.75rem;
-      font-size: 0.6875rem;
+      font-size: 1rem;
     }
 
     .entry-trust li {
@@ -574,18 +675,66 @@ const highlights = [
     }
   }
 
-  @media (height <= 850px) and (width > 900px) {
+  @media (height <= 850px) and (width > 1080px) {
+    .entry-hero {
+      grid-template-rows: auto auto auto;
+      row-gap: 1rem;
+    }
+
     .entry-hero,
     .entry-visual {
       min-height: 100svh;
     }
 
+    .entry-visual {
+      grid-area: auto;
+    }
+
     .entry-content {
-      padding: clamp(7rem, 17vh, 9rem) 2rem 10rem clamp(2rem, 8.5vw, 8.125rem);
+      min-height: 0;
+      justify-content: flex-start;
+      padding: clamp(6rem, 14vh, 7rem) 2rem 1.5rem clamp(2rem, 8.5vw, 8.125rem);
+    }
+
+    .entry-contact {
+      position: relative;
+      inset: auto;
+      grid-column: 1;
+      grid-row: 2;
+      margin-left: clamp(2rem, 8.5vw, 8.125rem);
+    }
+
+    .entry-hero h1 {
+      font-size: clamp(2.5rem, 3.5vw, 3.25rem);
+    }
+
+    .entry-introduction {
+      font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
+    }
+
+    .entry-highlights {
+      margin-top: 1.25rem;
+    }
+
+    .entry-highlight-title {
+      font-size: 1rem;
+    }
+
+    .entry-highlight-copy {
+      font-size: 0.875rem;
+    }
+
+    .entry-trust {
+      position: relative;
+      inset: auto;
+      grid-column: 1;
+      grid-row: 3;
+      width: min(62vw, 60rem);
+      margin-left: clamp(2rem, 8.5vw, 8.125rem);
     }
   }
 
-  @media (height <= 800px) and (width <= 900px) {
+  @media (height <= 800px) and (width <= 1080px) {
     .entry-hero {
       gap: 1rem;
       padding-top: 6.5rem;

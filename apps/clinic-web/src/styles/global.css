@@ -127,12 +127,21 @@ html {
   scroll-behavior: smooth;
 }
 
+html.home-layout {
+  background: #062b26;
+}
+
 body {
   width: min(100%, 120rem);
   min-width: 20rem;
   margin: 0 auto;
   color: var(--text);
   line-height: var(--line-body);
+}
+
+body.home-layout {
+  width: min(100%, clamp(120rem, 85vw, 160rem));
+  max-width: none;
 }
 
 h1,
