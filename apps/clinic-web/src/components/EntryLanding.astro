@@ -5,6 +5,7 @@ import { hotline, mainSiteCta, telegram } from '../content/customer-materials'
 import { landingSections } from '../content/landing'
 
 const hero = { ...landingSections[0], title: 'Підтримка на шляху до нового життя' }
+const mobileIntroduction = 'Підтримка для вас і близьких. Зателефонуйте або напишіть у Telegram.'
 const audience = landingSections[1].items
 const nextStep = landingSections[5].items[2]
 const highlights = [
@@ -24,7 +25,14 @@ const highlights = [
         <span>НОВЕ ЖИТТЯ</span>
       </p>
       <h1 id="entry-title">{hero.title}</h1>
-      <p class="entry-introduction">{hero.introduction}</p>
+      <a class="entry-site-button entry-site-button--mobile" href={mainSiteCta.href}>
+        {mainSiteCta.label}
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 12h15M13 5l7 7-7 7"></path>
+        </svg>
+      </a>
+      <p class="entry-introduction entry-introduction--mobile">{mobileIntroduction}</p>
+      <p class="entry-introduction entry-introduction--desktop">{hero.introduction}</p>
 
       <ul class="entry-highlights" aria-label="Як можна звернутися по підтримку">
         {
@@ -72,7 +80,7 @@ const highlights = [
           Написати в Telegram
         </a>
       </div>
-      <a class="entry-site-button" href={mainSiteCta.href}>
+      <a class="entry-site-button entry-site-button--contact" href={mainSiteCta.href}>
         {mainSiteCta.label}
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M4 12h15M13 5l7 7-7 7"></path>
@@ -104,12 +112,13 @@ const highlights = [
     </ul>
   </section>
 </main>
-<Footer />
+<Footer hideContactsOnMobile />
 
 <style>
   .entry-hero {
     position: relative;
     display: grid;
+    flex: 1;
     min-height: max(100svh, 54rem);
     grid-template-columns: 53% 47%;
     background: #062b26;
@@ -180,6 +189,10 @@ const highlights = [
     color: #e5efea;
     font-size: clamp(1.25rem, 1.6vw, 1.625rem);
     line-height: 1.65;
+  }
+
+  .entry-introduction--mobile {
+    display: none;
   }
 
   .entry-highlights {
@@ -343,6 +356,10 @@ const highlights = [
     transition: background-color 160ms ease;
   }
 
+  .entry-site-button--mobile {
+    display: none;
+  }
+
   .entry-site-button:hover {
     background: #a4e1e9;
   }
@@ -467,6 +484,10 @@ const highlights = [
       grid-column: 1 / -1;
       width: 100%;
     }
+
+    .entry-site-button--mobile {
+      display: none;
+    }
   }
 
   @media (width > 1080px) and (width <= 1600px) {
@@ -578,6 +599,28 @@ const highlights = [
       font-size: clamp(2rem, 8vw, 2.75rem);
     }
 
+    .entry-introduction--mobile {
+      display: block;
+    }
+
+    .entry-introduction--desktop,
+    .entry-site-button--contact,
+    .entry-values,
+    .entry-highlights {
+      display: none;
+    }
+
+    .entry-hero > .entry-trust {
+      display: none;
+    }
+
+    .entry-site-button--mobile {
+      display: inline-flex;
+      align-self: flex-start;
+      width: fit-content;
+      margin-top: 1.25rem;
+    }
+
     .entry-highlights {
       grid-template-columns: minmax(0, 1fr);
       gap: 0.875rem;
@@ -620,7 +663,15 @@ const highlights = [
     }
 
     .entry-phone-copy span {
-      font-size: 1rem;
+      font-size: 0.875rem;
+      letter-spacing: 0.04em;
+    }
+
+    .entry-phone-copy a[href^='tel:'],
+    .entry-phone-copy .entry-telegram {
+      display: inline-flex;
+      min-height: 2.75rem;
+      align-items: center;
     }
 
     .entry-site-button {

@@ -3,9 +3,10 @@ import { hotline, telegram } from '../content/customer-materials'
 
 interface Props {
   homeHref?: string
+  hideContactsOnMobile?: boolean
 }
 
-const { homeHref = '/' } = Astro.props
+const { homeHref = '/', hideContactsOnMobile = false } = Astro.props
 const supportingPagesAvailable = (process.env.CLINIC_SITE_MODE ?? 'normal') !== 'normal'
 const navigation = supportingPagesAvailable
   ? [
@@ -17,7 +18,7 @@ const navigation = supportingPagesAvailable
   : []
 ---
 
-<footer class="footer">
+<footer class:list={['footer', hideContactsOnMobile && 'footer--hide-contacts-mobile']}>
   <div class="wrap">
     <a class="identity" href={homeHref} aria-label="HAVENHUB — головна">HAVENHUB</a>
     {
@@ -37,3 +38,11 @@ const navigation = supportingPagesAvailable
     </div>
   </div>
 </footer>
+
+<style>
+  @media (width <= 700px) {
+    .footer--hide-contacts-mobile .footer-contacts {
+      display: none;
+    }
+  }
+</style>

@@ -6,16 +6,82 @@ test('the root landing links to the existing main site', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'Підтримка на шляху до нового життя',
   )
+  await expect(page.locator('.entry-introduction--desktop')).toBeVisible()
+  await expect(page.locator('.entry-introduction--mobile')).toBeHidden()
   await expect(page.locator('.entry-highlights li')).toHaveCount(3)
+  await expect(page.locator('.entry-trust')).toBeVisible()
   await expect(page.locator('.entry-phone-copy a[href^="tel:"]')).toHaveAttribute(
     'href',
     'tel:+380779742422',
   )
-  await expect(page.locator('.entry-site-button')).toHaveAttribute('href', '/site/')
+  await expect(page.locator('.entry-site-button--contact')).toHaveAttribute('href', '/site/')
+  await expect(page.locator('.entry-site-button--mobile')).toBeHidden()
 
-  await page.locator('.entry-site-button').click()
+  await page.locator('.entry-site-button--contact').click()
   await expect(page).toHaveURL(/\/site\/$/)
   await expect(page.locator('#audience')).toBeVisible()
+})
+
+test('the tablet landing keeps its full content and contact CTA', async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 1024 })
+  await page.goto('/')
+
+  await expect(page.locator('.entry-introduction--desktop')).toBeVisible()
+  await expect(page.locator('.entry-introduction--mobile')).toBeHidden()
+  await expect(page.locator('.entry-values')).toBeVisible()
+  await expect(page.locator('.entry-highlights')).toBeVisible()
+  await expect(page.locator('.entry-trust')).toBeVisible()
+  await expect(page.locator('.footer-contacts')).toBeVisible()
+  await expect(page.locator('.entry-site-button--mobile')).toBeHidden()
+  const cta = await page.locator('.entry-site-button--contact').boundingBox()
+  const contact = await page.locator('.entry-contact').boundingBox()
+  expect(cta).not.toBeNull()
+  expect(contact).not.toBeNull()
+  expect(cta!.x).toBeGreaterThanOrEqual(contact!.x)
+  expect(cta!.x + cta!.width).toBeLessThanOrEqual(contact!.x + contact!.width)
+  expect(cta!.y).toBeGreaterThanOrEqual(contact!.y)
+  expect(cta!.y + cta!.height).toBeLessThanOrEqual(contact!.y + contact!.height)
+})
+
+test('the compact visiting card keeps its main actions visible on narrow screens', async ({
+  page,
+}) => {
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 320, height: 568 },
+  ]) {
+    await page.setViewportSize(viewport)
+    await page.goto('/')
+
+    const cta = page.getByRole('link', { name: 'Перейти на основний сайт' })
+    await expect(cta).toHaveCount(1)
+    await expect(cta).toHaveAttribute('href', '/site/')
+    await expect(cta).toBeInViewport({ ratio: 1 })
+    await expect(page.locator('.entry-site-button--mobile')).toBeVisible()
+    await expect(page.locator('.entry-site-button--contact')).toBeHidden()
+    await expect(page.locator('.entry-introduction--mobile')).toHaveText(
+      'Підтримка для вас і близьких. Зателефонуйте або напишіть у Telegram.',
+    )
+    await expect(page.locator('.entry-introduction--desktop')).toBeHidden()
+    await expect(page.locator('.entry-values')).toBeHidden()
+    await expect(page.locator('.entry-highlights')).toBeHidden()
+    await expect(page.locator('.entry-trust')).toBeHidden()
+    const phone = page.locator('.entry-contact a[href^="tel:"]')
+    const telegram = page.locator('.entry-contact .entry-telegram')
+    const footer = await page.locator('.footer').boundingBox()
+    expect(footer).not.toBeNull()
+    if (viewport.width === 390) {
+      expect(Math.abs(footer!.y + footer!.height - viewport.height)).toBeLessThanOrEqual(1)
+    }
+    await expect(phone).toBeVisible()
+    await expect(phone).toHaveCSS('min-height', '44px')
+    await expect(telegram).toBeVisible()
+    await expect(telegram).toHaveCSS('min-height', '44px')
+    await expect(page.locator('.footer-contacts')).toBeHidden()
+    await expect(page.locator('.entry-highlights a')).toHaveCount(0)
+    await expect(page.getByText('Наші фахівці', { exact: true })).toHaveCount(0)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width)
+  }
 })
 
 test('the landing keeps its split layout on short landscape screens', async ({ page }) => {
@@ -85,7 +151,7 @@ test('the landing shell scales up and stays centered on wide displays', async ({
       expect(
         Number.parseFloat(
           await page
-            .locator('.entry-introduction')
+            .locator('.entry-introduction--desktop')
             .evaluate((node) => getComputedStyle(node).fontSize),
         ),
       ).toBeGreaterThanOrEqual(24)
@@ -150,11 +216,11 @@ test('the landing keeps contact actions reachable at 150% and 200% equivalent vi
     await expect(page.locator('.skip-link')).toBeFocused()
     await page.keyboard.press('Tab')
     await expect(page.locator('.site-header-landing .identity')).toBeFocused()
-    for (const selector of [
-      '.entry-phone-copy a[href^="tel:"]',
-      '.entry-telegram',
-      '.entry-site-button',
-    ]) {
+    const actionSelectors =
+      width <= 700
+        ? ['.entry-site-button--mobile', '.entry-phone-copy a[href^="tel:"]', '.entry-telegram']
+        : ['.entry-phone-copy a[href^="tel:"]', '.entry-telegram', '.entry-site-button--contact']
+    for (const selector of actionSelectors) {
       const link = page.locator(selector)
       await page.keyboard.press('Tab')
       await expect(link).toBeFocused()
@@ -166,7 +232,7 @@ test('the landing keeps contact actions reachable at 150% and 200% equivalent vi
 test('landing links show a visible keyboard focus indicator', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 })
   await page.goto('/')
-  const link = page.locator('.entry-site-button')
+  const link = page.locator('.entry-site-button--contact')
 
   await link.focus()
   await expect(link).toBeFocused()
