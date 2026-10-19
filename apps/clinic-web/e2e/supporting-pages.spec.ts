@@ -100,7 +100,7 @@ test('staging images occupy only their intended sections with clear illustrative
     })
   })
 
-  await page.goto('/')
+  await page.goto('/site/')
   const conditions = page.locator('#conditions [data-staging-illustration="IMG_0905"]')
   await expect(conditions).toHaveCount(1)
   await expect(conditions.locator('img')).toHaveAttribute('src', mediaPaths.IMG_0905)
@@ -138,7 +138,7 @@ test('no images or private media references appear without staging media authori
   const hasHomeMedia = stage && Boolean(process.env.HAVENHUB_STAGING_IMG_0905_URL)
   const hasProgramMedia = stage && Boolean(process.env.HAVENHUB_STAGING_IMG_0907_URL)
 
-  const homeResponse = await page.goto('/')
+  const homeResponse = await page.goto('/site/')
   const homeHtml = await homeResponse!.text()
   expect(homeHtml.includes('data-staging-illustration="IMG_0905"')).toBe(hasHomeMedia)
   expect(homeHtml).not.toContain('data-staging-illustration="IMG_0907"')
@@ -161,7 +161,7 @@ test('a missing protected asset is hidden while the surrounding explanatory text
     await route.fulfill({ status: 200, contentType: 'image/webp', body: 'invalid-image-bytes' })
   })
 
-  await page.goto('/')
+  await page.goto('/site/')
   const illustration = page.locator('#conditions [data-staging-illustration="IMG_0905"]')
   await illustration.locator('img').scrollIntoViewIfNeeded()
   await expect(illustration).toHaveCount(0)

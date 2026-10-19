@@ -1,7 +1,12 @@
 import { expect, test } from './fixtures'
 
-const selectedTheme = process.env.HAVENHUB_THEME ?? 'burgundy'
+const selectedTheme = process.env.HAVENHUB_THEME ?? 'forest'
 const expectedTokens: Record<string, { primary: string; contact: string; footer: string }> = {
+  forest: {
+    primary: '#174a40',
+    contact: 'rgb(23, 59, 53)',
+    footer: 'rgb(13, 48, 43)',
+  },
   burgundy: {
     primary: '#762d46',
     contact: 'rgb(59, 35, 44)',
@@ -15,7 +20,7 @@ const expectedTokens: Record<string, { primary: string; contact: string; footer:
 }
 
 test('the selected build-time token system applies to the whole page', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/site/')
   const expected = expectedTokens[selectedTheme]
   expect(expected, `test setup must know theme ${selectedTheme}`).toBeDefined()
 
@@ -31,7 +36,7 @@ test('the selected build-time token system applies to the whole page', async ({ 
 
 test('the theme does not break narrow reflow or CTA visibility', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 })
-  await page.goto('/')
+  await page.goto('/site/')
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320)
   await expect(page.locator('#hero a[href^="tel:"]')).toBeVisible()
   await expect(page.locator('#contact a[href^="tel:"]')).toBeVisible()

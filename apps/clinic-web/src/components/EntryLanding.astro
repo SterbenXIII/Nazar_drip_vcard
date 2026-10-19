@@ -1,0 +1,617 @@
+---
+import Footer from './Footer.astro'
+import Header from './Header.astro'
+import { hotline, mainSiteCta, telegram } from '../content/customer-materials'
+import { landingSections } from '../content/landing'
+
+const hero = { ...landingSections[0], title: 'Підтримка на шляху до нового життя' }
+const audience = landingSections[1].items
+const nextStep = landingSections[5].items[2]
+const highlights = [
+  { ...audience[0], description: ['Обговоріть ситуацію та можливі наступні кроки.'] },
+  { ...audience[1], description: ['Обговоріть підтримку для близьких.'] },
+  nextStep,
+]
+---
+
+<Header hrefPrefix="/site/" overlay landing />
+<main id="content" tabindex="-1">
+  <section class="entry-hero" aria-labelledby="entry-title">
+    <div class="entry-content">
+      <p class="entry-values" aria-label="Професіоналізм, підтримка, нове життя">
+        <span>ПРОФЕСІОНАЛІЗМ</span>
+        <span>ПІДТРИМКА</span>
+        <span>НОВЕ ЖИТТЯ</span>
+      </p>
+      <h1 id="entry-title">{hero.title}</h1>
+      <p class="entry-introduction">{hero.introduction}</p>
+
+      <ul class="entry-highlights" aria-label="Як можна звернутися по підтримку">
+        {
+          highlights.map((item, index) => (
+            <li>
+              <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                {index === 0 ? (
+                  <>
+                    <circle cx="24" cy="14" r="7" />
+                    <path d="M10 40c0-8 6-14 14-14s14 6 14 14" />
+                  </>
+                ) : index === 1 ? (
+                  <>
+                    <path d="M24 40S7 30 7 18a9 9 0 0 1 17-4 9 9 0 0 1 17 4c0 12-17 22-17 22Z" />
+                  </>
+                ) : (
+                  <>
+                    <path d="M8 24h28" />
+                    <path d="m26 13 11 11-11 11" />
+                  </>
+                )}
+              </svg>
+              <span class="entry-highlight-title">{item.title}</span>
+              <span class="entry-highlight-copy">{item.description[0]}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <div class="entry-visual" aria-hidden="true"></div>
+
+    <div class="entry-contact" aria-label="Контакти та основний сайт">
+      <div class="entry-phone-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <path
+            d="M7.1 3.8 9.4 7a1.7 1.7 0 0 1-.2 2.2l-1.4 1.4a13 13 0 0 0 5.6 5.6l1.4-1.4a1.7 1.7 0 0 1 2.2-.2l3.2 2.3a1.7 1.7 0 0 1 .5 2.2l-.8 1.3a2.2 2.2 0 0 1-2.3 1.1C9.8 20.1 3.9 14.2 2.5 6.4a2.2 2.2 0 0 1 1.1-2.3l1.3-.8a1.7 1.7 0 0 1 2.2.5Z"
+          ></path>
+        </svg>
+      </div>
+      <div class="entry-phone-copy">
+        <span>Контактний телефон</span>
+        <a href={hotline.href}>{hotline.display}</a>
+        <a class="entry-telegram" href={telegram.href} aria-label={telegram.accessibleName}>
+          Написати в Telegram
+        </a>
+      </div>
+      <a class="entry-site-button" href={mainSiteCta.href}>
+        {mainSiteCta.label}
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 12h15M13 5l7 7-7 7"></path>
+        </svg>
+      </a>
+    </div>
+
+    <ul class="entry-trust" aria-label="Важлива інформація">
+      <li>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 2 20 5v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5l8-3Z"></path>
+        </svg>
+        Для себе й близьких
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path
+            d="M20.8 8.8c0 5-8.8 11-8.8 11s-8.8-6-8.8-11a4.8 4.8 0 0 1 8.8-2.6 4.8 4.8 0 0 1 8.8 2.6Z"
+          ></path>
+        </svg>
+        Телефон та Telegram
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 12h15m-6-6 6 6-6 6"></path>
+        </svg>
+        Наступний крок — після розмови
+      </li>
+    </ul>
+  </section>
+</main>
+<Footer />
+
+<style>
+  .entry-hero {
+    position: relative;
+    display: grid;
+    min-height: max(100svh, 54rem);
+    grid-template-columns: 53% 47%;
+    background: #062b26;
+    color: #f4f7f2;
+  }
+
+  .entry-content {
+    z-index: 1;
+    grid-column: 1;
+    grid-row: 1;
+    padding: clamp(12rem, 20vh, 14rem) 2.5rem 14.5rem clamp(2rem, 8.5vw, 8.125rem);
+  }
+
+  .entry-values {
+    position: absolute;
+    z-index: 1;
+    top: 5.25rem;
+    right: 8.5vw;
+    display: grid;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0 0 0 1.75rem;
+    border-left: 1px solid #b9e9ed;
+    color: #b9e9ed;
+    font-size: 0.875rem;
+    letter-spacing: 0.2em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  .entry-visual {
+    position: relative;
+    grid-column: 2;
+    grid-row: 1;
+    min-height: max(100svh, 54rem);
+    background-image:
+      linear-gradient(90deg, rgb(6 43 38 / 18%), transparent 28%), url('/havenhub-lounge-v2.jpg');
+    background-position: center;
+    background-size: cover;
+  }
+
+  .entry-hero h1 {
+    max-width: 100%;
+    margin: 0;
+    color: #f4f7f2;
+    font-family: var(--font-display);
+    font-size: clamp(2.75rem, 4vw, 4.25rem);
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+  }
+
+  .entry-hero h1::after {
+    display: block;
+    width: 8.75rem;
+    height: 0.25rem;
+    margin-top: 1.5rem;
+    background: #9be0e8;
+    content: '';
+  }
+
+  .entry-introduction {
+    max-width: 42rem;
+    margin: 1.25rem 0 0;
+    color: #e5efea;
+    font-size: clamp(1rem, 1.45vw, 1.1875rem);
+    line-height: 1.65;
+  }
+
+  .entry-highlights {
+    display: grid;
+    max-width: 43rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 2rem 0 1.75rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .entry-highlights li {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 1rem;
+    text-align: center;
+  }
+
+  .entry-highlights li + li {
+    border-left: 1px solid rgb(185 233 237 / 46%);
+  }
+
+  .entry-highlights svg {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-bottom: 0.625rem;
+    fill: none;
+    stroke: #9be0e8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  .entry-highlight-title {
+    color: #d9f1f1;
+    font-size: 0.9375rem;
+    font-weight: 700;
+  }
+
+  .entry-highlight-copy {
+    margin-top: 0.375rem;
+    color: #e5efea;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+
+  .entry-contact {
+    position: absolute;
+    z-index: 2;
+    bottom: 6.75rem;
+    left: clamp(2rem, 8.5vw, 8.125rem);
+    display: flex;
+    width: min(62vw, 60rem);
+    min-height: 7rem;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid rgb(209 240 238 / 65%);
+    border-radius: 1.5rem;
+    background: rgb(4 35 31 / 52%);
+    backdrop-filter: blur(8px);
+  }
+
+  .entry-trust {
+    position: absolute;
+    width: min(52vw, 48rem);
+    bottom: 2.25rem;
+    left: clamp(2rem, 8.5vw, 8.125rem);
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    color: #c8e7e6;
+    font-size: 0.8125rem;
+    list-style: none;
+  }
+
+  .entry-trust li {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+  }
+
+  .entry-trust svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: #9be0e8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.6;
+  }
+
+  .entry-phone-icon {
+    display: grid;
+    width: 4.25rem;
+    height: 4.25rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid rgb(155 224 232 / 68%);
+    border-radius: 50%;
+    background: #71c4d0;
+  }
+
+  .entry-phone-icon svg {
+    width: 1.75rem;
+    height: 1.75rem;
+    fill: #07372f;
+  }
+
+  .entry-phone-copy {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .entry-phone-copy span {
+    color: #b9e9ed;
+    font-size: 0.8125rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .entry-phone-copy a {
+    color: #fff;
+    font-size: clamp(1.25rem, 2.3vw, 2rem);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .entry-phone-copy .entry-telegram {
+    align-self: flex-start;
+    color: #b9e9ed;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-decoration: underline;
+  }
+
+  .entry-site-button {
+    display: inline-flex;
+    min-height: 3.5rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 999px;
+    background: #86d2df;
+    color: #0a3934;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: background-color 160ms ease;
+  }
+
+  .entry-site-button:hover {
+    background: #a4e1e9;
+  }
+
+  .entry-site-button svg {
+    width: 1.375rem;
+    height: 1.375rem;
+    fill: none;
+    stroke: currentcolor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  .entry-telegram {
+    display: inline-block;
+    color: #b9e9ed;
+    font-size: 0.8125rem;
+    text-underline-offset: 0.2em;
+  }
+
+  .entry-site-button:focus-visible,
+  .entry-telegram:focus-visible,
+  .entry-phone-copy a:focus-visible {
+    outline: 3px solid #a4e1e9;
+    outline-offset: 4px;
+  }
+
+  @media (width <= 900px) {
+    .entry-hero {
+      display: flex;
+      min-height: 100svh;
+      flex-direction: column;
+      gap: 1.5rem;
+      padding: 8.5rem var(--gutter) 1.5rem;
+    }
+
+    .entry-content {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      padding: 0;
+    }
+
+    .entry-values {
+      position: static;
+      width: max-content;
+      max-width: 100%;
+      margin: 0 0 1.25rem auto;
+      padding-left: 0.875rem;
+      font-size: 0.6875rem;
+    }
+
+    .entry-visual {
+      position: absolute;
+      inset: 0;
+      min-height: 100%;
+      background-image:
+        linear-gradient(90deg, rgb(5 31 27 / 96%), rgb(5 31 27 / 80%) 68%, rgb(5 31 27 / 38%)),
+        url('/havenhub-lounge-v2.jpg');
+      background-position: 62% center;
+    }
+
+    .entry-hero h1 {
+      font-size: clamp(2.125rem, 6vw, 3.75rem);
+    }
+
+    .entry-highlights {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0;
+      margin: 1.75rem 0 0;
+    }
+
+    .entry-highlights li {
+      padding: 0 0.75rem;
+    }
+
+    .entry-highlights li + li {
+      border-left: 1px solid rgb(185 233 237 / 46%);
+    }
+
+    .entry-highlights svg {
+      width: 2rem;
+      height: 2rem;
+    }
+
+    .entry-contact {
+      position: relative;
+      z-index: 1;
+      inset: auto;
+      width: 100%;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 0.875rem;
+      padding: 1rem;
+      border-radius: 1.125rem;
+    }
+
+    .entry-trust {
+      position: relative;
+      z-index: 1;
+      inset: auto;
+      width: 100%;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem 1rem;
+      font-size: 0.75rem;
+    }
+
+    .entry-phone-copy a {
+      font-size: clamp(1rem, 4.6vw, 1.5rem);
+    }
+
+    .entry-phone-icon {
+      width: 3.5rem;
+      height: 3.5rem;
+    }
+
+    .entry-site-button {
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+  }
+
+  @media (width <= 700px) {
+    .entry-hero {
+      gap: 1.25rem;
+      padding-top: 8rem;
+    }
+
+    .entry-hero h1 {
+      font-size: clamp(2rem, 8vw, 2.75rem);
+    }
+
+    .entry-highlights {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.875rem;
+      margin-top: 1.5rem;
+    }
+
+    .entry-highlights li {
+      display: grid;
+      grid-template-columns: 2.25rem minmax(0, 1fr);
+      align-items: center;
+      gap: 0.125rem 0.75rem;
+      padding: 0;
+      text-align: left;
+    }
+
+    .entry-highlights li + li {
+      border-left: 0;
+    }
+
+    .entry-highlights svg {
+      grid-row: 1 / 3;
+      width: 2rem;
+      height: 2rem;
+      margin: 0;
+    }
+
+    .entry-highlight-title {
+      font-size: 0.875rem;
+    }
+
+    .entry-highlight-copy {
+      grid-column: 2;
+      margin-top: 0;
+      font-size: 0.8125rem;
+    }
+
+    .entry-contact {
+      gap: 0.75rem;
+      padding: 0.75rem;
+    }
+
+    .entry-phone-copy span {
+      font-size: 0.6875rem;
+    }
+
+    .entry-site-button {
+      gap: 0.5rem;
+      padding: 0.75rem 0.875rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+    }
+
+    .entry-trust {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      font-size: 0.6875rem;
+    }
+
+    .entry-trust li {
+      min-width: 0;
+      gap: 0.5rem;
+    }
+
+    .entry-trust li:last-child {
+      grid-column: 1 / -1;
+    }
+
+    .entry-trust svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  @media (width <= 360px) {
+    .entry-hero {
+      padding-right: 1rem;
+      padding-left: 1rem;
+    }
+
+    .entry-hero h1 {
+      font-size: 1.875rem;
+    }
+
+    .entry-phone-icon {
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .entry-phone-copy a {
+      font-size: 1rem;
+    }
+  }
+
+  @media (width <= 380px) {
+    .entry-highlight-copy {
+      overflow-wrap: anywhere;
+    }
+  }
+
+  @media (height <= 850px) and (width > 900px) {
+    .entry-hero,
+    .entry-visual {
+      min-height: 100svh;
+    }
+
+    .entry-content {
+      padding: clamp(7rem, 17vh, 9rem) 2rem 10rem clamp(2rem, 8.5vw, 8.125rem);
+    }
+  }
+
+  @media (height <= 800px) and (width <= 900px) {
+    .entry-hero {
+      gap: 1rem;
+      padding-top: 6.5rem;
+    }
+
+    .entry-values {
+      margin-bottom: 0.75rem;
+    }
+
+    .entry-hero h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+    }
+
+    .entry-highlights {
+      margin-top: 1rem;
+    }
+
+    .entry-highlights svg {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .entry-site-button {
+      transition-duration: 0.01ms;
+    }
+  }
+</style>

@@ -4,7 +4,7 @@ const supportingRoutes = ['/programa/', '/umovy/', '/rodyni/', '/napriamy/']
 const staging = process.env.CLINIC_SITE_MODE === 'staging'
 
 test('shared navigation only links to routes present in this build', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/site/')
   for (const route of supportingRoutes) {
     const links = page.locator(
       `.desktop-nav a[href="${route}"], .mobile-navigation a[href="${route}"], .footer a[href="${route}"]`,
@@ -16,13 +16,15 @@ test('shared navigation only links to routes present in this build', async ({ pa
       await page.goto(route)
       await expect(page.locator('.desktop-nav a[href="' + route + '"]')).toHaveCount(1)
       await expect(page.locator('.footer-navigation a[href="' + route + '"]')).toHaveCount(1)
-      await page.goto('/')
+      await page.goto('/site/')
     }
   }
 })
 
 test('every built page has one main landmark and a working skip link', async ({ page }) => {
-  const routes = staging ? ['/', '/404.html', ...supportingRoutes] : ['/', '/404.html']
+  const routes = staging
+    ? ['/', '/site/', '/404.html', ...supportingRoutes]
+    : ['/', '/site/', '/404.html']
   for (const route of routes) {
     await page.goto(route)
     await expect(page.getByRole('main')).toHaveCount(1)
@@ -37,7 +39,7 @@ test('mobile menu supports keyboard, short viewport scrolling, Escape, and break
   page,
 }) => {
   await page.setViewportSize({ width: 375, height: 360 })
-  await page.goto('/')
+  await page.goto('/site/')
   const toggle = page.locator('#mobile-menu-toggle')
   await toggle.focus()
   await page.keyboard.press('Enter')
@@ -59,7 +61,7 @@ test('mobile menu supports keyboard, short viewport scrolling, Escape, and break
 })
 
 test('shared contacts use published phone and Telegram destinations', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/site/')
   await expect(page.locator('.header-action')).toHaveAttribute('href', 'tel:+380779742422')
   await expect(page.locator('.footer-contacts a[href="tel:+380779742422"]')).toBeVisible()
   await expect(page.locator('.footer-contacts a[href="https://t.me/HavenRehub"]')).toBeVisible()

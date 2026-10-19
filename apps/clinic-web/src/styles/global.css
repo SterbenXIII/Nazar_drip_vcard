@@ -39,6 +39,43 @@
 }
 
 :root {
+  --background: #f5f3ea;
+  --surface: #fbfaf6;
+  --surface-muted: #e9eee8;
+  --text: #173b35;
+  --text-muted: #536966;
+  --primary: #174a40;
+  --primary-hover: #103c34;
+  --primary-foreground: #fff;
+  --border: #d4ded6;
+  --focus-ring: #0c6252;
+  --disabled-background: #e3e8e1;
+  --disabled-text: #4e655d;
+  --error: #8b1e32;
+  --success: #1f5e59;
+  --contact-copy: #e3ece4;
+  --footer-background: #0d302b;
+  --footer-copy: #d1ded6;
+  --footer-link: #f4f3eb;
+  --font-sans: 'IBM Plex Sans', arial, sans-serif;
+  --font-display: 'IBM Plex Serif', georgia, serif;
+  --font-label: 0.8125rem;
+  --font-help: 0.8125rem;
+  --line-body: 1.6;
+  --section-space: 4.75rem;
+  --container: 73.75rem;
+  --gutter: 1.5rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.8125rem;
+  --radius-lg: 1.125rem;
+  --shadow-card: 0 9px 27px rgb(23 59 53 / 6%);
+  color: var(--text);
+  background: var(--background);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+}
+
+:root[data-theme='burgundy'] {
   --background: #fff;
   --surface: #fff;
   --surface-muted: #f8f1f3;
@@ -57,22 +94,7 @@
   --footer-background: #2b1d24;
   --footer-copy: #e7d8dd;
   --footer-link: #f4e9ec;
-  --font-sans: 'IBM Plex Sans', arial, sans-serif;
-  --font-display: 'IBM Plex Serif', georgia, serif;
-  --font-label: 0.8125rem;
-  --font-help: 0.8125rem;
-  --line-body: 1.6;
-  --section-space: 4.75rem;
-  --container: 73.75rem;
-  --gutter: 1.5rem;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.8125rem;
-  --radius-lg: 1.125rem;
   --shadow-card: 0 9px 27px rgb(59 35 44 / 6%);
-  color: var(--text);
-  background: var(--background);
-  font-family: var(--font-sans);
-  font-size: 1rem;
 }
 
 :root[data-theme='navy-teal'] {
@@ -106,7 +128,9 @@ html {
 }
 
 body {
-  margin: 0;
+  width: min(100%, 120rem);
+  min-width: 20rem;
+  margin: 0 auto;
   color: var(--text);
   line-height: var(--line-body);
 }
@@ -202,7 +226,7 @@ a {
   align-items: center;
   justify-content: center;
   padding: 0.75rem 1.375rem;
-  border-radius: 0.5625rem;
+  border-radius: 999px;
   background: var(--primary);
   color: var(--primary-foreground);
   font-size: 0.875rem;
@@ -219,7 +243,7 @@ a {
 
 .button.secondary {
   border: 1px solid var(--primary);
-  background: #fff;
+  background: var(--surface);
   color: var(--primary);
 }
 
@@ -232,6 +256,13 @@ a {
   z-index: 4;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+}
+
+.site-header-overlay {
+  position: absolute;
+  inset: 0 0 auto;
+  border-bottom: 0;
+  background: transparent;
 }
 
 .header-row {
@@ -267,6 +298,18 @@ a {
   white-space: nowrap;
 }
 
+.site-header-overlay .identity,
+.site-header-overlay .desktop-nav a {
+  color: #fff;
+  text-shadow: 0 1px 10px rgb(0 0 0 / 40%);
+}
+
+.site-header-overlay .desktop-nav a:hover,
+.site-header-overlay .desktop-nav a:focus-visible {
+  color: #fff;
+  opacity: 0.8;
+}
+
 .desktop-nav a:hover,
 .desktop-nav a:focus-visible {
   color: var(--primary);
@@ -284,7 +327,14 @@ a {
 
 .hero {
   overflow: hidden;
-  background: linear-gradient(145deg, var(--surface-muted), var(--surface) 72%);
+  min-height: clamp(34rem, 45vw, 42rem);
+  background-color: var(--footer-background);
+  background-image:
+    linear-gradient(90deg, rgb(7 36 31 / 90%) 0%, rgb(7 36 31 / 76%) 48%, rgb(7 36 31 / 28%) 100%),
+    url('/havenhub-landscape.jpg');
+  background-position: center;
+  background-size: cover;
+  color: #fff;
 }
 
 .hero-grid {
@@ -298,9 +348,11 @@ a {
 
 .hero h1 {
   max-width: 18ch;
-  margin-bottom: 1.75rem;
-  font-size: clamp(2.3rem, 5.5vw, 5.25rem);
-  line-height: 1.11;
+  margin-bottom: 1.5rem;
+  color: #fff;
+  font-size: clamp(2.75rem, 4.8vw, 4.5rem);
+  letter-spacing: -0.025em;
+  line-height: 1.02;
 }
 
 .hero .lead {
@@ -333,6 +385,20 @@ a {
   background: transparent;
   color: var(--text-muted);
   cursor: default;
+}
+
+.hero .button {
+  border: 1px solid rgb(255 255 255 / 24%);
+}
+
+.hero .button.secondary {
+  border-color: rgb(244 243 235 / 72%);
+  background: transparent;
+  color: #fff;
+}
+
+.hero .button.secondary:hover {
+  background: rgb(255 255 255 / 12%);
 }
 
 .hero-geometry {
@@ -549,7 +615,12 @@ a {
 }
 
 .contact {
-  background: var(--text);
+  background-color: var(--text);
+  background-image:
+    linear-gradient(90deg, rgb(7 36 31 / 91%) 0%, rgb(7 36 31 / 76%) 58%, rgb(7 36 31 / 48%) 100%),
+    url('/havenhub-landscape.jpg');
+  background-position: center 68%;
+  background-size: cover;
 }
 
 .contact-grid {
@@ -648,9 +719,15 @@ a {
     padding: 0;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    background: #fff;
+    background: var(--surface);
     color: var(--text);
     cursor: pointer;
+  }
+
+  .site-header-overlay .mobile-menu-toggle {
+    border-color: rgb(255 255 255 / 60%);
+    background: rgb(7 36 31 / 24%);
+    color: #fff;
   }
 
   .menu-icon {
@@ -707,7 +784,7 @@ a {
     overscroll-behavior: contain;
     padding: 0.75rem 1.5rem 1.5rem;
     border-top: 1px solid var(--border);
-    background: #fff;
+    background: var(--surface);
     box-shadow: var(--shadow-card);
   }
 
@@ -719,6 +796,13 @@ a {
     font-size: 0.9375rem;
     font-weight: 700;
     text-decoration: none;
+  }
+}
+
+@media (width <= 900px) {
+  .hero-inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
   }
 }
 
@@ -817,19 +901,105 @@ a {
 
 /* Landing and supporting routes share the same closed-draft visual system. */
 .hero-inner {
-  padding-block: clamp(4rem, 8vw, 8rem);
+  display: grid;
+  min-height: inherit;
+  grid-template-columns: minmax(0, 1.08fr) minmax(22rem, 0.92fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-content: center;
+  padding-block: clamp(8rem, 10vw, 9.5rem) 5rem;
 }
 
 .hero-lead {
-  max-width: 56ch;
+  max-width: 52ch;
   font-size: clamp(1.0625rem, 1.45vw, 1.25rem);
-  line-height: 1.65;
+  font-weight: 550;
+  line-height: 1.55;
+  color: #f4f3eb;
+}
+
+.hero-eyebrow {
+  margin: 0 0 1rem;
+  color: #f4f3eb;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  line-height: 1.4;
+  text-transform: uppercase;
 }
 
 .hero-note {
-  margin: 1.5rem 0 0;
-  color: var(--text);
+  margin: 1.25rem 0 0;
+  color: #f4f3eb;
   font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.hero-form {
+  padding: clamp(1.5rem, 2.5vw, 2.25rem);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1.125rem 3.5rem rgb(7 36 31 / 22%);
+}
+
+.hero-form h2 {
+  margin-bottom: 0.75rem;
+  color: var(--text);
+  font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+  letter-spacing: -0.035em;
+}
+
+.hero-form fieldset {
+  display: grid;
+  gap: 0.625rem;
+  padding: 0;
+  border: 0;
+  opacity: 1;
+}
+
+.hero-form label {
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.hero-form input {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.hero-form input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.hero-form input:disabled {
+  background: var(--disabled-background);
+  color: var(--disabled-text);
+}
+
+.hero-form button {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.hero-form button:disabled {
+  background: var(--disabled-text);
+  cursor: not-allowed;
+}
+
+.hero-form-status {
+  margin: 1rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
 .landing-section {
@@ -863,8 +1033,12 @@ a {
   align-items: flex-start;
   padding: clamp(1.5rem, 3vw, 2.25rem);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--surface);
+}
+
+.audience .choice-grid article {
+  box-shadow: var(--shadow-card);
 }
 
 .choice-grid article h3,
@@ -887,6 +1061,12 @@ a {
   margin: 0 0 1.5rem;
   padding: 0;
   list-style: none;
+}
+
+.formats .format-list li {
+  border: 0;
+  border-top: 3px solid var(--primary);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
 .editorial-grid {
@@ -924,6 +1104,11 @@ a {
   margin-top: 1.5rem;
 }
 
+.family .editorial-copy {
+  padding-left: clamp(1.5rem, 4vw, 3.5rem);
+  border-left: 1px solid var(--border);
+}
+
 .text-link,
 .choice-grid a,
 .process-note a {
@@ -957,6 +1142,8 @@ a {
   display: block;
   margin-bottom: 0.85rem;
   color: var(--primary);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
   font-weight: 700;
 }
 
@@ -978,8 +1165,9 @@ a {
 }
 
 .contact-actions .button {
-  background: var(--surface);
-  color: var(--text);
+  border-color: rgb(244 243 235 / 36%);
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .contact-actions .button.secondary {
@@ -993,6 +1181,10 @@ a {
   outline-color: var(--surface);
 }
 
+.contact-actions .button:hover {
+  background: var(--primary-hover);
+}
+
 @media (width <= 1080px) {
   .process-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1001,7 +1193,25 @@ a {
 
 @media (width <= 700px) {
   .hero-inner {
-    padding-block: 4rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+    min-height: 39rem;
+    padding-block: 7.5rem 3.25rem;
+  }
+
+  .hero {
+    background-image:
+      linear-gradient(90deg, rgb(7 36 31 / 88%) 0%, rgb(7 36 31 / 76%) 100%),
+      url('/havenhub-landscape.jpg');
+    background-position: 58% center;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.75rem, 11vw, 3.75rem);
+  }
+
+  .hero-lead {
+    font-size: 1rem;
   }
 
   .editorial-grid,
@@ -1018,5 +1228,20 @@ a {
 
   .contact-actions .button {
     width: 100%;
+  }
+
+  .family .editorial-copy {
+    padding-top: 1.5rem;
+    padding-left: 0;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+
+  .contact {
+    background-position: 62% center;
+  }
+
+  .contact-actions .button.secondary:hover {
+    background: rgb(255 255 255 / 12%);
   }
 }

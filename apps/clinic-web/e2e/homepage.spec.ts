@@ -15,19 +15,23 @@ const sectionIds = [
   'contact',
 ]
 
-test('renders the complete landing in editorial order without old placeholders', async ({
+test('renders the complete main site in editorial order without old placeholders', async ({
   page,
 }) => {
-  await page.goto('/')
+  await page.goto('/site/')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'Допомога людям із залежностями та їхнім близьким',
   )
+  await expect(page.locator('#clinic-lead-preview')).toBeVisible()
+  await expect(page.locator('#clinic-lead-preview fieldset')).toHaveAttribute('disabled', '')
+  await expect(page.locator('#clinic-lead-preview button[type="submit"]')).toBeDisabled()
   expect(
     await page
       .locator('main > section')
       .evaluateAll((sections) => sections.map((section) => section.id)),
   ).toEqual(sectionIds)
   await expect(page.locator('main h2')).toHaveText([
+    'Залиште контакти',
     'З чого почати',
     'З якими залежностями працюємо',
     'Формати допомоги',
@@ -37,17 +41,16 @@ test('renders the complete landing in editorial order without old placeholders',
     'Простір і щоденні умови',
     'Поговорімо про наступний крок',
   ])
-  await expect(page.locator('#faq, #about, .main-site-unavailable, form')).toHaveCount(0)
+  await expect(page.locator('#faq, #about, .main-site-unavailable')).toHaveCount(0)
   await expect(
     page.getByText(/Питання 01|після погодження|Форма звернення поки недоступна/),
   ).toHaveCount(0)
-  await expect(page.getByRole('button', { name: /Надіслати звернення/ })).toHaveCount(0)
 })
 
 test('keeps distinct dependency and care-format lists with sourced boundaries', async ({
   page,
 }) => {
-  await page.goto('/')
+  await page.goto('/site/')
   await expect(page.locator('#dependencies li')).toHaveCount(3)
   await expect(page.locator('#formats li')).toHaveCount(3)
   await expect(page.locator('#dependencies')).toContainText('Алкогольна залежність')
@@ -69,7 +72,7 @@ test('keeps distinct dependency and care-format lists with sourced boundaries', 
 })
 
 test('shows phone and Telegram actions and only links to built detail routes', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/site/')
   for (const section of ['hero', 'contact']) {
     await expect(page.locator(`#${section} a[href="tel:+380779742422"]`)).toBeVisible()
     await expect(page.locator(`#${section} a[href="https://t.me/HavenRehub"]`)).toBeVisible()
@@ -85,7 +88,7 @@ test('shows phone and Telegram actions and only links to built detail routes', a
 test('keeps one landmark, usable links, and no critical accessibility violations', async ({
   page,
 }) => {
-  await page.goto('/')
+  await page.goto('/site/')
   await expect(page.getByRole('main')).toHaveCount(1)
   await expect(page.locator('.skip-link')).toHaveAttribute('href', '#content')
   for (const href of await page
@@ -100,7 +103,7 @@ test('keeps one landmark, usable links, and no critical accessibility violations
 for (const width of [320, 390, 768, 1440]) {
   test(`landing fits ${width}px without horizontal scrolling`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
-    await page.goto('/')
+    await page.goto('/site/')
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true)
@@ -110,7 +113,7 @@ for (const width of [320, 390, 768, 1440]) {
 }
 
 test('skip link transfers keyboard focus into the main content', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/site/')
   await page.keyboard.press('Tab')
   await expect(page.locator('.skip-link')).toBeFocused()
   await page.keyboard.press('Enter')
@@ -119,7 +122,7 @@ test('skip link transfers keyboard focus into the main content', async ({ page }
 
 test('normal navigation anchors point to sections that exist', async ({ page }) => {
   test.skip(staging, 'staging has dedicated supporting routes')
-  await page.goto('/')
+  await page.goto('/site/')
   for (const href of await page
     .locator('.desktop-nav a[href^="#"]')
     .evaluateAll((links) => links.map((link) => link.getAttribute('href')!))) {

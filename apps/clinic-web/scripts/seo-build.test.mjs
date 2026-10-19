@@ -33,6 +33,10 @@ test('production SEO is explicitly gated, has a single indexable canonical page 
     assert.match(home, /<link rel="canonical" href="https:\/\/havenhub\.example\/">/)
     assert.match(home, /<meta property="og:url" content="https:\/\/havenhub\.example\/">/)
     assert.match(home, /<meta name="twitter:card" content="summary">/)
+
+    const mainSite = await readFile(resolve(dist, 'site', 'index.html'), 'utf8')
+    assert.match(mainSite, /<meta name="robots" content="noindex,follow">/)
+    assert.doesNotMatch(mainSite, /rel="canonical"/)
     const sitemap = await readFile(resolve(dist, 'sitemap.xml'), 'utf8')
     assert.match(sitemap, /<loc>https:\/\/havenhub\.example\/<\/loc>/)
     assert.equal((sitemap.match(/<loc>/g) ?? []).length, 1)

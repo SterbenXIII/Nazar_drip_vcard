@@ -15,6 +15,11 @@ assert.doesNotMatch(html, /\bog:url\b/i)
 assert.doesNotMatch(html, /<form\b|id="clinic-submit"|data-clinic-ready/i)
 assert.doesNotMatch(html, /__havenhub_staging_media__|img-0905|img-0907/i)
 assert.match(html, /<main\b[^>]*id="content"[^>]*tabindex="-1"/)
+assert.match(html, /href="\/site\/"[^>]*>Перейти на основний сайт/)
+
+const mainSite = await get('/site/')
+assert.equal(mainSite.status, 200, 'main site must remain directly accessible')
+assert.match(await mainSite.text(), /<meta name="robots" content="noindex,nofollow">/)
 
 const favicon = await get('/favicon.svg')
 assert.equal(favicon.status, 200, 'favicon must return HTTP 200')
@@ -60,7 +65,7 @@ try {
     page.on('pageerror', (error) => errors.push(error.message))
     page.on('response', (response) => {
       const url = new URL(response.url())
-      if (url.origin === origin && /\.(css|js|png|svg|woff2)$/.test(url.pathname)) {
+      if (url.origin === origin && /\.(css|js|jpe?g|png|svg|woff2)$/.test(url.pathname)) {
         if (!response.ok()) errors.push(`asset HTTP ${response.status()}: ${url.pathname}`)
         assets.add(url.pathname.split('.').at(-1))
       }
@@ -69,9 +74,16 @@ try {
     await page.goto(origin)
     assert.equal(await page.evaluate(() => window.innerWidth), width)
     assert.equal(await page.locator('h1').count(), 1)
-    assert.equal(await page.locator('main > section').count(), 9)
-    assert.equal(await page.locator('form, #clinic-submit').count(), 0)
+    assert.equal(await page.locator('main > section').count(), 1)
+    assert.equal(await page.locator('.entry-site-button').getAttribute('href'), '/site/')
+    assert.equal(await page.locator('.entry-phone-copy a[href="tel:+380779742422"]').count(), 1)
+    assert.equal(await page.locator('.entry-telegram[href="https://t.me/HavenRehub"]').count(), 1)
     assert.equal(await page.locator('link[rel="icon"]').getAttribute('href'), '/favicon.svg')
+
+    await page.goto(new URL('/site/', origin).toString())
+    assert.equal(await page.locator('main > section').count(), 9)
+    assert.equal(await page.locator('#clinic-lead-preview fieldset').isDisabled(), true)
+    assert.equal(await page.locator('#clinic-lead-preview button').isDisabled(), true)
 
     for (const target of ['tel:+380779742422', 'https://t.me/HavenRehub']) {
       assert.equal(await page.locator(`#contact a[href="${target}"]`).count(), 1)
@@ -98,8 +110,8 @@ try {
     }
 
     for (const href of await page
-      .locator('.desktop-nav a[href^="#"]')
-      .evaluateAll((links) => links.map((link) => link.getAttribute('href')))) {
+      .locator('.desktop-nav a[href*="#"]')
+      .evaluateAll((links) => links.map((link) => new URL(link.href).hash))) {
       assert.equal(await page.locator(href).count(), 1, `navigation target ${href} must exist`)
     }
     assert.equal(

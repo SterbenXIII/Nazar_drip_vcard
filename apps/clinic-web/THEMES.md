@@ -4,7 +4,8 @@
 
 | Value | Result |
 | --- | --- |
-| unset or `burgundy` | Restrained burgundy (current default) |
+| unset or `forest` | Forest green, warm ivory surfaces, serif display headings, and a photo-led entry landing |
+| `burgundy` | Restrained burgundy legacy palette |
 | `navy-teal` | Navy / teal alternative |
 
 Any other value (including an empty string or whitespace) fails the build with an explicit `HAVENHUB_THEME` error. No browser theme picker is added.
@@ -14,13 +15,16 @@ Any other value (including an empty string or whitespace) fails the build with a
 From the monorepo root:
 
 ```bash
-# Default: burgundy
+# Default: forest green
 pnpm --filter @vcard/clinic-web build:normal
 
 # Navy / teal staging preview
 HAVENHUB_THEME=navy-teal pnpm --filter @vcard/clinic-web build:staging
 
-# Explicitly select the default palette
+# Explicitly select the forest palette
+HAVENHUB_THEME=forest pnpm --filter @vcard/clinic-web build:normal
+
+# Keep the previous burgundy palette when needed
 HAVENHUB_THEME=burgundy pnpm --filter @vcard/clinic-web build:normal
 ```
 
@@ -40,4 +44,4 @@ HAVENHUB_THEME=navy-teal CLINIC_SITE_MODE=normal pnpm --filter @vcard/clinic-web
 pnpm --filter @vcard/clinic-web check
 ```
 
-Design selection remains provisional until approved by the owner; no production release is authorized by this feature.
+The forest visual direction was approved for local implementation. This does not authorize a production release.

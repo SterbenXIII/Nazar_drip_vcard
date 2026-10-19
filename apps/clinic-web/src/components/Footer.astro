@@ -1,6 +1,11 @@
 ---
 import { hotline, telegram } from '../content/customer-materials'
 
+interface Props {
+  homeHref?: string
+}
+
+const { homeHref = '/' } = Astro.props
 const supportingPagesAvailable = (process.env.CLINIC_SITE_MODE ?? 'normal') !== 'normal'
 const navigation = supportingPagesAvailable
   ? [
@@ -14,7 +19,7 @@ const navigation = supportingPagesAvailable
 
 <footer class="footer">
   <div class="wrap">
-    <a class="identity" href="/" aria-label="HAVENHUB — головна">HAVENHUB</a>
+    <a class="identity" href={homeHref} aria-label="HAVENHUB — головна">HAVENHUB</a>
     {
       navigation.length > 0 && (
         <nav class="footer-navigation" aria-label="Навігація внизу сторінки">

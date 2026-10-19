@@ -15,6 +15,7 @@ const production = {
 const supportingPages = ['programa', 'umovy', 'rodyni', 'napriamy'].map(
   (slug) => `${slug}/index.html`,
 )
+const mainSitePage = 'site/index.html'
 
 function run(label: string, args: string[], variables: Record<string, string> = {}) {
   const env = Object.fromEntries(
@@ -51,22 +52,22 @@ test('publication modes preserve explicit release gates and correct SEO inventor
   test.setTimeout(120_000)
   try {
     run('default build', ['--filter', packageName, 'build'])
-    expect(await htmlFiles()).toEqual(['404.html', 'index.html'])
+    expect(await htmlFiles()).toEqual(['404.html', 'index.html', mainSitePage].sort())
     run('default metadata', ['--filter', packageName, 'check:metadata'])
     expect(await artifactExists('sitemap.xml')).toBe(false)
 
     run('content preview', ['--filter', packageName, 'build:content'])
-    expect(await htmlFiles()).toEqual([
-      '404.html',
-      'index.html',
-      'preview/services/template-demo/index.html',
-    ])
+    expect(await htmlFiles()).toEqual(
+      ['404.html', 'index.html', mainSitePage, 'preview/services/template-demo/index.html'].sort(),
+    )
     run('content preview metadata', ['--filter', packageName, 'check:metadata'], {
       CLINIC_ENABLE_SERVICE_PREVIEW: 'true',
     })
 
     run('staging build', ['--filter', packageName, 'build:staging'])
-    expect(await htmlFiles()).toEqual(['404.html', 'index.html', ...supportingPages].sort())
+    expect(await htmlFiles()).toEqual(
+      ['404.html', 'index.html', mainSitePage, ...supportingPages].sort(),
+    )
     run('staging metadata', ['--filter', packageName, 'check:metadata'], {
       CLINIC_SITE_MODE: 'staging',
     })
@@ -103,7 +104,9 @@ test('publication modes preserve explicit release gates and correct SEO inventor
     ).toThrow('CLINIC_CANONICAL_ORIGIN')
 
     run('gated production', ['--filter', packageName, 'build:production'], production)
-    expect(await htmlFiles()).toEqual(['404.html', 'index.html', ...supportingPages].sort())
+    expect(await htmlFiles()).toEqual(
+      ['404.html', 'index.html', mainSitePage, ...supportingPages].sort(),
+    )
     run('production metadata', ['--filter', packageName, 'check:metadata'], {
       ...production,
       CLINIC_SITE_MODE: 'production',
@@ -112,6 +115,9 @@ test('publication modes preserve explicit release gates and correct SEO inventor
     const home = await readFile(resolve(appDir, 'dist/index.html'), 'utf8')
     expect(home).toContain('<meta name="robots" content="index,follow">')
     expect(home).toContain('<link rel="canonical" href="https://havenhub.example/">')
+    const mainSite = await readFile(resolve(appDir, 'dist', 'site', 'index.html'), 'utf8')
+    expect(mainSite).toContain('<meta name="robots" content="noindex,follow">')
+    expect(mainSite).not.toContain('rel="canonical"')
     expect(await artifactExists('sitemap.xml')).toBe(true)
     const sitemap = await readFile(resolve(appDir, 'dist/sitemap.xml'), 'utf8')
     expect(sitemap.match(/<loc>/g)).toHaveLength(1)
@@ -120,7 +126,7 @@ test('publication modes preserve explicit release gates and correct SEO inventor
     expect(robots).not.toMatch(/Disallow:/i)
 
     run('restored normal build', ['--filter', packageName, 'build:normal'])
-    expect(await htmlFiles()).toEqual(['404.html', 'index.html'])
+    expect(await htmlFiles()).toEqual(['404.html', 'index.html', mainSitePage].sort())
     expect(await artifactExists('sitemap.xml')).toBe(false)
   } finally {
     run('restore normal build after test', ['--filter', packageName, 'build:normal'])

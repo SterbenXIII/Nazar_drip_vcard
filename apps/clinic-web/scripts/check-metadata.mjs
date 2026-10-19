@@ -16,7 +16,7 @@ assert(
   'The service preview is disabled outside normal builds',
 )
 
-const expectedPages = ['404.html', 'index.html']
+const expectedPages = ['404.html', 'index.html', 'site/index.html']
 if (mode !== 'normal') {
   expectedPages.push(
     'programa/index.html',
@@ -34,7 +34,7 @@ const descriptionValues = new Set()
 for (const page of pages) {
   const html = await readFile(resolve(distDir, page), 'utf8')
   const isHomepage = page === 'index.html'
-  const isSupporting = expectedPages.length > 2 && !isHomepage && page !== '404.html'
+  const isSupporting = !isHomepage && page !== '404.html'
   const isIndexable = mode === 'production' && isHomepage
   const robots = isIndexable
     ? 'index,follow'

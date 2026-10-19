@@ -31,6 +31,7 @@ test('normal E2E suite excludes route-changing publication and staging-only test
   const inventory = listTests('normal')
   assert.doesNotMatch(inventory, /publication\.spec\.ts/)
   assert.doesNotMatch(inventory, /supporting-pages\.spec\.ts/)
+  assert.match(inventory, /entry-landing\.spec\.ts/)
   assert.match(inventory, /landing-content\.spec\.ts/)
 })
 

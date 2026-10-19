@@ -81,7 +81,7 @@ test('tracks source receipt, service currentness, and production approval separa
 })
 
 test('renders only the confirmed center location and home-visit coverage', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/site/')
 
   const conditions = page.locator('#conditions')
   const formats = page.locator('#formats')

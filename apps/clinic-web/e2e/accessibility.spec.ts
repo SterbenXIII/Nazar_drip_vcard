@@ -3,11 +3,11 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from './fixtures'
 
 const isStaging = process.env.CLINIC_SITE_MODE === 'staging'
-const routes = ['/', '/programa/', '/umovy/', '/rodyni/', '/napriamy/'] as const
+const routes = ['/site/', '/programa/', '/umovy/', '/rodyni/', '/napriamy/'] as const
 
 for (const route of routes) {
   test(`${route} supports axe, skip-to-main, and 320px reflow`, async ({ page }) => {
-    test.skip(route !== '/' && !isStaging, 'supporting routes are absent in normal')
+    test.skip(route !== '/site/' && !isStaging, 'supporting routes are absent in normal')
     await page.setViewportSize({ width: 320, height: 720 })
     await page.goto(route)
 
@@ -32,7 +32,7 @@ test('200%-equivalent reduced CSS viewport plus 200% text resizing retains acces
   page,
 }) => {
   await page.setViewportSize({ width: 640, height: 450 })
-  await page.goto('/')
+  await page.goto('/site/')
   await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
@@ -48,7 +48,7 @@ test('reduced-motion media disables smooth scroll and animated menu transitions'
 }) => {
   await page.setViewportSize({ width: 375, height: 650 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await page.goto('/site/')
   expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(
     true,
   )

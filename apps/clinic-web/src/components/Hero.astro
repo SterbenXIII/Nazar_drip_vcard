@@ -7,16 +7,41 @@ const copy = landingSections[0]
 
 <section class="hero" id="hero" aria-labelledby="hero-title">
   <div class="wrap hero-inner">
-    <h1 id="hero-title">{copy.title}</h1>
-    <p class="hero-lead">{copy.introduction}</p>
-    <div class="hero-actions">
-      <a class="button" href={consultationCta.href} aria-label="Зателефонувати на гарячу лінію">
-        {consultationCta.label}
-      </a>
-      <a class="button secondary" href={telegram.href} aria-label={telegram.accessibleName}>
-        Написати в Telegram
-      </a>
+    <div class="hero-copy">
+      <p class="hero-eyebrow">{copy.items[0].title}</p>
+      <h1 id="hero-title">{copy.title}</h1>
+      <p class="hero-lead">{copy.introduction}</p>
+      <div class="hero-actions">
+        <a class="button" href={consultationCta.href} aria-label="Зателефонувати на гарячу лінію">
+          {consultationCta.label}
+        </a>
+        <a class="button secondary" href={telegram.href} aria-label={telegram.accessibleName}>
+          Написати в Telegram
+        </a>
+      </div>
+      <p class="hero-note">
+        {copy.items[0].description[0]}
+      </p>
     </div>
-    <p class="hero-note"><strong>{copy.items[0].title}.</strong> {copy.items[0].description[0]}</p>
+    <form class="hero-form" id="clinic-lead-preview" aria-labelledby="hero-form-title">
+      <h2 id="hero-form-title">Залиште контакти</h2>
+      <fieldset disabled aria-describedby="hero-form-status">
+        <label for="hero-name">Ваше ім’я</label>
+        <input id="hero-name" name="name" type="text" autocomplete="name" />
+        <label for="hero-phone">Номер телефону</label>
+        <input
+          id="hero-phone"
+          name="phone"
+          type="tel"
+          autocomplete="tel"
+          inputmode="tel"
+          placeholder="+380 __ ___ __ __"
+        />
+        <button class="button" type="submit">Залишити заявку</button>
+      </fieldset>
+      <p class="hero-form-status" id="hero-form-status" role="status">
+        Форма поки не надсилає дані. Зверніться телефоном або в Telegram.
+      </p>
+    </form>
   </div>
 </section>

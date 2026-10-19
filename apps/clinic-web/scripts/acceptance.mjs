@@ -191,6 +191,7 @@ try {
   await browser(
     'normal-browser',
     [
+      'e2e/entry-landing.spec.ts',
       'e2e/homepage.spec.ts',
       'e2e/shared-chrome.spec.ts',
       'e2e/accessibility.spec.ts',
@@ -215,6 +216,7 @@ try {
   await browser(
     'staging-browser',
     [
+      'e2e/entry-landing.spec.ts',
       'e2e/homepage.spec.ts',
       'e2e/shared-chrome.spec.ts',
       'e2e/supporting-pages.spec.ts',
