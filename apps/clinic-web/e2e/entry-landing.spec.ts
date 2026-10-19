@@ -29,15 +29,19 @@ test('the landing keeps its split layout on short landscape screens', async ({ p
   const highlights = await page.locator('.entry-highlights').boundingBox()
   const contact = await page.locator('.entry-contact').boundingBox()
   const trust = await page.locator('.entry-trust').boundingBox()
+  const footer = await page.locator('.footer').boundingBox()
   expect(hero).not.toBeNull()
   expect(visual).not.toBeNull()
   expect(highlights).not.toBeNull()
   expect(contact).not.toBeNull()
   expect(trust).not.toBeNull()
+  expect(footer).not.toBeNull()
+  await expect(page.locator('.entry-hero')).toHaveCSS('min-height', '0px')
   expect(visual!.x).toBeCloseTo(hero!.width * 0.53, 0)
   expect(visual!.width).toBeCloseTo(hero!.width * 0.47, 0)
   expect(contact!.y).toBeGreaterThanOrEqual(highlights!.y + highlights!.height)
   expect(trust!.y).toBeGreaterThanOrEqual(contact!.y + contact!.height + 16)
+  expect(footer!.y - (trust!.y + trust!.height)).toBeGreaterThanOrEqual(24)
 })
 
 test('the landing stacks cleanly in a narrow landscape viewport', async ({ page }) => {
@@ -100,6 +104,7 @@ test('wide landing keeps a clear gap between guidance and contact actions', asyn
   expect(footer).not.toBeNull()
   expect(contact!.y - (highlights!.y + highlights!.height)).toBeGreaterThanOrEqual(52)
   expect(trust!.y - (contact!.y + contact!.height)).toBeGreaterThanOrEqual(32)
+  expect(footer!.y - (trust!.y + trust!.height)).toBeGreaterThanOrEqual(24)
   expect(footer!.y - (trust!.y + trust!.height)).toBeLessThanOrEqual(32)
 })
 
