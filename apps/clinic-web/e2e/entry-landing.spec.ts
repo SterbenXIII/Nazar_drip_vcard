@@ -39,6 +39,7 @@ test('the landing keeps its split layout on short landscape screens', async ({ p
   await expect(page.locator('.entry-hero')).toHaveCSS('min-height', '0px')
   expect(visual!.x).toBeCloseTo(hero!.width * 0.53, 0)
   expect(visual!.width).toBeCloseTo(hero!.width * 0.47, 0)
+  expect(trust!.x + trust!.width).toBeLessThanOrEqual(hero!.x + hero!.width * 0.53)
   expect(contact!.y).toBeGreaterThanOrEqual(highlights!.y + highlights!.height)
   expect(trust!.y).toBeGreaterThanOrEqual(contact!.y + contact!.height + 16)
   expect(footer!.y - (trust!.y + trust!.height)).toBeGreaterThanOrEqual(24)
@@ -72,12 +73,14 @@ test('the landing shell scales up and stays centered on wide displays', async ({
       return { left, width }
     })
     const visual = await page.locator('.entry-visual').boundingBox()
+    const trust = await page.locator('.entry-trust').boundingBox()
     expect(actualWidth).toBe(shellWidth)
     expect(left).toBe((width - shellWidth) / 2)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
     if (width > 1080) {
       expect(visual!.x).toBeCloseTo(left + shellWidth * 0.53, 0)
       expect(visual!.width).toBeCloseTo(shellWidth * 0.47, 0)
+      expect(trust!.x + trust!.width).toBeLessThanOrEqual(left + shellWidth * 0.53)
       await expect(page.locator('.entry-content')).toHaveCSS('justify-content', 'flex-start')
       expect(
         Number.parseFloat(
@@ -98,12 +101,15 @@ test('wide landing keeps a clear gap between guidance and contact actions', asyn
   const contact = await page.locator('.entry-contact').boundingBox()
   const trust = await page.locator('.entry-trust').boundingBox()
   const footer = await page.locator('.footer').boundingBox()
+  const hero = await page.locator('.entry-hero').boundingBox()
   expect(highlights).not.toBeNull()
   expect(contact).not.toBeNull()
   expect(trust).not.toBeNull()
   expect(footer).not.toBeNull()
+  expect(hero).not.toBeNull()
   expect(contact!.y - (highlights!.y + highlights!.height)).toBeGreaterThanOrEqual(52)
   expect(trust!.y - (contact!.y + contact!.height)).toBeGreaterThanOrEqual(32)
+  expect(trust!.x + trust!.width).toBeLessThanOrEqual(hero!.x + hero!.width * 0.53)
   expect(footer!.y - (trust!.y + trust!.height)).toBeGreaterThanOrEqual(24)
   expect(footer!.y - (trust!.y + trust!.height)).toBeLessThanOrEqual(32)
 })
