@@ -26,7 +26,7 @@ YELLOW = \033[1;33m
 RED    = \033[1;31m
 NC     = \033[0m
 
-.PHONY: help init setup-net build dev dev-down dev-rebuild up down rebuild logs ps clean clean-all backup-to-tg db-check verify-deploy refresh deploy-setup secret-scan secret-history-scan remote-preflight-dev remote-deploy-dev remote-preflight-prod remote-deploy-prod remote-status remote-logs remote-logs-follow remote-backup remote-recover remote-rollback clinic-dev clinic-build clinic-preview clinic-content-preview clinic-check clinic-acceptance clinic-docker-build clinic-docker-up clinic-docker-down clinic-docker-logs clinic-docker-check
+.PHONY: help init setup-net build dev dev-down dev-rebuild up down rebuild logs ps clean clean-all backup-to-tg db-check verify-deploy refresh deploy-setup secret-scan secret-history-scan remote-preflight-dev remote-deploy-dev remote-preflight-prod remote-deploy-prod remote-status remote-logs remote-logs-follow remote-backup remote-recover remote-rollback clinic-shared clinic-dev clinic-build clinic-preview clinic-content-preview clinic-check clinic-acceptance clinic-docker-build clinic-docker-up clinic-docker-down clinic-docker-logs clinic-docker-check
 
 # --- Допомога ---
 
@@ -41,8 +41,8 @@ help:
 	@echo "  $(GREEN)make clinic-content-preview$(NC) - Локальне opt-in демо контенту, noindex"
 	@echo "  $(GREEN)make clinic-check$(NC)   - Astro check, ESLint, Stylelint, Prettier"
 	@echo "  $(GREEN)make clinic-acceptance$(NC) - Повне локальне приймання з mock даними"
-	@echo "  $(GREEN)make clinic-docker-build$(NC) - Зібрати ізольований static clinic image"
-	@echo "  $(GREEN)make clinic-docker-up$(NC) - Запустити clinic на http://127.0.0.1:4323"
+	@echo "  $(GREEN)make clinic-docker-build$(NC) - Зібрати clinic image з API proxy"
+	@echo "  $(GREEN)make clinic-docker-up$(NC) - Запустити API й clinic на http://127.0.0.1:4323"
 	@echo "  $(GREEN)make clinic-docker-down$(NC) - Зупинити лише clinic project"
 	@echo "  $(GREEN)make clinic-docker-logs$(NC) - Логи clinic project"
 	@echo "  $(GREEN)make clinic-docker-check$(NC) - HTTP і браузерний smoke clinic container"
@@ -77,28 +77,32 @@ build:
 	pnpm build:all
 
 # The root .env is exported for existing targets; clinic children receive only PATH and HOME.
-clinic-dev:
+clinic-shared:
+	@pnpm --filter @vcard/shared build
+
+clinic-dev: clinic-shared
 	@$(CLINIC_PNPM) dev
 
-clinic-build:
+clinic-build: clinic-shared
 	@$(CLINIC_PNPM) build:normal
 
-clinic-preview:
+clinic-preview: clinic-shared
 	@$(CLINIC_PNPM) preview:normal
 
-clinic-content-preview:
+clinic-content-preview: clinic-shared
 	@$(CLINIC_PNPM) preview:content
 
-clinic-check:
+clinic-check: clinic-shared
 	@$(CLINIC_PNPM) check
 
-clinic-acceptance:
+clinic-acceptance: clinic-shared
 	@$(CLINIC_PNPM) acceptance
 
 clinic-docker-build:
 	@$(DC_CLINIC) build clinic-web
 
-clinic-docker-up:
+clinic-docker-up: setup-net
+	@$(DC_APP) up -d api
 	@$(DC_CLINIC) up -d --no-build --wait --wait-timeout 60 clinic-web
 
 clinic-docker-down:

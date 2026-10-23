@@ -12,7 +12,8 @@ assert.match(html, /<meta name="robots" content="noindex,nofollow">/)
 assert.doesNotMatch(html, /<link\b[^>]*\brel=["']canonical["']/i)
 assert.doesNotMatch(html, /\bhreflang\s*=/i)
 assert.doesNotMatch(html, /\bog:url\b/i)
-assert.doesNotMatch(html, /<form\b|id="clinic-submit"|data-clinic-ready/i)
+assert.match(html, /<form\b[^>]*id="clinic-lead-form"/)
+assert.doesNotMatch(html, /data-clinic-ready/i)
 assert.doesNotMatch(html, /__havenhub_staging_media__|img-0905|img-0907/i)
 assert.match(html, /<main\b[^>]*id="content"[^>]*tabindex="-1"/)
 assert.match(html, /href="\/site\/"[^>]*>Перейти на основний сайт/)
@@ -82,8 +83,9 @@ try {
 
     await page.goto(new URL('/site/', origin).toString())
     assert.equal(await page.locator('main > section').count(), 9)
-    assert.equal(await page.locator('#clinic-lead-preview fieldset').isDisabled(), true)
-    assert.equal(await page.locator('#clinic-lead-preview button').isDisabled(), true)
+    assert.equal(await page.locator('#clinic-lead-form input[name="name"]').isEnabled(), true)
+    assert.equal(await page.locator('#clinic-lead-form input[name="phone"]').isEnabled(), true)
+    assert.equal(await page.locator('#clinic-lead-form button[type="submit"]').isEnabled(), true)
 
     for (const target of ['tel:+380779742422', 'https://t.me/HavenRehub']) {
       assert.equal(await page.locator(`#contact a[href="${target}"]`).count(), 1)
@@ -135,4 +137,4 @@ try {
   await browser.close()
 }
 
-console.log('clinic Docker HTTP, metadata, closed forms, assets and browser smoke PASS')
+console.log('clinic Docker HTTP, metadata, lead form, assets and browser smoke PASS')
