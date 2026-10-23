@@ -87,6 +87,29 @@ describe('Lead Submission Integration Test', () => {
       expect(savedServices).toEqual(testLead.services)
     })
 
+    it('повинен зберегти контактну заявку без району та послуг', async () => {
+      const testLead = {
+        ...leadSchema.parse({
+          name: 'Заявка на консультацію',
+          phone: '+380501234567',
+          source: 'clinic-web',
+        }),
+        timestamp: new Date(),
+      }
+
+      await coordinator.handleIncomingLead(testLead)
+
+      const db = DatabaseService.getInstance().getProvider()
+      const results = await db.query<LeadRecord>(
+        'SELECT * FROM leads WHERE phone = ? ORDER BY id DESC LIMIT 1',
+        [testLead.phone],
+      )
+
+      expect(results).toHaveLength(1)
+      expect(results[0]?.district).toBe('')
+      expect(JSON.parse(results[0]!.services as unknown as string)).toEqual([])
+    })
+
     it('повинен відкинути невалідну заявку', () => {
       const invalidLead = {
         name: 'Test',
