@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 520" fill="none" aria-hidden="true">
+ <circle cx="302" cy="229" r="198" fill="#E7EDE3"/><circle cx="378" cy="94" r="53" fill="#DFB88D" opacity=".72"/>
+ <path d="M76 474C151 371 185 261 229 77M178 489C268 379 332 299 433 147" stroke="#68866E" stroke-width="3" stroke-linecap="round"/>
+ <g fill="#88A186" opacity=".9">
+  <path d="M111 406C60 373 54 329 71 304c48 23 65 59 40 102ZM148 332C110 275 120 235 149 214c31 42 34 81-1 118ZM189 231C150 176 160 129 190 102c32 46 34 89-1 129ZM224 110C208 72 223 38 261 14c13 44 1 76-37 96ZM233 417c-1-61 40-96 87-96-6 52-36 85-87 96ZM293 345c12-54 56-79 99-73-20 48-48 71-99 73ZM354 267c-1-55 32-86 80-93-6 49-32 81-80 93ZM406 194c-12-47 5-85 42-111 18 50 4 86-42 111Z"/>
+ </g>
+ <path d="M89 442C154 400 201 405 247 433" stroke="#D29B68" stroke-width="2" stroke-linecap="round"/>
+</svg>

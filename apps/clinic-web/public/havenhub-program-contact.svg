@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 320" fill="none" aria-hidden="true">
+  <path d="M30 318C87 195 134 109 220 8" stroke="#789B86" stroke-width="2.5" stroke-linecap="round"/>
+  <g fill="#83A78E" opacity=".75">
+    <path d="M72 244c-47-56-62-46-71-32 23 33 45 46 71 32ZM104 192c12-56 40-73 74-74-14 42-36 66-74 74ZM127 159c-49-52-73-44-90-29 25 34 52 45 90 29ZM170 91c5-53 30-71 62-78-7 40-26 67-62 78ZM192 65c-42-43-68-39-87-22 26 29 48 37 87 22Z"/>
+  </g>
+</svg>

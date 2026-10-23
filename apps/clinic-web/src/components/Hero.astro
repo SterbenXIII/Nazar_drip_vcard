@@ -1,6 +1,8 @@
 ---
-import { consultationCta, telegram } from '../content/customer-materials'
+import { consultationCta, email, telegram, whatsapp } from '../content/customer-materials'
+import WhatsAppIcon from './WhatsAppIcon.astro'
 import { landingSections } from '../content/landing'
+import { VALIDATION_LIMITS } from '@vcard/shared'
 
 const copy = landingSections[0]
 ---
@@ -18,30 +20,51 @@ const copy = landingSections[0]
         <a class="button secondary" href={telegram.href} aria-label={telegram.accessibleName}>
           Написати в Telegram
         </a>
+        <a class="button secondary" href={whatsapp.href} aria-label={whatsapp.accessibleName}>
+          <WhatsAppIcon /> Написати в WhatsApp
+        </a>
+        <a class="button secondary" href={email.href} aria-label={email.accessibleName}>
+          Написати на email
+        </a>
       </div>
       <p class="hero-note">
         {copy.items[0].description[0]}
       </p>
     </div>
-    <form class="hero-form" id="clinic-lead-preview" aria-labelledby="hero-form-title">
-      <h2 id="hero-form-title">Залиште контакти</h2>
-      <fieldset disabled aria-describedby="hero-form-status">
-        <label for="hero-name">Ваше ім’я</label>
-        <input id="hero-name" name="name" type="text" autocomplete="name" />
-        <label for="hero-phone">Номер телефону</label>
-        <input
-          id="hero-phone"
-          name="phone"
-          type="tel"
-          autocomplete="tel"
-          inputmode="tel"
-          placeholder="+380 __ ___ __ __"
-        />
-        <button class="button" type="submit">Залишити заявку</button>
-      </fieldset>
-      <p class="hero-form-status" id="hero-form-status" role="status">
-        Форма поки не надсилає дані. Зверніться телефоном або в Telegram.
+    <form class="hero-form" id="clinic-lead-form" aria-labelledby="hero-form-title">
+      <h2 id="hero-form-title">Отримайте консультацію</h2>
+      <p class="hero-form-introduction">
+        Залиште контакти — ми зв’яжемося з вами, щоб обговорити наступний крок.
       </p>
+      <label for="hero-name">Ваше ім’я</label>
+      <input
+        id="hero-name"
+        name="name"
+        type="text"
+        autocomplete="name"
+        minlength="2"
+        maxlength={VALIDATION_LIMITS.MAX_NAME_LENGTH}
+        required
+        aria-describedby="name-error"
+      />
+      <span class="field-error" id="name-error" aria-live="polite"></span>
+      <label for="hero-phone">Номер телефону</label>
+      <input
+        id="hero-phone"
+        name="phone"
+        type="tel"
+        autocomplete="tel"
+        inputmode="tel"
+        maxlength={VALIDATION_LIMITS.MAX_PHONE_INPUT_LENGTH}
+        placeholder="+380 __ ___ __ __"
+        required
+        aria-describedby="phone-error"
+      />
+      <span class="field-error" id="phone-error" aria-live="polite"></span>
+      <button class="button" id="clinic-submit" type="submit">Надіслати звернення</button>
+      <p class="hero-form-status" id="clinic-request-status" role="status" aria-live="polite"></p>
     </form>
   </div>
 </section>
+
+<script src="../scripts/clinic-lead-form.ts"></script>

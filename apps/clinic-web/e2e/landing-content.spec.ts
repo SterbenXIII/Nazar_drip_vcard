@@ -80,6 +80,77 @@ test('tracks source receipt, service currentness, and production approval separa
   }
 })
 
+test('records customer authorization separately from claim verification', () => {
+  const pdfClaims = [
+    ['customer-program-residential', 'Програми.pdf', 'сторінки 1–1'],
+    ['customer-program-outpatient', 'Програми.pdf', 'сторінки 1–2'],
+    ['customer-program-narcologist-visit', 'Програми.pdf', 'сторінки 2–2'],
+    ['customer-dependency-alcohol', 'Документ без назви.pdf', 'сторінки 1–1'],
+    ['customer-dependency-drugs', 'Документ без назви.pdf', 'сторінки 1–2'],
+    ['customer-dependency-gambling', 'Документ без назви.pdf', 'сторінки 2–3'],
+  ]
+
+  for (const [id, filename, pageRange] of pdfClaims) {
+    const claim = claimRegister.find((record) => record.id === id)
+
+    expect(claim).toMatchObject({
+      evidenceReceived: true,
+      publicationAuthorization: 'CUSTOMER_AUTHORIZED',
+      status: 'PENDING_VERIFICATION',
+      currentness: 'UNVERIFIED',
+      productionApproval: 'PENDING',
+      publicDraft: null,
+    })
+    expect(claim?.sources).toContain(`${filename}, ${pageRange}; отримано 2026-10-22`)
+  }
+
+  for (const claim of claimRegister.filter(({ status }) => status === 'PENDING_VERIFICATION')) {
+    expect(claim.publicDraft).toBeNull()
+  }
+})
+
+test('overview cards summarize the PDFs and format cards link to consultation', async ({
+  page,
+}) => {
+  await page.goto('/site/')
+
+  await expect(page.locator('#dependencies .editorial-list > li > p')).toHaveText([
+    'Починаємо з оцінювання фізичного й психологічного стану та індивідуального плану допомоги.',
+    'Підтримка з урахуванням ігрової залежності та індивідуальних потреб.',
+    'Враховуємо фізичний стан, психологічне благополуччя й ризики припинення вживання.',
+  ])
+  await expect(page.locator('#formats .format-list > li > h3')).toHaveText(careFormats)
+  await expect(page.locator('#formats .format-list > li > p')).toHaveText([
+    'Комплексний підхід до відновлення фізичного та психологічного стану. Склад і тривалість програми визначаються індивідуально після консультації.',
+    'Професійна підтримка без постійного перебування в реабілітаційному центрі. Індивідуальний план, консультації та супровід фахівців.',
+    'Виїзд додому у Львові та Львівській області.',
+  ])
+
+  const consultationLinks = page.locator('#formats a[href="#clinic-lead-form"]')
+  await expect(consultationLinks).toHaveText([
+    'Замовити консультацію',
+    'Замовити консультацію',
+    'Замовити консультацію',
+  ])
+  for (const link of await consultationLinks.all()) {
+    await link.click()
+    await expect(page).toHaveURL(/#clinic-lead-form$/)
+    await expect(page.locator('#clinic-lead-form')).toBeVisible()
+  }
+
+  for (const width of [1440, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 })
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+  }
+
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await consultationLinks.first().focus()
+  await page.keyboard.press('Tab')
+  await expect(consultationLinks.nth(1)).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(consultationLinks.nth(2)).toBeFocused()
+})
+
 test('renders only the confirmed center location and home-visit coverage', async ({ page }) => {
   await page.goto('/site/')
 

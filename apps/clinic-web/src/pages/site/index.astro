@@ -23,8 +23,8 @@ const isProduction = process.env.CLINIC_SITE_MODE === 'production'
   description={landingSections[0].introduction}
   routePolicy="supporting"
 >
-  <Header hrefPrefix="/site/" homeHref="/site/" />
-  <main id="content" tabindex="-1">
+  <Header hrefPrefix="/site/" homeHref="/site/" overlay site />
+  <main id="content" class="site-main" tabindex="-1">
     <Hero />
     <Audience />
     <Services />
@@ -34,5 +34,5 @@ const isProduction = process.env.CLINIC_SITE_MODE === 'production'
     <ConditionsSummary />
     <Contact />
   </main>
-  <Footer homeHref="/site/" />
+  <Footer homeHref="/site/" site />
 </Layout>

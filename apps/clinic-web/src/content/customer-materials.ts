@@ -49,6 +49,19 @@ export const telegram = {
   href: 'https://t.me/HavenRehub',
 } as const
 
+export const whatsapp = {
+  label: 'WhatsApp',
+  accessibleName: 'Написати в WhatsApp HAVENHUB',
+  href: 'https://wa.me/380779742422',
+} as const
+
+export const email = {
+  label: 'Email',
+  accessibleName: 'Написати на email HAVENHUB',
+  address: 'havenrehub@gmail.com',
+  href: 'mailto:havenrehub@gmail.com',
+} as const
+
 export const consultationCta = {
   label: 'Зателефонувати',
   href: hotline.href,

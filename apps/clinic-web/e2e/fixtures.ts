@@ -30,7 +30,7 @@ export const test = base.extend<{ localNetworkOnly: void }>({
       })
       page.on('pageerror', (error) => violations.push(`page: ${error.message}`))
       page.on('response', (response) => {
-        if (new URL(response.url()).pathname === '/api/leads/submit' && response.status() === 500) {
+        if (new URL(response.url()).pathname === '/api/leads/submit' && response.status() >= 500) {
           mockedLeadFailure = true
         }
       })
@@ -41,9 +41,7 @@ export const test = base.extend<{ localNetworkOnly: void }>({
           .filter(
             (message) =>
               !mockedLeadFailure ||
-              !message.includes(
-                'Failed to load resource: the server responded with a status of 500',
-              ),
+              !message.includes('Failed to load resource: the server responded with a status of'),
           )
           .map((message) => `console: ${message}`),
       )

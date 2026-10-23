@@ -1,0 +1,135 @@
+---
+import { Picture } from 'astro:assets'
+import activityRoom from '../assets/conditions-gallery/activity-room.jpg'
+import bedroomShared from '../assets/conditions-gallery/bedroom-shared.jpg'
+import bedroomTwin from '../assets/conditions-gallery/bedroom-twin.jpg'
+import outdoorSpace from '../assets/conditions-gallery/outdoor-space.jpg'
+import roomKitchen from '../assets/conditions-gallery/room-kitchen.jpg'
+import sauna from '../assets/conditions-gallery/sauna.jpg'
+
+const photos = [
+  {
+    image: roomKitchen,
+    alt: 'Ліжко, тумба та кухонна зона в кімнаті',
+    caption: 'Кімната з ліжком і кухонною зоною',
+  },
+  { image: bedroomTwin, alt: 'Два ліжка біля вікна', caption: 'Кімната з двома ліжками' },
+  {
+    image: bedroomShared,
+    alt: 'Кімната з кількома ліжками',
+    caption: 'Простір кімнати для проживання',
+  },
+  { image: sauna, alt: 'Дерев’яні лави та оздоблення парної', caption: 'Дерев’яна парна' },
+  {
+    image: activityRoom,
+    alt: 'Зала з кольоровим спортивним покриттям',
+    caption: 'Простір із спортивним покриттям',
+  },
+  {
+    image: outdoorSpace,
+    alt: 'Майданчик із турніками та дерев’яним павільйоном',
+    caption: 'Відкрита зона з майданчиком і павільйоном',
+  },
+]
+---
+
+<section class="conditions-photo-gallery" aria-labelledby="conditions-gallery-title">
+  <div class="conditions-photo-gallery-heading">
+    <p class="support-intro-kicker">Фото простору</p>
+    <h2 id="conditions-gallery-title">Погляньте на простір HAVENHUB</h2>
+    <p>Актуальні умови перебування та доступність окремих просторів уточнюйте під час розмови.</p>
+  </div>
+  <div class="conditions-photo-gallery-grid">
+    {
+      photos.map(({ image, alt, caption }) => (
+        <figure>
+          <Picture
+            src={image}
+            formats={['webp']}
+            widths={[480, 1200]}
+            sizes="(min-width: 1100px) 31vw, (min-width: 700px) 47vw, 100vw"
+            alt={alt}
+          />
+          <figcaption>{caption}</figcaption>
+        </figure>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .conditions-photo-gallery {
+    margin-top: clamp(2.5rem, 6vw, 5rem);
+  }
+
+  .conditions-photo-gallery-heading {
+    max-width: 48rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .conditions-photo-gallery-heading .support-intro-kicker {
+    margin: 0 0 0.75rem;
+    color: #477269;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .conditions-photo-gallery-heading h2 {
+    margin: 0 0 0.75rem;
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  .conditions-photo-gallery-heading > p:last-child {
+    max-width: 42rem;
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .conditions-photo-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .conditions-photo-gallery figure {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+  }
+
+  :global(.conditions-photo-gallery img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+
+  .conditions-photo-gallery figcaption {
+    padding: 0.875rem 1rem 1rem;
+    color: var(--text);
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  @media (width <= 900px) {
+    .conditions-photo-gallery-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (width <= 520px) {
+    .conditions-photo-gallery-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

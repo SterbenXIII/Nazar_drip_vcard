@@ -22,16 +22,16 @@ test('renders the complete main site in editorial order without old placeholders
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'Допомога людям із залежностями та їхнім близьким',
   )
-  await expect(page.locator('#clinic-lead-preview')).toBeVisible()
-  await expect(page.locator('#clinic-lead-preview fieldset')).toHaveAttribute('disabled', '')
-  await expect(page.locator('#clinic-lead-preview button[type="submit"]')).toBeDisabled()
+  await expect(page.locator('#clinic-lead-form')).toBeVisible()
+  await expect(page.locator('#hero a[href="tel:+380779742422"]')).toBeVisible()
+  await expect(page.locator('#hero a[href="https://t.me/HavenRehub"]')).toBeVisible()
   expect(
     await page
       .locator('main > section')
       .evaluateAll((sections) => sections.map((section) => section.id)),
   ).toEqual(sectionIds)
   await expect(page.locator('main h2')).toHaveText([
-    'Залиште контакти',
+    'Отримайте консультацію',
     'З чого почати',
     'З якими залежностями працюємо',
     'Формати допомоги',
@@ -69,6 +69,23 @@ test('keeps distinct dependency and care-format lists with sourced boundaries', 
   await expect(page.locator('main')).not.toContainText(
     /300[–-]400|гарантоване одужання|повна анонімність/,
   )
+})
+
+test('presents program details as a labelled list of informational cards', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/site/')
+  const cards = page.getByRole('list', { name: 'Напрями програми підтримки' })
+
+  await expect(cards.getByRole('listitem')).toHaveCount(3)
+  await expect(cards.getByRole('heading', { level: 3 })).toHaveText([
+    'Індивідуальна та групова робота',
+    'Підтримка близьких',
+    'Соціалізація та ресоціалізація',
+  ])
+  await expect(cards.getByRole('link')).toHaveCount(0)
+  expect(
+    await cards.evaluate((list) => getComputedStyle(list).gridTemplateColumns.split(' ').length),
+  ).toBe(3)
 })
 
 test('shows phone and Telegram actions and only links to built detail routes', async ({ page }) => {
@@ -128,4 +145,50 @@ test('normal navigation anchors point to sections that exist', async ({ page }) 
     .evaluateAll((links) => links.map((link) => link.getAttribute('href')!))) {
     await expect(page.locator(href)).toHaveCount(1)
   }
+})
+
+test('not-found page provides a branded recovery path', async ({ page }) => {
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 },
+    { width: 320, height: 568 },
+  ]) {
+    await page.setViewportSize(viewport)
+    await page.goto('/404.html')
+
+    await expect(page.getByRole('link', { name: 'HAVENHUB — головна' })).toHaveAttribute(
+      'href',
+      '/',
+    )
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Сторінку не знайдено' }),
+    ).toBeVisible()
+    await expect(page.getByRole('link', { name: 'На головну' })).toHaveAttribute('href', '/')
+    await expect(page.getByRole('link', { name: 'Перейти на основний сайт' })).toHaveAttribute(
+      'href',
+      '/site/',
+    )
+    await expect(page.locator('a[href="tel:+380779742422"]')).toBeVisible()
+    await expect(page.locator('a[href="https://t.me/HavenRehub"]')).toBeVisible()
+    await expect(page.locator('.not-found-art')).toHaveAttribute('src', '/hero-abstract.png')
+    if (viewport.width >= 1280) {
+      const title = await page.getByRole('heading', { level: 1 }).boundingBox()
+      expect(title?.height).toBeLessThan(60)
+    }
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true)
+  }
+
+  const accessibility = await new AxeBuilder({ page }).analyze()
+  expect(accessibility.violations).toEqual([])
+
+  await page.keyboard.press('Tab')
+  await expect(page.locator('.skip-link')).toBeFocused()
+  await page.keyboard.press('Tab')
+  const brandLink = page.getByRole('link', { name: 'HAVENHUB — головна' })
+  await expect(brandLink).toBeFocused()
+  await expect(brandLink).toHaveCSS('outline-style', 'solid')
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('link', { name: 'На головну' })).toBeFocused()
 })

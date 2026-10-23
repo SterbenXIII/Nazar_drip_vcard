@@ -77,6 +77,10 @@ test('404 provides a useful home route and remains noindex', async ({ page }) =>
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Сторінку не знайдено')
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,nofollow')
   await expect(page.getByRole('link', { name: 'На головну' })).toHaveAttribute('href', '/')
+  await expect(page.getByRole('link', { name: 'Перейти на основний сайт' })).toHaveAttribute(
+    'href',
+    '/site/',
+  )
   await page.getByRole('link', { name: 'На головну' }).click()
   await expect(page).toHaveURL('/')
 })

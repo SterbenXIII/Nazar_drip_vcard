@@ -118,6 +118,15 @@ test('publication modes preserve explicit release gates and correct SEO inventor
     const mainSite = await readFile(resolve(appDir, 'dist', 'site', 'index.html'), 'utf8')
     expect(mainSite).toContain('<meta name="robots" content="noindex,follow">')
     expect(mainSite).not.toContain('rel="canonical"')
+    const program = await readFile(resolve(appDir, 'dist/programa/index.html'), 'utf8')
+    expect(program).toContain(
+      'Склад і тривалість програми визначаються індивідуально після консультації.',
+    )
+    const directions = await readFile(resolve(appDir, 'dist/napriamy/index.html'), 'utf8')
+    expect(directions).toContain('Допомога при алкогольній залежності')
+    for (const page of [program, directions]) {
+      expect(page).toContain('<meta name="robots" content="noindex,follow">')
+    }
     expect(await artifactExists('sitemap.xml')).toBe(true)
     const sitemap = await readFile(resolve(appDir, 'dist/sitemap.xml'), 'utf8')
     expect(sitemap.match(/<loc>/g)).toHaveLength(1)

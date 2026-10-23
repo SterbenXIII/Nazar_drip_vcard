@@ -1,26 +1,44 @@
 ---
-import { hotline, telegram } from '../content/customer-materials'
+import { email, hotline, telegram, whatsapp } from '../content/customer-materials'
+import WhatsAppIcon from './WhatsAppIcon.astro'
+import BrandLogo from './BrandLogo.astro'
 
 interface Props {
   homeHref?: string
   hideContactsOnMobile?: boolean
+  site?: boolean
 }
 
-const { homeHref = '/', hideContactsOnMobile = false } = Astro.props
+const { homeHref = '/', hideContactsOnMobile = false, site = false } = Astro.props
 const supportingPagesAvailable = (process.env.CLINIC_SITE_MODE ?? 'normal') !== 'normal'
-const navigation = supportingPagesAvailable
-  ? [
-      { href: '/programa/', label: 'Програма' },
-      { href: '/umovy/', label: 'Про центр' },
-      { href: '/rodyni/', label: 'Для родини' },
-      { href: '/napriamy/', label: 'Напрями' },
-    ]
-  : []
+const navigation =
+  site && !supportingPagesAvailable
+    ? [
+        { href: `${homeHref}#conditions`, label: 'Про центр' },
+        { href: `${homeHref}#dependencies`, label: 'Напрями' },
+        { href: `${homeHref}#program`, label: 'Програми' },
+        { href: `${homeHref}#family`, label: 'Для родини' },
+        { href: `${homeHref}#contact`, label: 'Контакти' },
+      ]
+    : supportingPagesAvailable
+      ? [
+          { href: '/programa/', label: 'Програма' },
+          { href: '/umovy/', label: 'Про центр' },
+          { href: '/rodyni/', label: 'Для родини' },
+          { href: '/napriamy/', label: 'Напрями' },
+        ]
+      : []
 ---
 
-<footer class:list={['footer', hideContactsOnMobile && 'footer--hide-contacts-mobile']}>
+<footer
+  class:list={[
+    'footer',
+    hideContactsOnMobile && 'footer--hide-contacts-mobile',
+    site && 'site-footer-site',
+  ]}
+>
   <div class="wrap">
-    <a class="identity" href={homeHref} aria-label="HAVENHUB — головна">HAVENHUB</a>
+    <a class="identity" href={homeHref} aria-label="HAVENHUB — головна"><BrandLogo /></a>
     {
       navigation.length > 0 && (
         <nav class="footer-navigation" aria-label="Навігація внизу сторінки">
@@ -35,6 +53,11 @@ const navigation = supportingPagesAvailable
         {hotline.display}
       </a>
       <a href={telegram.href} aria-label={telegram.accessibleName}>{telegram.label}</a>
+      <a href={whatsapp.href} aria-label={whatsapp.accessibleName}>
+        <WhatsAppIcon />
+        {whatsapp.label}
+      </a>
+      <a href={email.href} aria-label={email.accessibleName}>{email.address}</a>
     </div>
   </div>
 </footer>

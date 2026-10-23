@@ -2,15 +2,21 @@
 import { careFormats, dependencyTypes } from '../content/customer-materials'
 import { landingSections } from '../content/landing'
 
-const detailRoutesAvailable = (process.env.CLINIC_SITE_MODE ?? 'normal') !== 'normal'
+const detailRoutesAvailable =
+  import.meta.env.DEV || (process.env.CLINIC_SITE_MODE ?? 'normal') !== 'normal'
 const dependencyDescriptions = [
-  'Під час першого звернення можна описати ситуацію й запитати про доступні кроки допомоги.',
-  'Можна звернутися щодо власних труднощів або запитати, як підтримати близьку людину.',
-  'Формат підтримки обговорюють після уточнення обставин і стану людини.',
+  'Починаємо з оцінювання фізичного й психологічного стану та індивідуального плану допомоги.',
+  'Підтримка з урахуванням ігрової залежності та індивідуальних потреб.',
+  'Враховуємо фізичний стан, психологічне благополуччя й ризики припинення вживання.',
+]
+const dependencyImages = [
+  '/havenhub-alcohol-dependency.jpg',
+  '/havenhub-gambling-dependency.jpg',
+  '/havenhub-narcotic-dependency.jpg',
 ]
 const formatDescriptions = [
-  'Програму з перебуванням у центрі обговорюють під час консультації.',
-  'Амбулаторну програму обговорюють окремо від виїзду додому.',
+  'Комплексний підхід до відновлення фізичного та психологічного стану. Склад і тривалість програми визначаються індивідуально після консультації.',
+  'Професійна підтримка без постійного перебування в реабілітаційному центрі. Індивідуальний план, консультації та супровід фахівців.',
   'Виїзд додому у Львові та Львівській області.',
 ]
 ---
@@ -22,16 +28,40 @@ const formatDescriptions = [
 >
   <div class="wrap editorial-grid">
     <div class="section-intro">
+      <p class="section-kicker">Наші напрями допомоги</p>
       <h2 id="dependencies-title">{landingSections[2].title}</h2>
       <p>{landingSections[2].introduction}</p>
+      <a class="text-link" href="#formats">
+        Формати допомоги <span aria-hidden="true">→</span>
+      </a>
     </div>
     <ul class="editorial-list">
       {
         dependencyTypes.map((name, index) => (
           <li>
             <>
+              <span class="direction-icon" aria-hidden="true">
+                {index === 0 ? (
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M16 3 5 7.5v8.3c0 5.6 4.2 10.2 11 13.2 6.8-3 11-7.6 11-13.2V7.5L16 3Z" />
+                    <path d="M16 11v9m-4.5-4.5h9" />
+                  </svg>
+                ) : index === 1 ? (
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M16 5.5c-1.7-2.7-5.6-2.1-6.2.9-3.5-.6-6.3 2.5-4.6 5.6-2.4 2.1-1.4 5.8 1.4 6.3-.6 3.1 2.1 5.9 5.3 4.8 1 .8 2.6 1.2 4.1.7V5.5Z" />
+                    <path d="M16 5.5c1.7-2.7 5.6-2.1 6.2.9 3.5-.6 6.3 2.5 4.6 5.6 2.4 2.1 1.4 5.8-1.4 6.3.6 3.1-2.1 5.9-5.3 4.8-1 .8-2.6 1.2-4.1.7V5.5Z" />
+                    <path d="M11 11.5c2 0 3 1.2 3 3m7-3c-2 0-3 1.2-3 3M11 18h3m7 0h-3" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M27 5C15.2 5.2 7 9.1 7 17c0 6.2 6.2 9.2 11.4 5.1C23.4 18.3 26 11.4 27 5Z" />
+                    <path d="M5 27c3.2-5.1 8.3-10 16.1-15.4M5.5 18c-2.3-1.5-3.2-4-3.2-7 4.4 0 7.8 1.1 9.5 3.7" />
+                  </svg>
+                )}
+              </span>
               <h3>{name}</h3>
               <p>{dependencyDescriptions[index]}</p>
+              <img class="direction-image" src={dependencyImages[index]} alt="" loading="lazy" />
             </>
           </li>
         ))
@@ -53,6 +83,9 @@ const formatDescriptions = [
             <>
               <h3>{name}</h3>
               <p>{formatDescriptions[index]}</p>
+              <a class="text-link" href="#clinic-lead-form">
+                Замовити консультацію
+              </a>
             </>
           </li>
         ))

@@ -1,15 +1,298 @@
 ---
 import Layout from '../layouts/Layout.astro'
+import { email, hotline, mainSiteCta, telegram, whatsapp } from '../content/customer-materials'
+import WhatsAppIcon from '../components/WhatsAppIcon.astro'
+import BrandLogo from '../components/BrandLogo.astro'
 ---
 
 <Layout
   title="Сторінку не знайдено"
-  description="Сторінку HAVENHUB не знайдено."
+  description="Сторінку HAVENHUB не знайдено. Поверніться на головну або перейдіть на основний сайт."
   routePolicy="closed"
 >
-  <main id="content" tabindex="-1">
-    <h1>Сторінку не знайдено</h1>
-    <p>Поверніться на головну сторінку.</p>
-    <a href="/">На головну</a>
+  <main class="not-found-page" id="content" tabindex="-1">
+    <div class="not-found-frame">
+      <a class="not-found-brand" href="/" aria-label="HAVENHUB — головна">
+        <BrandLogo />
+      </a>
+
+      <section class="not-found-content" aria-labelledby="not-found-title">
+        <div class="not-found-copy">
+          <p class="not-found-code" aria-label="Помилка 404">404</p>
+          <h1 id="not-found-title">Сторінку не знайдено</h1>
+          <p class="not-found-description">
+            Схоже, адреса застаріла або в ній є помилка. Можна повернутися на головну чи перейти до
+            основного сайту.
+          </p>
+          <div class="not-found-actions">
+            <a class="not-found-home" href="/">На головну</a>
+            <a class="not-found-main-site" href={mainSiteCta.href}>{mainSiteCta.label}</a>
+          </div>
+          <nav class="not-found-contact" aria-label="Контакти HAVENHUB">
+            <a
+              href={hotline.href}
+              aria-label={`Зателефонувати на гарячу лінію: ${hotline.display}`}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path
+                  d="M21 16.4v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 10.2 18a19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 1.9 3.2 2 2 0 0 1 3.9 1h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L7.8 9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.9 2.5Z"
+                ></path>
+              </svg>
+            </a>
+            <a href={telegram.href} aria-label={telegram.accessibleName}>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="m22 2-7 20-4-9-9-4Z"></path>
+                <path d="M22 2 11 13"></path>
+              </svg>
+            </a>
+            <a class="not-found-whatsapp" href={whatsapp.href} aria-label={whatsapp.accessibleName}>
+              <WhatsAppIcon />
+            </a>
+            <a href={email.href} aria-label={email.accessibleName}>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <path d="m3 6 9 7 9-7"></path>
+              </svg>
+            </a>
+          </nav>
+        </div>
+        <img class="not-found-art" src="/hero-abstract.png" alt="" />
+      </section>
+    </div>
   </main>
 </Layout>
+
+<style>
+  .not-found-page {
+    min-height: 100svh;
+    padding: 1rem;
+    background: #f7f5ec;
+  }
+
+  .not-found-frame {
+    display: flex;
+    width: min(100%, 82rem);
+    min-height: calc(100svh - 2rem);
+    flex-direction: column;
+    margin-inline: auto;
+    border: 1px solid rgb(11 48 42 / 20%);
+    border-radius: 1rem;
+    background: radial-gradient(ellipse at 50% 45%, #fffefa 0, #f7f5ec 80%);
+  }
+
+  .not-found-brand {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 0.75rem;
+    margin: clamp(1.25rem, 3vw, 2.75rem) clamp(1.25rem, 3vw, 2.75rem) 0;
+    color: #0b302a;
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2vw, 1.75rem);
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .not-found-content {
+    display: grid;
+    width: min(calc(100% - 3rem), 68rem);
+    min-height: 29rem;
+    grid-template-columns: minmax(0, 1.15fr) minmax(17rem, 0.85fr);
+    align-items: center;
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    margin: auto;
+    padding: clamp(1.5rem, 4vw, 3.5rem);
+    border: 1px solid rgb(11 48 42 / 7%);
+    border-radius: 1.5rem;
+    background: #fffefa;
+    box-shadow: 0 1.5rem 4rem rgb(11 48 42 / 9%);
+  }
+
+  .not-found-code {
+    margin: 0 0 0.8rem;
+    color: #53c6d4;
+    font-family: var(--font-display);
+    font-size: clamp(6rem, 11vw, 9rem);
+    font-weight: 600;
+    letter-spacing: -0.06em;
+    line-height: 0.82;
+  }
+
+  .not-found-content h1 {
+    margin: 0 0 1rem;
+    color: #0b302a;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 3.4vw, 3rem);
+    font-weight: 500;
+    line-height: 1.08;
+  }
+
+  .not-found-description {
+    max-width: 43ch;
+    margin: 0 0 1.5rem;
+    color: #263c38;
+    font-size: clamp(1rem, 1.35vw, 1.125rem);
+    line-height: 1.6;
+  }
+
+  .not-found-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .not-found-actions a {
+    display: inline-flex;
+    min-height: 3.25rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.25rem;
+    border: 1px solid #0b302a;
+    border-radius: 0.625rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    transition:
+      background-color 160ms ease,
+      color 160ms ease;
+  }
+
+  .not-found-home {
+    background: #8adce6;
+    color: #0b302a;
+  }
+
+  .not-found-home:hover {
+    background: #70d1dd;
+  }
+
+  .not-found-main-site {
+    background: #fffefa;
+    color: #0b302a;
+  }
+
+  .not-found-main-site:hover {
+    background: #edf5f1;
+  }
+
+  .not-found-contact {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+  }
+
+  .not-found-contact a {
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    place-items: center;
+    border: 1px solid #0b302a;
+    border-radius: 50%;
+    color: #0b302a;
+    transition:
+      background-color 160ms ease,
+      color 160ms ease;
+  }
+
+  .not-found-contact a:hover {
+    background: #0b302a;
+    color: #fffefa;
+  }
+
+  .not-found-contact svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: none;
+    stroke: currentcolor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  .not-found-art {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 1rem;
+    object-fit: cover;
+    object-position: 60% center;
+  }
+
+  .not-found-page a:focus-visible {
+    outline: 3px solid #08717a;
+    outline-offset: 4px;
+  }
+
+  @media (width <= 720px) {
+    .not-found-page {
+      padding: 0.5rem;
+    }
+
+    .not-found-frame {
+      min-height: calc(100svh - 1rem);
+    }
+
+    .not-found-brand {
+      margin: 1.25rem 1rem 0;
+    }
+
+    .not-found-content {
+      width: calc(100% - 1rem);
+      min-height: 0;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.5rem;
+      margin: auto auto 0.5rem;
+      padding: clamp(1.25rem, 6vw, 2rem);
+    }
+
+    .not-found-code,
+    .not-found-content h1 {
+      text-align: center;
+    }
+
+    .not-found-code {
+      font-size: clamp(5.25rem, 24vw, 7rem);
+    }
+
+    .not-found-content h1 {
+      font-size: clamp(1.85rem, 8vw, 2.6rem);
+    }
+
+    .not-found-description {
+      margin-bottom: 1.25rem;
+    }
+
+    .not-found-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .not-found-contact {
+      justify-content: center;
+      margin-top: 1.25rem;
+    }
+
+    .not-found-art {
+      aspect-ratio: 16 / 10;
+    }
+  }
+
+  @media (width <= 350px) {
+    .not-found-content {
+      padding: 1rem;
+    }
+
+    .not-found-actions a {
+      padding-inline: 0.75rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .not-found-actions a,
+    .not-found-contact a {
+      transition: none;
+    }
+  }
+</style>

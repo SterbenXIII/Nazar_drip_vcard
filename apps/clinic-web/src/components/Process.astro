@@ -1,5 +1,6 @@
 ---
-import { hotline, telegram } from '../content/customer-materials'
+import { email, hotline, telegram, whatsapp } from '../content/customer-materials'
+import WhatsAppIcon from './WhatsAppIcon.astro'
 import { landingSections } from '../content/landing'
 
 const copy = landingSections[5]
@@ -33,7 +34,10 @@ const copy = landingSections[5]
     <p class="process-note">
       Перша первинна консультація безкоштовна. Вартість визначають після консультації. <a
         href={hotline.href}>Зателефонуйте</a
-      > або <a href={telegram.href}>напишіть у Telegram</a>.
+      > або <a href={telegram.href}>напишіть у Telegram</a>, <a href={whatsapp.href}
+        ><WhatsAppIcon /> WhatsApp</a
+      > чи
+      <a href={email.href}>на email</a>.
     </p>
   </div>
 </section>

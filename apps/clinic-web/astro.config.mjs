@@ -29,7 +29,15 @@ export default defineConfig({
       : [],
   output: 'static',
   vite: {
-    server: { strictPort: true },
+    server: {
+      strictPort: true,
+      proxy: {
+        '/api': {
+          target: process.env.CLINIC_API_TARGET ?? 'http://127.0.0.1:5678',
+          changeOrigin: true,
+        },
+      },
+    },
     preview: { strictPort: true },
   },
 })

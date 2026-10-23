@@ -3,34 +3,30 @@ import { expect, test } from './fixtures'
 const pages = [
   {
     path: '/programa/',
-    h1: 'Як побудована програма підтримки',
+    h1: 'Зрозумілий шлях до підтримки',
     sections: [
-      'Перший контакт',
-      'Індивідуальна та групова робота',
-      'Підтримка близьких',
-      'Підходи в роботі',
-      'Соціалізація та ресоціалізація',
+      'Від першого звернення — до наступного кроку',
+      'Три теми для розмови про подальший шлях',
     ],
   },
   {
     path: '/umovy/',
-    h1: 'Про центр та умови перебування',
+    h1: 'Місце, де можна зосередитися на наступному кроці',
     sections: [
-      'Наш підхід',
+      'Починаємо з розмови',
       'Щоденні умови',
-      'Команда',
-      'Розташування',
-      'Що уточнити перед початком',
+      'У Львівській області',
+      'Уточніть те, що важливо саме вам',
     ],
   },
   {
     path: '/rodyni/',
-    h1: 'Підтримка для рідних і близьких',
+    h1: 'Коли хвилюєтеся за близьку людину',
     sections: [
-      'Коли ви хвилюєтеся за близьку людину',
-      'Як почати розмову з центром',
-      'Підтримка родини',
-      'Що можна обговорити',
+      'Звернення може початися з простої розмови',
+      'Два прості кроки',
+      'Ви теж можете звернутися по підтримку',
+      'Про що можна запитати?',
     ],
   },
   {
@@ -39,6 +35,74 @@ const pages = [
     sections: ['З якими залежностями працюємо', 'Формати допомоги'],
   },
 ] as const
+
+test('conditions page follows the section design and keeps approved contact links', async ({
+  page,
+}) => {
+  await page.goto('/umovy/')
+
+  await expect(page.locator('.support-page-conditions')).toBeVisible()
+  await expect(page.locator('.desktop-nav a[href="/programa/"]')).toBeVisible()
+  await expect(page.locator('.conditions-list > li')).toHaveCount(3)
+  await expect(page.locator('.support-conditions-number')).toHaveText(['01', '02', '03'])
+  await expect(page.locator('.support-conditions-approach .support-items > li')).toHaveCount(2)
+  await expect(page.locator('.support-page-conditions section[id]:not(#contact)')).toHaveCount(4)
+  await expect(page.locator('.conditions-photo-gallery figure')).toHaveCount(6)
+  await expect(page.locator('.conditions-photo-gallery img[alt]:not([alt=""])')).toHaveCount(6)
+  await expect(page.locator('.support-page-conditions a[href="#conditions"]')).toBeVisible()
+  await expect(page.locator('.support-contact a[href="tel:+380779742422"]')).toBeVisible()
+  await expect(page.locator('.support-contact a[href="https://t.me/HavenRehub"]')).toBeVisible()
+  await expect(page.locator('main')).not.toContainText(/Наші фахівці|Перша первинна консультація/)
+})
+
+test('conditions gallery loads unique photos with responsive layout', async ({ page }) => {
+  for (const width of [1440, 1024, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/umovy/')
+    const gallery = page.locator('.conditions-photo-gallery')
+    await expect(gallery.locator('figure')).toHaveCount(6)
+    const sources = await gallery
+      .locator('img')
+      .evaluateAll((images) => images.map((image) => (image as HTMLImageElement).src))
+    expect(new Set(sources).size).toBe(6)
+    for (const image of await gallery.locator('img').all()) {
+      await image.scrollIntoViewIfNeeded()
+      await expect
+        .poll(() => image.evaluate((img) => (img as HTMLImageElement).naturalWidth))
+        .toBeGreaterThan(0)
+      const box = await image.boundingBox()
+      expect(box!.width / box!.height).toBeCloseTo(4 / 3, 1)
+    }
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)
+    expect(overflow, `horizontal overflow at ${width}px`).toBe(false)
+  }
+})
+
+test('conditions page anchors, menu and layout work at narrow widths', async ({ page }) => {
+  for (const width of [768, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 })
+    await page.goto('/umovy/')
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+    await page.locator('.support-page-conditions a[href="#conditions"]').click()
+    await expect(page).toHaveURL(/#conditions$/)
+  }
+
+  await page.locator('#mobile-menu-toggle').click()
+  await expect(page.locator('#mobile-menu-toggle')).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.locator('#mobile-navigation')).toBeVisible()
+})
+
+test('conditions contact actions remain reachable at 200% text size', async ({ page }) => {
+  await page.setViewportSize({ width: 640, height: 450 })
+  await page.goto('/umovy/')
+  await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
+
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  )
+  await expect(page.locator('#contact a[href="tel:+380779742422"]')).toBeVisible()
+  await expect(page.locator('#contact a[href="https://t.me/HavenRehub"]')).toBeVisible()
+})
 
 for (const route of pages) {
   test(`${route.path} renders its approved content and shared contact paths`, async ({ page }) => {
@@ -60,12 +124,92 @@ for (const route of pages) {
   })
 }
 
+test('program page follows the design sections and keeps the contact actions', async ({ page }) => {
+  await page.goto('/programa/')
+
+  await expect(page.locator('.support-program-cards > .support-program-card')).toHaveCount(4)
+  await expect(page.locator('.support-program-card h3')).toHaveText([
+    'Перший контакт',
+    'Індивідуальна та групова робота',
+    'Підтримка близьких',
+    'Підходи в роботі',
+  ])
+  await expect(page.locator('.support-program-stages li')).toHaveCount(3)
+  await expect(page.locator('.support-program-stages li p')).toHaveText([
+    'Запитайте, які цілі має цей етап і що входить до щоденної програми підтримки.',
+    'Уточніть, як програма допомагає готуватися до повернення у звичне середовище.',
+    'Обговоріть, яку підтримку передбачено для подальшого життя та спілкування.',
+  ])
+  await expect(page.locator('.support-contact-actions a[href^="tel:"]')).toBeVisible()
+  await expect(page.locator('.support-contact-actions a[href*="t.me/"]')).toBeVisible()
+})
+
+test('program page has no horizontal overflow on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/programa/')
+
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+
+  const stages = page.locator('.support-program-stages .support-items')
+  const lastStage = stages.locator('li').last()
+  const gridWidth = await stages.evaluate((element) => element.getBoundingClientRect().width)
+  const cardWidth = await lastStage.evaluate((element) => element.getBoundingClientRect().width)
+
+  expect(cardWidth).toBeGreaterThan(gridWidth * 0.9)
+})
+
+test('program intro art stays clear of the text on tablet', async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 1024 })
+  await page.goto('/programa/')
+
+  const textClearsArt = await page.evaluate(() => {
+    const intro = document.querySelector('.support-intro')!
+    const description = intro.querySelector('.support-description')!.getBoundingClientRect()
+    const artStyle = getComputedStyle(intro, '::after')
+    const introBox = intro.getBoundingClientRect()
+    const artLeft =
+      introBox.right - Number.parseFloat(artStyle.right) - Number.parseFloat(artStyle.width)
+
+    return description.right <= artLeft
+  })
+
+  expect(textClearsArt).toBe(true)
+})
+
 test('family page avoids absolute confidentiality promises', async ({ page }) => {
   await page.goto('/rodyni/')
 
   await expect(page.locator('body')).not.toContainText(
     /гарантуємо повну анонімність|абсолютн\w* конфіденційн\w*|100\s*%/,
   )
+})
+
+test('family page follows the design sections and keeps contact paths', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/rodyni/')
+
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'Коли хвилюєтеся за близьку людину',
+  )
+  await expect(page.locator('main h2')).toHaveText([
+    'Звернення може початися з простої розмови',
+    'Два прості кроки',
+    'Ви теж можете звернутися по підтримку',
+    'Про що можна запитати?',
+    'Обговорімо наступний крок',
+  ])
+  await expect(
+    page.getByText('Ваше звернення по інформацію не означає', { exact: false }),
+  ).toBeVisible()
+  await expect(page.locator('.support-family-steps li')).toHaveCount(2)
+  await expect(page.locator('.support-family-questions li')).toHaveCount(4)
+  await expect(page.locator('img[src="/havenhub-rodyni-family-branches.svg"]')).toBeVisible()
+  await expect(page.locator('.support-contact a[href^="tel:"]')).toBeVisible()
+  await expect(page.locator('.support-contact a[href*="t.me/"]')).toBeVisible()
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+  await expect(page.locator('.support-family-steps li')).toHaveCount(2)
 })
 
 test('directions page keeps dependency types and care formats separate', async ({ page }) => {
@@ -75,6 +219,71 @@ test('directions page keeps dependency types and care formats separate', async (
   await expect(page.getByRole('heading', { name: 'Формати допомоги', exact: true })).toBeVisible()
   await expect(page.locator('table')).toHaveCount(0)
   await expect(page.locator('[data-service-matrix]')).toHaveCount(0)
+})
+
+test('program page renders PDF sections and keeps the home visit distinct', async ({ page }) => {
+  await page.goto('/programa/')
+
+  for (const heading of [
+    'Стаціонарна програма реабілітації',
+    'Амбулаторна програма відновлення',
+    'Виїзд нарколога',
+  ]) {
+    await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible()
+  }
+  await expect(page.locator('.support-program-customer-copy .support-items > li > ul')).toHaveCount(
+    3,
+  )
+  await expect(page.locator('.support-program-customer-copy')).toContainText(
+    'якщо така послуга доступна у вашому регіоні',
+  )
+  for (const width of [1440, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 })
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+  }
+  await page.setViewportSize({ width: 640, height: 450 })
+  await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
+  await expect(page.locator('.support-contact a[href^="tel:"]')).toBeVisible()
+  await expect(page.locator('.support-contact a[href*="t.me/"]')).toBeVisible()
+
+  await page.goto('/napriamy/')
+  await expect(page.locator('.support-section-care-formats')).toContainText(
+    'Виїзд додому доступний у Львові та Львівській області.',
+  )
+})
+
+test('directions page renders PDF dependency details and retains its format section', async ({
+  page,
+}) => {
+  await page.goto('/napriamy/')
+
+  await expect(page.locator('.support-page-directions')).toContainText(
+    'У HAVENHUB ми поєднуємо медичний супровід, психотерапію та реабілітаційну підтримку',
+  )
+  await expect(page.locator('.support-items-dependency-types h3')).toHaveText([
+    'Допомога при алкогольній залежності',
+    'Допомога при наркотичній залежності',
+    'Допомога при ігровій залежності',
+  ])
+  await expect(
+    page.locator('.support-items-dependency-types > li > .support-item-details'),
+  ).toHaveCount(3)
+  await expect(page.locator('.support-items-dependency-types')).toContainText(
+    'при тривалому або інтенсивному вживанні алкоголю різке припинення може спричинити небезпечний синдром відміни',
+  )
+  await expect(page.getByRole('heading', { name: 'Формати допомоги', exact: true })).toBeVisible()
+  await expect(page.locator('.support-items-care-formats')).toContainText(
+    'Виїзд додому доступний у Львові та Львівській області.',
+  )
+
+  for (const width of [1440, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 })
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+  }
+  await page.setViewportSize({ width: 640, height: 450 })
+  await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
+  await expect(page.locator('.support-contact a[href^="tel:"]')).toBeVisible()
+  await expect(page.locator('.support-contact a[href*="t.me/"]')).toBeVisible()
 })
 
 const mediaPaths = {

@@ -1,7 +1,8 @@
 ---
 import Footer from './Footer.astro'
 import Header from './Header.astro'
-import { hotline, mainSiteCta, telegram } from '../content/customer-materials'
+import { email, hotline, mainSiteCta, telegram, whatsapp } from '../content/customer-materials'
+import WhatsAppIcon from './WhatsAppIcon.astro'
 import { landingSections } from '../content/landing'
 
 const hero = { ...landingSections[0], title: 'Підтримка на шляху до нового життя' }
@@ -78,6 +79,12 @@ const highlights = [
         <a href={hotline.href}>{hotline.display}</a>
         <a class="entry-telegram" href={telegram.href} aria-label={telegram.accessibleName}>
           Написати в Telegram
+        </a>
+        <a class="entry-telegram" href={whatsapp.href} aria-label={whatsapp.accessibleName}>
+          <WhatsAppIcon /> Написати в WhatsApp
+        </a>
+        <a class="entry-telegram" href={email.href} aria-label={email.accessibleName}>
+          Написати на email
         </a>
       </div>
       <a class="entry-site-button entry-site-button--contact" href={mainSiteCta.href}>

@@ -21,6 +21,46 @@ test('shared navigation only links to routes present in this build', async ({ pa
   }
 })
 
+test('same-origin page changes use native transitions and retain document navigation', async ({
+  page,
+}) => {
+  test.skip(!staging, 'supporting routes are absent in normal')
+  await page.goto('/site/')
+
+  const transitionRules = await page.evaluate(() => {
+    const result: string[] = []
+    const visit = (rules: CSSRuleList) => {
+      for (const rule of rules) {
+        result.push(rule.cssText)
+        if (rule instanceof CSSGroupingRule) visit(rule.cssRules)
+      }
+    }
+    for (const sheet of document.styleSheets) {
+      try {
+        visit(sheet.cssRules)
+      } catch {
+        // Ignore stylesheets that the browser does not expose to the page.
+      }
+    }
+    return result
+  })
+  expect(transitionRules.some((rule) => rule.includes('navigation: auto'))).toBe(true)
+  expect(
+    transitionRules.some(
+      (rule) => rule.includes('prefers-reduced-motion') && rule.includes('navigation: none'),
+    ),
+  ).toBe(true)
+
+  const navigation = page.waitForNavigation()
+  await page.locator('.desktop-nav a[href="/umovy/"]').click()
+  await navigation
+  await expect(page).toHaveURL(/\/umovy\/$/)
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  expect(await page.evaluate(() => performance.getEntriesByType('navigation')[0]?.type)).toBe(
+    'navigate',
+  )
+})
+
 test('every built page has one main landmark and a working skip link', async ({ page }) => {
   const routes = staging
     ? ['/', '/site/', '/404.html', ...supportingRoutes]
@@ -65,4 +105,19 @@ test('shared contacts use published phone and Telegram destinations', async ({ p
   await expect(page.locator('.header-action')).toHaveAttribute('href', 'tel:+380779742422')
   await expect(page.locator('.footer-contacts a[href="tel:+380779742422"]')).toBeVisible()
   await expect(page.locator('.footer-contacts a[href="https://t.me/HavenRehub"]')).toBeVisible()
+})
+
+test('all HAVENHUB pages use the same logo mark and wordmark', async ({ page }) => {
+  const routes = staging
+    ? ['/', '/site/', '/404.html', ...supportingRoutes]
+    : ['/', '/site/', '/404.html']
+  for (const route of routes) {
+    await page.goto(route)
+    const logos = page.locator('.brand-logo')
+    await expect(logos).toHaveCount(route === '/404.html' ? 1 : 2)
+    for (const logo of await logos.all()) {
+      await expect(logo.locator('.brand-logo-mark')).toBeVisible()
+      await expect(logo.locator('.brand-logo-name')).toHaveText('HAVENHUB')
+    }
+  }
 })

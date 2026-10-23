@@ -39,5 +39,6 @@ test('the theme does not break narrow reflow or CTA visibility', async ({ page }
   await page.goto('/site/')
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320)
   await expect(page.locator('#hero a[href^="tel:"]')).toBeVisible()
+  await expect(page.locator('#hero a[href^="https://t.me/"]')).toBeVisible()
   await expect(page.locator('#contact a[href^="tel:"]')).toBeVisible()
 })

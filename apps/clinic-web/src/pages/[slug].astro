@@ -2,56 +2,376 @@
 import Layout from '../layouts/Layout.astro'
 import Header from '../components/Header.astro'
 import Footer from '../components/Footer.astro'
+import PhotoGallery from '../components/PhotoGallery.astro'
 import StagingIllustration from '../components/StagingIllustration.astro'
-import { hotline, telegram } from '../content/customer-materials'
+import { email, hotline, telegram, whatsapp } from '../content/customer-materials'
+import WhatsAppIcon from '../components/WhatsAppIcon.astro'
 import { supportingPages, type SupportingPage } from '../content/supporting-pages'
 
 export function getStaticPaths() {
   const siteMode = process.env.CLINIC_SITE_MODE ?? 'normal'
-  if (siteMode === 'normal') return []
+  const pages = siteMode === 'normal' && !import.meta.env.DEV ? [] : supportingPages
 
-  return supportingPages.map((page) => ({
+  return pages.map((page) => ({
     params: { slug: page.slug },
     props: { page },
   }))
 }
 
 const { page } = Astro.props as { page: SupportingPage }
+const isDirectionsPage = page.slug === 'napriamy'
+const isProgramPage = page.slug === 'programa'
+const isFamilyPage = page.slug === 'rodyni'
+const isConditionsPage = page.slug === 'umovy'
 ---
 
 <Layout title={page.title} description={page.description} routePolicy="supporting">
-  <Header hrefPrefix="/" />
-  <main id="content" tabindex="-1" class="support-page">
+  <Header
+    hrefPrefix="/"
+    directionsPage={isDirectionsPage}
+    supportingPage={isFamilyPage || isConditionsPage}
+  />
+  <main
+    id="content"
+    tabindex="-1"
+    class:list={[
+      'support-page',
+      isFamilyPage && 'support-page-family',
+      isConditionsPage && 'support-page-conditions',
+      isDirectionsPage && 'support-page-directions',
+      isProgramPage && 'support-page-program',
+    ]}
+  >
     <div class="wrap">
       <header class="support-intro">
+        {isFamilyPage && <p class="support-family-kicker">Для рідних і близьких</p>}
+        {isConditionsPage && <p class="support-intro-kicker">HAVENHUB · Про центр</p>}
+        {isDirectionsPage && <p class="support-intro-kicker">Напрями та формати допомоги</p>}
+        {isProgramPage && <p class="support-intro-kicker">Підтримка починається з розмови</p>}
         <h1>{page.h1}</h1>
         <p class="support-description">{page.description}</p>
+        {
+          isConditionsPage && (
+            <>
+              <div class="support-conditions-hero-actions">
+                <a class="support-primary-action" href="#conditions">
+                  Дізнатися про умови
+                </a>
+                <a class="support-secondary-action" href="#contact">
+                  Поставити запитання
+                </a>
+              </div>
+              <figure class="support-conditions-hero-art">
+                <img src="/havenhub-umovy-hero-leaves.svg" alt="" aria-hidden="true" />
+                <figcaption>Індивідуальні обставини обговорюємо під час звернення</figcaption>
+              </figure>
+            </>
+          )
+        }
+        {
+          isFamilyPage && (
+            <>
+              <div class="support-family-hero-actions">
+                <a class="support-primary-action" href={hotline.href}>
+                  Поговорити з нами
+                </a>
+                <span>Перша первинна консультація безкоштовна</span>
+              </div>
+              <img
+                class="support-family-hero-art"
+                src="/havenhub-rodyni-hero-leaves.svg"
+                alt=""
+                aria-hidden="true"
+              />
+            </>
+          )
+        }
+        {
+          isDirectionsPage && (
+            <svg
+              class="support-intro-branch"
+              viewBox="0 0 560 320"
+              fill="none"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="M16 286C151 237 282 151 548 166" stroke="#bdc9bc" stroke-width="2" />
+              <g fill="#e7ebe4" stroke="#cbd5ca" stroke-width="1.5">
+                <path d="M152 239C91 206 53 151 41 85c60 31 107 87 111 154Z" />
+                <path d="M261 194C207 150 183 94 189 39c55 32 88 81 72 155Z" />
+                <path d="M349 174C321 112 326 49 359 7c41 52 53 108 18 165Z" />
+                <path d="M411 166C415 98 448 39 491 17c16 65-1 120-80 149Z" />
+                <path d="M449 169C488 126 522 108 557 111c-15 43-48 66-108 58Z" />
+              </g>
+              <g fill="none" stroke="#cbd5ca" stroke-width="1.5">
+                <path d="M152 239C119 177 75 122 41 85" />
+                <path d="M261 194C242 134 213 78 189 39" />
+                <path d="M349 174C352 106 356 49 359 7" />
+                <path d="M411 166C447 106 472 55 491 17" />
+                <path d="M449 169C490 143 524 123 557 111" />
+              </g>
+            </svg>
+          )
+        }
       </header>
 
-      <div class="support-sections">
+      {
+        isProgramPage && (
+          <header class="support-program-heading">
+            <h2>Від першого звернення — до наступного кроку</h2>
+            <p>
+              Починати можна з короткої розмови. Формат підтримки визначається після уточнення
+              вашого запиту та обставин.
+            </p>
+          </header>
+        )
+      }
+
+      <div class:list={['support-sections', isProgramPage && 'support-program-cards']}>
         {
           page.sections.map((section, index) => (
             <section
-              class:list={['support-section', index % 2 === 1 && 'support-section-muted']}
+              class:list={[
+                'support-section',
+                index % 2 === 1 && 'support-section-muted',
+                isFamilyPage && index === 0 && 'support-family-first-contact',
+                isFamilyPage && index === 1 && 'support-family-steps-section',
+                isFamilyPage && index === 2 && 'support-family-support-section',
+                isFamilyPage && index === 3 && 'support-family-questions-section',
+                isConditionsPage && index === 0 && 'support-conditions-approach',
+                isConditionsPage && index === 1 && 'support-conditions-list-section',
+                isConditionsPage && index === 2 && 'support-conditions-location',
+                isConditionsPage && index === 3 && 'support-conditions-before',
+                isDirectionsPage && index === 0 && 'support-section-dependency-types',
+                isDirectionsPage && index === 1 && 'support-section-care-formats',
+                isProgramPage && index < 4 && 'support-program-card',
+                isProgramPage && index === 4 && 'support-program-stages',
+                isProgramPage && index === 5 && 'support-program-customer-copy',
+              ]}
+              id={
+                isConditionsPage
+                  ? ['approach', 'conditions', 'location', 'before'][index]
+                  : undefined
+              }
               aria-labelledby={`section-${page.slug}-${index}`}
             >
               <div class="support-section-content">
-                <h2 id={`section-${page.slug}-${index}`}>{section.heading}</h2>
-                {section.paragraphs.map((paragraph) => (
-                  <p>{paragraph}</p>
-                ))}
+                {isFamilyPage && index === 2 && (
+                  <img
+                    class="support-family-illustration"
+                    src="/havenhub-rodyni-family-branches.svg"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                )}
+                {isProgramPage && index < 4 ? (
+                  <h3 id={`section-${page.slug}-${index}`}>{section.heading}</h3>
+                ) : (
+                  <h2 id={`section-${page.slug}-${index}`}>{section.heading}</h2>
+                )}
+                {section.paragraphs
+                  .slice(0, isProgramPage && index === 4 ? 1 : undefined)
+                  .map((paragraph, paragraphIndex) => (
+                    <p
+                      class:list={[
+                        isFamilyPage &&
+                          index === 2 &&
+                          paragraphIndex === 1 &&
+                          'support-family-note',
+                      ]}
+                    >
+                      {paragraph}
+                    </p>
+                  ))}
+                {section.callout && (
+                  <div
+                    class:list={[
+                      'support-family-callout',
+                      isFamilyPage && index === 3 && 'support-family-privacy',
+                    ]}
+                  >
+                    <strong>{section.callout.heading}</strong>
+                    <p>{section.callout.paragraph}</p>
+                  </div>
+                )}
                 {section.illustrationSlot && (
                   <StagingIllustration slot={section.illustrationSlot} />
                 )}
                 {section.items && (
-                  <ul class="support-items">
-                    {section.items.map((item) => (
+                  <ul
+                    class:list={[
+                      'support-items',
+                      isFamilyPage && index === 1 && 'support-family-steps',
+                      isFamilyPage && index === 3 && 'support-family-questions',
+                      isDirectionsPage && index === 0 && 'support-items-dependency-types',
+                      isDirectionsPage && index === 1 && 'support-items-care-formats',
+                      isConditionsPage && index === 1 && 'conditions-list',
+                      isConditionsPage && index === 0 && 'support-conditions-principles',
+                    ]}
+                  >
+                    {section.items.map((item, itemIndex) => (
                       <li>
-                        <h3>{item.title}</h3>
-                        <p>{item.description}</p>
+                        {isConditionsPage && index === 1 && (
+                          <span class="support-conditions-number" aria-hidden="true">
+                            {String(itemIndex + 1).padStart(2, '0')}
+                          </span>
+                        )}
+                        {isFamilyPage && index === 1 && (
+                          <span class="support-family-step-number" aria-hidden="true">
+                            {itemIndex + 1}
+                          </span>
+                        )}
+                        {isFamilyPage && index === 3 ? (
+                          <>
+                            <span class="support-family-question-number" aria-hidden="true">
+                              {String(itemIndex + 1).padStart(2, '0')}
+                            </span>
+                            <span>{item.title}</span>
+                          </>
+                        ) : (
+                          <>
+                            <h3>{item.title}</h3>
+                            <p>{item.description}</p>
+                            {item.details?.length && (
+                              <ul class="support-item-details">
+                                {item.details.map((detail) => (
+                                  <li>{detail}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </>
+                        )}
+                        {isProgramPage && index === 4 && (
+                          <span class="support-program-step-number" aria-hidden="true">
+                            {itemIndex + 1}
+                          </span>
+                        )}
+                        {isDirectionsPage && index === 0 && (
+                          <span class="support-item-icon" aria-hidden="true">
+                            {itemIndex === 0 ? (
+                              <svg viewBox="0 0 32 32" fill="none">
+                                <path
+                                  d="M13 3h6v4l-1.5 2v3.5l3.5 2.5v11a3 3 0 0 1-3 3h-5a3 3 0 0 1-3-3V15l3.5-2.5V9L13 7V3Z"
+                                  stroke="currentColor"
+                                  stroke-width="1.8"
+                                  stroke-linejoin="round"
+                                />
+                                <path d="M11 18h10" stroke="currentColor" stroke-width="1.8" />
+                              </svg>
+                            ) : itemIndex === 1 ? (
+                              <svg viewBox="0 0 32 32" fill="none">
+                                <rect
+                                  x="4.9"
+                                  y="13.2"
+                                  width="13"
+                                  height="13"
+                                  rx="2"
+                                  transform="rotate(-13 4.9 13.2)"
+                                  stroke="currentColor"
+                                  stroke-width="1.8"
+                                />
+                                <rect
+                                  x="15"
+                                  y="5"
+                                  width="13"
+                                  height="13"
+                                  rx="2"
+                                  stroke="currentColor"
+                                  stroke-width="1.8"
+                                />
+                                <circle cx="19" cy="9" r="1" fill="currentColor" />
+                                <circle cx="24" cy="14" r="1" fill="currentColor" />
+                                <circle cx="9" cy="17" r="1" fill="currentColor" />
+                                <circle cx="14" cy="22" r="1" fill="currentColor" />
+                              </svg>
+                            ) : (
+                              <svg viewBox="0 0 32 32" fill="none">
+                                <path
+                                  d="M27 4C15.2 4.2 7 8.1 7 16c0 6.2 6.2 9.2 11.4 5.1C23.4 17.3 26 10.4 27 4Z"
+                                  stroke="currentColor"
+                                  stroke-width="1.8"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M5 28c3.2-5.1 8.3-10 16.1-15.4M5.5 19c-2.3-1.5-3.2-4-3.2-7 4.4 0 7.8 1.1 9.5 3.7"
+                                  stroke="currentColor"
+                                  stroke-width="1.8"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                            )}
+                          </span>
+                        )}
+                        {isDirectionsPage && index === 1 && (
+                          <span class="support-item-icon" aria-hidden="true">
+                            {itemIndex === 0 ? (
+                              <svg viewBox="0 0 32 32" fill="none">
+                                <path
+                                  d="m4 14 12-10 12 10M7 12v16h18V12M13 28v-9h6v9"
+                                  stroke="currentColor"
+                                  stroke-width="1.8"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                            ) : itemIndex === 1 ? (
+                              <svg viewBox="0 0 32 32" fill="none">
+                                <circle
+                                  cx="16"
+                                  cy="9"
+                                  r="3"
+                                  stroke="currentColor"
+                                  stroke-width="1.8"
+                                />
+                                <circle
+                                  cx="6.5"
+                                  cy="13"
+                                  r="2.5"
+                                  stroke="currentColor"
+                                  stroke-width="1.8"
+                                />
+                                <circle
+                                  cx="25.5"
+                                  cy="13"
+                                  r="2.5"
+                                  stroke="currentColor"
+                                  stroke-width="1.8"
+                                />
+                                <path
+                                  d="M10.5 27v-4a5.5 5.5 0 0 1 11 0v4h-11ZM2 25v-3a4.5 4.5 0 0 1 8-2.8M30 25v-3a4.5 4.5 0 0 0-8-2.8"
+                                  stroke="currentColor"
+                                  stroke-width="1.8"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                            ) : (
+                              <svg viewBox="0 0 32 32" fill="none">
+                                <path
+                                  d="M5 19.5 7.2 12a3 3 0 0 1 2.9-2.2h11.8a3 3 0 0 1 2.9 2.2l2.2 7.5M4 19.5h24V25a2 2 0 0 1-2 2h-2M4 19.5V25a2 2 0 0 0 2 2h2"
+                                  stroke="currentColor"
+                                  stroke-width="1.8"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="m8 19.5 1.8-5.7h12.4l1.8 5.7M8 23h.01M24 23h.01"
+                                  stroke="currentColor"
+                                  stroke-width="1.8"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                            )}
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
+                )}
+                {isProgramPage && index === 4 && (
+                  <p class="support-program-note">{section.paragraphs[1]}</p>
                 )}
               </div>
             </section>
@@ -59,19 +379,54 @@ const { page } = Astro.props as { page: SupportingPage }
         }
       </div>
 
-      <section class="support-contact" aria-labelledby="support-contact-title">
+      {isConditionsPage && <PhotoGallery />}
+
+      {
+        isProgramPage && (
+          <p class="support-program-price">
+            <strong>Що з вартістю?</strong> Формат допомоги та вартість узгоджують після розмови з
+            урахуванням конкретної ситуації.
+          </p>
+        )
+      }
+
+      <section
+        id={isConditionsPage ? 'contact' : undefined}
+        class:list={[
+          'support-contact',
+          isFamilyPage && 'support-family-contact',
+          isConditionsPage && 'support-conditions-contact',
+        ]}
+        aria-labelledby="support-contact-title"
+      >
         <div>
           <h2 id="support-contact-title">Обговорімо наступний крок</h2>
-          <p>Перша первинна консультація безкоштовна. Вартість визначають після консультації.</p>
+          <p>
+            {
+              isFamilyPage
+                ? 'Перша консультація безкоштовна. Формат допомоги та вартість визначають після розмови з урахуванням ситуації.'
+                : 'Перша консультація безкоштовна. Вартість визначають після консультації.'
+            }
+          </p>
         </div>
-        <div class="support-contact-actions">
+        <div
+          class:list={[
+            'support-contact-actions',
+            isFamilyPage && 'support-family-contact-actions',
+            isConditionsPage && 'support-conditions-contact-actions',
+          ]}
+        >
           <a class="support-primary-action" href={hotline.href}>Зателефонувати</a>
           <a class="support-secondary-action" href={telegram.href}>Написати в Telegram</a>
+          <a class="support-secondary-action" href={whatsapp.href}>
+            <WhatsAppIcon /> Написати в WhatsApp
+          </a>
+          <a class="support-secondary-action" href={email.href}>Написати на email</a>
         </div>
       </section>
     </div>
   </main>
-  <Footer />
+  <Footer site={isDirectionsPage} />
 </Layout>
 
 <style>
@@ -167,6 +522,27 @@ const { page } = Astro.props as { page: SupportingPage }
     font-size: 0.9375rem;
   }
 
+  .support-item-details {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0.25rem 0 0;
+    padding-left: 1.25rem;
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    list-style: disc;
+  }
+
+  .support-items .support-item-details li {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    list-style: disc;
+  }
+
   .support-contact {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -223,13 +599,1615 @@ const { page } = Astro.props as { page: SupportingPage }
     outline-offset: 3px;
   }
 
+  .support-page-conditions {
+    padding-block: 0 4rem;
+    background: #f6f3eb;
+  }
+
+  .support-page-conditions .support-intro {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(17rem, 0.9fr);
+    grid-template-rows: auto auto auto 1fr;
+    align-items: center;
+    gap: 0.5rem clamp(1.5rem, 5vw, 4rem);
+    max-width: none;
+    min-height: 31rem;
+    margin: 0 0 2.5rem;
+    padding: clamp(3rem, 7vw, 5.5rem) 0;
+    text-align: left;
+  }
+
+  .support-page-conditions .support-intro-kicker,
+  .support-page-conditions .support-intro h1,
+  .support-page-conditions .support-description,
+  .support-page-conditions .support-conditions-hero-actions {
+    grid-column: 1;
+    margin-inline: 0;
+  }
+
+  .support-page-conditions .support-intro-kicker {
+    align-self: end;
+    margin: 0;
+    color: #477269;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .support-page-conditions .support-intro h1 {
+    max-width: 16ch;
+    margin: 0.75rem 0 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.75rem, 5.3vw, 4.75rem);
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1.08;
+  }
+
+  .support-page-conditions .support-description {
+    max-width: 39rem;
+    margin: 0.75rem 0 0;
+    color: var(--text-muted);
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    line-height: 1.75;
+  }
+
+  .support-conditions-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
+    margin-top: 1rem;
+  }
+
+  .support-page-conditions .support-conditions-hero-actions a {
+    min-height: 3rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 999px;
+  }
+
+  .support-conditions-hero-art {
+    position: relative;
+    grid-column: 2;
+    grid-row: 1 / span 4;
+    width: min(100%, 28rem);
+    height: 27rem;
+    justify-self: end;
+    margin: 0;
+    border-radius: 50% 50% 1.25rem 1.25rem;
+    background: #e8eee6;
+    overflow: hidden;
+  }
+
+  .support-conditions-hero-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 1.25rem;
+  }
+
+  .support-conditions-hero-art figcaption {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    left: 1rem;
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    color: var(--text);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .support-page-conditions .support-sections {
+    display: grid;
+    max-width: none;
+    gap: 1rem;
+  }
+
+  .support-page-conditions .support-section {
+    margin: 0;
+    padding: clamp(1.75rem, 5vw, 4rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    scroll-margin-top: 2rem;
+  }
+
+  .support-page-conditions .support-section-content {
+    max-width: 64rem;
+  }
+
+  .support-page-conditions .support-section h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+  }
+
+  .support-page-conditions .support-section p {
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  .support-page-conditions .support-conditions-approach .support-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin-top: 2rem;
+  }
+
+  .support-page-conditions .support-conditions-approach .support-items li {
+    display: flex;
+    min-height: 13rem;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.75rem;
+    border: 0;
+    background: #e8eee6;
+  }
+
+  .support-page-conditions .support-conditions-approach .support-items li:nth-child(2) {
+    background: #f3e9de;
+  }
+
+  .support-page-conditions .support-items h3 {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2vw, 1.75rem);
+    line-height: 1.25;
+  }
+
+  .support-page-conditions .conditions-list-section,
+  .support-page-conditions .support-conditions-list-section {
+    background: #f6f3eb;
+  }
+
+  .support-page-conditions .conditions-list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .support-page-conditions .conditions-list li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.5rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .support-page-conditions .conditions-list li > .support-conditions-number {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border-radius: 50%;
+    background: #e8eee6;
+    color: var(--primary);
+    font-family: var(--font-display);
+    font-size: 1rem;
+  }
+
+  .support-page-conditions .conditions-list li h3,
+  .support-page-conditions .conditions-list li p {
+    grid-column: 2;
+  }
+
+  .support-page-conditions .conditions-list li h3 {
+    grid-row: 1;
+  }
+
+  .support-page-conditions .conditions-list li p {
+    grid-row: 2;
+  }
+
+  .support-page-conditions .conditions-list h3 {
+    margin-bottom: 0.4rem;
+  }
+
+  .support-page-conditions .conditions-list p {
+    margin: 0;
+  }
+
+  .support-page-conditions .support-conditions-location {
+    background: #e6ede5;
+  }
+
+  .support-page-conditions .support-conditions-before .support-section-content {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    align-items: center;
+    gap: 2rem 5rem;
+  }
+
+  .support-page-conditions .support-conditions-before h2,
+  .support-page-conditions .support-conditions-before p {
+    margin: 0;
+  }
+
+  .support-page-conditions .support-conditions-contact {
+    max-width: none;
+    min-height: 15rem;
+    margin-top: 1.25rem;
+    padding: clamp(2rem, 5vw, 3.5rem);
+    border-radius: 1.5rem;
+    background: #173f38;
+  }
+
+  .support-page-conditions .support-conditions-contact h2 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 600;
+  }
+
+  .support-page-conditions .support-conditions-contact p {
+    color: #d5e2db;
+  }
+
+  .support-page-conditions .support-conditions-contact-actions a {
+    min-width: 12rem;
+    border-radius: 999px;
+  }
+
   @media (width <= 700px) {
+    .support-page-conditions .support-intro {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto;
+      gap: 0.5rem;
+      min-height: 0;
+      margin-bottom: 1.5rem;
+      padding-block: 2.75rem 2rem;
+    }
+
+    .support-page-conditions .support-intro h1 {
+      max-width: 13ch;
+      font-size: clamp(2.7rem, 12vw, 3.8rem);
+    }
+
+    .support-page-conditions .support-description {
+      font-size: 1rem;
+    }
+
+    .support-conditions-hero-actions {
+      align-items: stretch;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .support-conditions-hero-art {
+      grid-column: 1;
+      grid-row: auto;
+      width: min(100%, 24rem);
+      height: 20rem;
+      justify-self: center;
+      margin-top: 1rem;
+    }
+
+    .support-page-conditions .support-section {
+      padding: 1.5rem 1.25rem;
+    }
+
+    .support-page-conditions .support-conditions-approach .support-items,
+    .support-page-conditions .support-conditions-before .support-section-content {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.75rem;
+    }
+
+    .support-page-conditions .support-conditions-approach .support-items li {
+      min-height: 10rem;
+      padding: 1.375rem;
+    }
+
+    .support-page-conditions .conditions-list li {
+      grid-template-columns: 2.75rem minmax(0, 1fr);
+      gap: 0.875rem;
+      padding-block: 1.25rem;
+    }
+
+    .support-page-conditions .support-conditions-contact {
+      padding: 1.75rem 1.375rem;
+    }
+
+    .support-page-conditions .support-contact-actions {
+      display: grid;
+    }
+
+    .support-page-conditions .support-contact-actions a {
+      width: 100%;
+    }
+
     .support-contact {
       grid-template-columns: minmax(0, 1fr);
     }
 
     .support-contact-actions {
       display: grid;
+    }
+  }
+
+  .support-page-directions {
+    padding-block: 0 4rem;
+  }
+
+  .support-page-directions .support-intro {
+    position: relative;
+    display: flex;
+    min-height: clamp(20.25rem, 31.8vw, 23rem);
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow: hidden;
+    isolation: isolate;
+    max-width: none;
+    margin: 0 0 clamp(1.75rem, 3vw, 2.5rem);
+    padding-block: 3.25rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+
+  @media (width > 900px) and (width <= 1080px) {
+    .support-page-directions > .wrap {
+      width: min(calc(100% - 10.25rem), var(--container));
+    }
+  }
+
+  .support-page-directions .support-intro-kicker,
+  .support-page-directions .support-intro h1,
+  .support-page-directions .support-description {
+    position: relative;
+    z-index: 1;
+  }
+
+  .support-page-directions .support-intro-kicker {
+    margin: 0 0 1.25rem;
+    color: var(--text-muted);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  .support-page-directions .support-intro-branch {
+    position: absolute;
+    z-index: 0;
+    top: 0;
+    right: -2%;
+    bottom: 0;
+    width: min(48%, 35rem);
+    height: 100%;
+    margin-block: auto;
+    opacity: 0.56;
+    pointer-events: none;
+  }
+
+  .support-page-directions h1 {
+    max-width: 30rem;
+    margin: 0;
+    font-size: clamp(2.5rem, 5vw, 3.25rem);
+    letter-spacing: -0.035em;
+    line-height: 1.06;
+  }
+
+  .support-page-directions .support-description {
+    max-width: 29rem;
+    margin: 1.375rem 0 0;
+    font-size: clamp(1rem, 1.8vw, 1.125rem);
+    line-height: 1.55;
+  }
+
+  .support-page-directions .support-sections {
+    display: grid;
+    max-width: none;
+    gap: clamp(1.25rem, 2.5vw, 2rem);
+  }
+
+  .support-page-directions .support-section {
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    border: 0;
+  }
+
+  .support-page-directions .support-section-dependency-types {
+    padding: 2.5rem 0;
+  }
+
+  .support-page-directions .support-section-care-formats {
+    position: relative;
+    isolation: isolate;
+    padding: 2.5rem 0;
+    background: none;
+  }
+
+  .support-page-directions .support-section-care-formats::before {
+    position: absolute;
+    z-index: -1;
+    inset-block: 0;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
+    background: #e8efeb;
+    content: '';
+  }
+
+  .support-page-directions .support-section-muted {
+    border-radius: var(--radius-lg);
+    background: #e8efeb;
+  }
+
+  .support-page-directions .support-section-content {
+    max-width: none;
+  }
+
+  .support-page-directions .support-section h2 {
+    margin-bottom: 0.625rem;
+    font-size: clamp(1.5rem, 2.6vw, 1.875rem);
+    line-height: 1.2;
+  }
+
+  .support-page-directions .support-section p {
+    max-width: 72ch;
+    margin-bottom: 0;
+    line-height: 1.6;
+  }
+
+  .support-page-directions .support-items {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .support-page-directions .support-items li {
+    display: grid;
+    min-height: 10rem;
+    align-content: start;
+    gap: 0.5rem;
+    padding: 1.25rem;
+    border-top: 3px solid #8adce6;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+  }
+
+  .support-page-directions .support-items h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    line-height: 1.25;
+  }
+
+  .support-page-directions .support-items p {
+    font-size: 0.9375rem;
+    line-height: 1.55;
+  }
+
+  .support-page-directions .support-section-dependency-types h2 {
+    margin-bottom: 0.75rem;
+    font-size: clamp(1.75rem, 3.2vw, 2rem);
+    line-height: 1.2;
+  }
+
+  .support-page-directions .support-section-dependency-types .support-items {
+    margin-top: 1.5rem;
+  }
+
+  .support-page-directions .support-items-dependency-types li {
+    min-height: 0;
+    grid-template-rows: auto auto auto 1fr;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: rgb(255 255 255 / 42%);
+    box-shadow: none;
+  }
+
+  .support-page-directions .support-items-dependency-types {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .support-page-directions .support-items-dependency-types .support-item-icon {
+    grid-row: 1;
+  }
+
+  .support-page-directions .support-item-details {
+    margin-top: 0.25rem;
+    padding-left: 1.125rem;
+    font-size: 0.875rem;
+  }
+
+  .support-page-directions .support-items-dependency-types .support-item-details li {
+    display: list-item;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .support-page-directions .support-items-care-formats li {
+    min-height: 16.625rem;
+    gap: 0.5rem;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: rgb(255 255 255 / 72%);
+    box-shadow: none;
+  }
+
+  .support-page-directions .support-item-icon {
+    display: grid;
+    width: 3.875rem;
+    height: 3.875rem;
+    place-items: center;
+    margin-bottom: 0.125rem;
+    border-radius: 50%;
+    background: #e3ede8;
+    color: #0b302a;
+  }
+
+  .support-page-directions .support-item-icon svg {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .support-page-directions .support-items-dependency-types h3 {
+    grid-row: 2;
+    font-size: clamp(1.15rem, 1.8vw, 1.3rem);
+    line-height: 1.25;
+  }
+
+  .support-page-directions .support-items-dependency-types p {
+    grid-row: 3;
+    font-size: 1.0625rem;
+    line-height: 1.5;
+  }
+
+  .support-page-directions .support-items-care-formats h3 {
+    font-size: clamp(1.15rem, 1.8vw, 1.3rem);
+    line-height: 1.25;
+  }
+
+  .support-page-directions .support-items-care-formats p {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .support-page-directions .support-contact {
+    position: relative;
+    left: 50%;
+    width: min(var(--container), calc(100vw - 4.625rem));
+    transform: translateX(-50%);
+    max-width: none;
+    margin-top: clamp(1.25rem, 2.5vw, 2rem);
+    padding: 1.75rem clamp(1.5rem, 4.7vw, 3rem);
+    border-radius: 0.875rem;
+    background: linear-gradient(110deg, #0b302a 5%, #104136 100%);
+  }
+
+  .support-page-directions .support-contact h2 {
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+    line-height: 1.15;
+  }
+
+  .support-page-directions .support-contact-actions {
+    align-items: center;
+    gap: 1.75rem;
+  }
+
+  .support-page-directions .support-contact-actions a {
+    min-height: 3rem;
+    padding-inline: 1.25rem;
+    border-radius: 0.5rem;
+  }
+
+  .support-page-directions .support-primary-action {
+    background: #f7f5ec;
+  }
+
+  .support-page-directions .support-contact-actions .support-secondary-action {
+    padding-inline: 0;
+    border: 0;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
+  @media (width <= 900px) {
+    .support-page-directions .support-items {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .support-page-directions .support-items li {
+      min-height: 10.5rem;
+    }
+
+    .support-page-directions .support-items li:last-child:nth-child(odd) {
+      width: 100%;
+      max-width: calc((100% - 1rem) / 2);
+      grid-column: 1 / -1;
+      justify-self: center;
+    }
+
+    .support-page-directions
+      .support-items-dependency-types
+      .support-item-details
+      > li:last-child:nth-child(odd) {
+      width: auto;
+      max-width: none;
+      grid-column: auto;
+      justify-self: stretch;
+    }
+
+    .support-page-directions .support-contact {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.25rem;
+    }
+
+    .support-page-directions .support-contact-actions {
+      justify-content: flex-start;
+    }
+  }
+
+  @media (width <= 700px) {
+    .support-page-directions {
+      padding-bottom: 2.5rem;
+    }
+
+    .support-page-directions .support-intro {
+      min-height: 0;
+      margin-bottom: 1.25rem;
+      padding-block: 2rem 1.5rem;
+    }
+
+    .support-page-directions .support-intro-branch {
+      right: -48%;
+      width: 100%;
+      opacity: 0.18;
+    }
+
+    .support-page-directions h1 {
+      max-width: 18ch;
+      font-size: clamp(2rem, 8.5vw, 2.5rem);
+      line-height: 1.08;
+    }
+
+    .support-page-directions .support-description {
+      margin-top: 0.75rem;
+      font-size: 1rem;
+    }
+
+    .support-page-directions .support-intro-kicker {
+      margin-bottom: 0.75rem;
+    }
+
+    .support-page-directions .support-sections {
+      gap: 1rem;
+    }
+
+    .support-page-directions .support-section,
+    .support-page-directions .support-section-muted {
+      padding: 1.25rem;
+    }
+
+    .support-page-directions .support-items {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.75rem;
+      margin-top: 1.125rem;
+    }
+
+    .support-page-directions .support-items li,
+    .support-page-directions .support-items li:last-child:nth-child(odd) {
+      min-height: 0;
+      max-width: none;
+      grid-column: auto;
+      justify-self: stretch;
+    }
+
+    .support-page-directions .support-items-dependency-types li {
+      min-height: 0;
+    }
+
+    .support-page-directions .support-items-care-formats li {
+      min-height: 0;
+    }
+
+    .support-page-directions .support-contact {
+      margin-top: 1rem;
+      width: calc(100vw - 2.5rem);
+      padding: 1.5rem 1.25rem;
+    }
+
+    .support-page-directions .support-contact h2 {
+      font-size: 1.5rem;
+    }
+
+    .support-page-directions .support-contact-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .support-page-directions .support-secondary-action {
+      justify-self: start;
+    }
+  }
+
+  .support-page-program {
+    padding-block: 0 4rem;
+  }
+
+  .support-page-program .support-intro {
+    position: relative;
+    max-width: none;
+    margin: 0 0 2.75rem;
+    padding-block: clamp(3rem, 7vw, 5rem);
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    isolation: isolate;
+  }
+
+  .support-page-program .support-intro::after {
+    position: absolute;
+    z-index: -1;
+    inset: 0 -1rem 0 auto;
+    width: min(48%, 36rem);
+    background:
+      url('/havenhub-program-hero.svg') right center / auto 96% no-repeat,
+      radial-gradient(ellipse at 75% 45%, rgb(230 238 231 / 90%), transparent 69%),
+      radial-gradient(ellipse at 100% 0%, rgb(245 233 214 / 70%), transparent 70%);
+    content: '';
+    pointer-events: none;
+  }
+
+  .support-page-program .support-intro-kicker,
+  .support-page-program .support-intro h1,
+  .support-page-program .support-description {
+    position: relative;
+    z-index: 1;
+  }
+
+  .support-page-program .support-intro-kicker {
+    margin-bottom: 1.25rem;
+    color: var(--text-muted);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  .support-page-program .support-intro h1 {
+    max-width: 12ch;
+    margin: 0;
+    font-size: clamp(2.75rem, 5.4vw, 4rem);
+    line-height: 1.05;
+  }
+
+  .support-page-program .support-description {
+    max-width: 38rem;
+    margin: 1.25rem 0 0;
+    font-size: clamp(1rem, 1.8vw, 1.2rem);
+    line-height: 1.6;
+  }
+
+  .support-page-program .support-program-heading {
+    max-width: 58rem;
+    margin: 0 auto 1.5rem;
+  }
+
+  .support-page-program .support-program-heading h2 {
+    max-width: 32ch;
+    margin-bottom: 0.75rem;
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    line-height: 1.15;
+  }
+
+  .support-page-program .support-program-heading p {
+    max-width: 67ch;
+    margin: 0;
+  }
+
+  .support-page-program .support-program-cards {
+    display: grid;
+    max-width: 58rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .support-page-program .support-program-customer-copy {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .support-page-program .support-program-customer-copy .support-items {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .support-page-program .support-program-customer-copy .support-items > li {
+    min-height: 0;
+  }
+
+  .support-page-program .support-program-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 15rem;
+    padding: clamp(1.375rem, 2.6vw, 2rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+  }
+
+  .support-page-program .support-program-card::before {
+    position: absolute;
+    z-index: -1;
+    right: -1.75rem;
+    bottom: -2rem;
+    width: 8rem;
+    height: 8rem;
+    background: url('/havenhub-program-card.svg') center / contain no-repeat;
+    content: '';
+    opacity: 0.22;
+    pointer-events: none;
+  }
+
+  .support-page-program .support-program-card:nth-child(2),
+  .support-page-program .support-program-card:nth-child(3) {
+    background: #e9eee8;
+  }
+
+  .support-page-program .support-program-card .support-section-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 100%;
+    max-width: none;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .support-page-program .support-program-card h3 {
+    max-width: 24ch;
+    margin: 0 0 0.75rem;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    line-height: 1.2;
+  }
+
+  .support-page-program .support-program-card p {
+    margin-bottom: 0.75rem;
+  }
+
+  .support-page-program .support-program-card .staging-illustration {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .support-page-program .support-program-price {
+    max-width: 58rem;
+    margin: 1.25rem auto 0;
+    padding-left: 1rem;
+    border-left: 3px solid #8adce6;
+    font-size: 0.9375rem;
+  }
+
+  .support-page-program .support-program-price strong {
+    color: var(--text);
+  }
+
+  .support-page-program .support-program-stages {
+    position: relative;
+    z-index: 0;
+    grid-column: 1 / -1;
+    margin-top: 2rem;
+    padding: clamp(1.75rem, 4vw, 3rem);
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: transparent;
+  }
+
+  .support-page-program .support-program-stages::before {
+    position: absolute;
+    z-index: -1;
+    inset-block: 0;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
+    background:
+      url('/havenhub-program-stages.svg') right top / min(26rem, 55vw) auto no-repeat,
+      radial-gradient(ellipse at 92% 0%, rgb(245 233 214 / 80%), transparent 40%),
+      #e6eee7;
+    content: '';
+  }
+
+  .support-page-program .support-program-stages .support-section-content {
+    max-width: 58rem;
+  }
+
+  .support-page-program .support-program-stages h2 {
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  }
+
+  .support-page-program .support-program-stages .support-items {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    margin-top: 1.5rem;
+  }
+
+  .support-page-program .support-program-stages .support-items li {
+    min-width: 0;
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+  }
+
+  .support-page-program .support-program-step-number {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    margin-bottom: 1rem;
+    border-radius: 50%;
+    background: #dcebe2;
+    color: var(--primary);
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+
+  .support-page-program .support-program-note {
+    max-width: none;
+    margin: 1.25rem 0 0;
+    padding: 0.875rem 1rem;
+    border-left: 3px solid #8adce6;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: rgb(255 253 248 / 72%);
+    font-size: 0.875rem;
+  }
+
+  .support-page-program .support-contact {
+    position: relative;
+    overflow: hidden;
+    grid-template-columns: minmax(0, 1.2fr) auto;
+    max-width: 58rem;
+    margin-top: 2.5rem;
+    background: #123d37;
+  }
+
+  .support-page-program .support-contact::after {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 12rem;
+    height: 100%;
+    background: url('/havenhub-program-contact.svg') right bottom / auto 92% no-repeat;
+    content: '';
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .support-page-program .support-contact > div,
+  .support-page-program .support-contact-actions {
+    position: relative;
+    z-index: 1;
+  }
+
+  .support-page-program .support-contact h2 {
+    margin-bottom: 0.75rem;
+    color: var(--surface);
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+  }
+
+  .support-page-program .support-contact p {
+    max-width: 45ch;
+    color: #d5e3dd;
+  }
+
+  .support-page-program .support-contact-actions {
+    align-items: center;
+  }
+
+  .support-page-program .support-primary-action {
+    border-radius: 0.75rem;
+    background: var(--surface);
+  }
+
+  .support-page-program .support-secondary-action {
+    border: 0;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  @media (width <= 900px) {
+    .support-page-directions .support-items-dependency-types {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .support-page-program .support-intro::after {
+      right: 0;
+      width: 42%;
+      opacity: 0.6;
+    }
+
+    .support-page-program .support-description {
+      max-width: 22.5rem;
+    }
+
+    .support-page-program .support-program-stages .support-items {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .support-page-program .support-program-stages .support-items li:last-child:nth-child(odd) {
+      max-width: calc((100% - 1rem) / 2);
+      grid-column: 1 / -1;
+      justify-self: center;
+    }
+
+    .support-page-program .support-contact {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (width <= 700px) {
+    .support-page-program {
+      padding-bottom: 2.5rem;
+    }
+
+    .support-page-program .support-intro {
+      margin-bottom: 2rem;
+      padding-block: 2.25rem 2rem;
+    }
+
+    .support-page-program .support-intro::after {
+      right: 0;
+      width: 85%;
+      background-size: auto 85%;
+      opacity: 0.42;
+    }
+
+    .support-page-program .support-intro-kicker {
+      margin-bottom: 0.875rem;
+    }
+
+    .support-page-program .support-intro h1 {
+      max-width: 13ch;
+      font-size: clamp(2.375rem, 10vw, 3.125rem);
+    }
+
+    .support-page-program .support-description {
+      margin-top: 1rem;
+      font-size: 1rem;
+    }
+
+    .support-page-program .support-program-heading h2 {
+      font-size: 1.75rem;
+    }
+
+    .support-page-program .support-program-cards {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.875rem;
+    }
+
+    .support-page-program .support-program-card {
+      min-height: 0;
+      padding: 1.375rem;
+    }
+
+    .support-page-program .support-program-stages {
+      margin-top: 1.25rem;
+      padding: 1.5rem 1.25rem;
+    }
+
+    .support-page-program .support-program-stages .support-items {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.75rem;
+    }
+
+    .support-page-program .support-program-stages .support-items li:last-child:nth-child(odd) {
+      max-width: none;
+      grid-column: auto;
+      justify-self: stretch;
+    }
+
+    .support-page-program .support-program-stages .support-items li {
+      padding: 1.25rem;
+    }
+
+    .support-page-program .support-contact {
+      margin-top: 1.5rem;
+      padding: 1.5rem 1.25rem;
+    }
+
+    .support-page-program .support-contact h2 {
+      font-size: 1.75rem;
+    }
+
+    .support-page-program .support-contact-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+  }
+
+  .support-page-family {
+    padding-block: 0 4rem;
+  }
+
+  .support-page-family .support-intro {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(16rem, 0.85fr);
+    align-items: center;
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    max-width: none;
+    min-height: clamp(27rem, 42vw, 34rem);
+    margin: 0 auto clamp(2.5rem, 6vw, 4.5rem);
+    isolation: isolate;
+    text-align: left;
+  }
+
+  .support-page-family .support-intro::before {
+    position: absolute;
+    z-index: -1;
+    inset-block: 0;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
+    background: linear-gradient(125deg, #faf8f1 42%, #f3f0e4);
+    content: '';
+  }
+
+  .support-family-kicker {
+    grid-column: 1;
+    margin: 0 0 1rem;
+    color: var(--primary);
+    font-size: var(--font-label);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .support-page-family .support-intro h1 {
+    grid-column: 1;
+    max-width: 15ch;
+    margin: 0;
+    font-size: clamp(2.75rem, 5.2vw, 4.25rem);
+  }
+
+  .support-page-family .support-description {
+    grid-column: 1;
+    max-width: 39rem;
+    margin: 0.875rem 0 0;
+    font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+  }
+
+  .support-family-hero-actions {
+    z-index: 1;
+    display: flex;
+    grid-column: 1;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+
+  .support-family-hero-actions span {
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+  }
+
+  .support-page-family .support-intro .support-primary-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding-inline: 1.5rem;
+    border-radius: 999px;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .support-family-hero-art {
+    z-index: 0;
+    display: block;
+    grid-column: 2;
+    grid-row: 1 / span 4;
+    width: min(100%, 31rem);
+    justify-self: end;
+  }
+
+  .support-page-family .support-sections {
+    display: grid;
+    max-width: none;
+    gap: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .support-page-family .support-section,
+  .support-page-family .support-section-muted {
+    margin: 0;
+    padding: clamp(1.75rem, 5vw, 3.25rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+  }
+
+  .support-page-family .support-section-content {
+    max-width: none;
+  }
+
+  .support-page-family .support-family-first-contact .support-section-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.9fr);
+    grid-template-areas: 'heading callout' 'copy callout';
+    align-items: center;
+    gap: 1rem clamp(1.5rem, 5vw, 4rem);
+  }
+
+  .support-page-family .support-family-first-contact h2 {
+    grid-area: heading;
+    margin: 0;
+    font-size: clamp(1.75rem, 3.3vw, 2.5rem);
+  }
+
+  .support-page-family .support-family-first-contact .support-section-content > p {
+    grid-area: copy;
+    margin: 0;
+  }
+
+  .support-family-callout {
+    padding: clamp(1.5rem, 4vw, 2.75rem);
+    border-radius: var(--radius-lg);
+    background: var(--surface-muted);
+  }
+
+  .support-family-callout strong {
+    display: block;
+    margin-bottom: 1rem;
+    color: var(--primary);
+    font-size: var(--font-label);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .support-family-callout p {
+    margin: 0;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 2vw, 1.625rem);
+    line-height: 1.4;
+  }
+
+  .support-page-family .support-family-first-contact .support-family-callout {
+    grid-area: callout;
+  }
+
+  .support-page-family .support-family-steps-section {
+    background: #f2f2e9;
+  }
+
+  .support-page-family .support-family-steps-section .support-section-content > h2,
+  .support-page-family .support-family-steps-section .support-section-content > p {
+    max-width: 46rem;
+  }
+
+  .support-page-family .support-family-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin-top: 2rem;
+  }
+
+  .support-page-family .support-family-steps li {
+    min-height: 15rem;
+    padding: 1.75rem;
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+  }
+
+  .support-page-family .support-family-steps li:nth-child(2) {
+    background: #e2ebe2;
+  }
+
+  .support-family-step-number {
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 1.5rem;
+    place-items: center;
+    border-radius: 50%;
+    background: #f4e6d3;
+    color: var(--primary);
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .support-page-family .support-family-steps li h3 {
+    margin-bottom: 0.625rem;
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+  }
+
+  .support-page-family .support-family-steps li p {
+    margin: 0;
+  }
+
+  .support-page-family .support-family-support-section .support-section-content {
+    display: grid;
+    grid-template-columns: minmax(14rem, 0.8fr) minmax(0, 1.2fr);
+    grid-template-areas: 'art heading' 'art copy' 'art note';
+    align-items: center;
+    column-gap: clamp(2rem, 6vw, 5rem);
+  }
+
+  .support-family-illustration {
+    display: block;
+    grid-area: art;
+    width: min(100%, 27.5rem);
+    justify-self: center;
+  }
+
+  .support-page-family .support-family-support-section h2 {
+    grid-area: heading;
+    font-size: clamp(1.9rem, 3.6vw, 2.75rem);
+  }
+
+  .support-page-family .support-family-support-section .support-section-content > p:first-of-type {
+    grid-area: copy;
+  }
+
+  .support-page-family .support-family-support-section .support-family-note {
+    grid-area: note;
+    margin: 0.75rem 0 0;
+    padding-left: 1.125rem;
+    border-left: 2px solid #b98356;
+    color: var(--text);
+  }
+
+  .support-page-family .support-family-questions-section .support-section-content {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    grid-template-areas: 'heading questions' 'copy questions' 'privacy privacy';
+    align-items: start;
+    gap: 1rem clamp(2rem, 6vw, 5rem);
+  }
+
+  .support-page-family .support-family-questions-section h2 {
+    grid-area: heading;
+    font-size: clamp(1.9rem, 3.6vw, 2.75rem);
+  }
+
+  .support-page-family .support-family-questions-section .support-section-content > p {
+    grid-area: copy;
+  }
+
+  .support-page-family .support-family-questions {
+    grid-area: questions;
+    gap: 0.75rem;
+    margin: 0;
+  }
+
+  .support-page-family .support-family-questions li {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.125rem 1.25rem;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text);
+    line-height: 1.55;
+  }
+
+  .support-family-question-number {
+    flex: 0 0 auto;
+    color: #956440;
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .support-page-family .support-family-privacy {
+    grid-area: privacy;
+    padding: 1.5rem 1.75rem;
+  }
+
+  .support-page-family .support-family-privacy strong {
+    margin-bottom: 0.5rem;
+    color: var(--text);
+    font-size: 1rem;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  .support-page-family .support-family-privacy p {
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+  }
+
+  .support-page-family .support-family-contact {
+    position: relative;
+    overflow: hidden;
+    grid-template-columns: minmax(0, 1.35fr) minmax(14rem, 0.8fr);
+    gap: clamp(1.5rem, 5vw, 3.5rem);
+    max-width: none;
+    padding: clamp(2rem, 5vw, 3.75rem);
+    border-radius: 1.5rem;
+  }
+
+  .support-page-family .support-family-contact::after {
+    position: absolute;
+    right: 0;
+    bottom: -1rem;
+    width: 11rem;
+    height: 13rem;
+    background: url('/havenhub-rodyni-contact-branch.svg') center / contain no-repeat;
+    content: '';
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .support-page-family .support-family-contact > div,
+  .support-page-family .support-contact-actions {
+    z-index: 1;
+  }
+
+  .support-page-family .support-family-contact h2 {
+    font-size: clamp(2rem, 3.5vw, 2.75rem);
+  }
+
+  .support-page-family .support-family-contact p {
+    max-width: 43rem;
+    color: var(--contact-copy);
+  }
+
+  .support-page-family .support-family-contact-actions {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .support-page-family .support-family-contact .support-primary-action {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .support-page-family .support-family-contact .support-secondary-action {
+    justify-self: center;
+    border: 0;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  @media (width <= 900px) {
+    .support-page-family .support-intro {
+      grid-template-columns: minmax(0, 1.2fr) minmax(12rem, 0.8fr);
+      min-height: 25rem;
+    }
+
+    .support-page-family .support-family-first-contact .support-section-content,
+    .support-page-family .support-family-questions-section .support-section-content {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: 'heading' 'copy' 'callout' 'questions' 'privacy';
+    }
+
+    .support-page-family .support-family-support-section .support-section-content {
+      grid-template-columns: minmax(12rem, 0.8fr) minmax(0, 1.2fr);
+    }
+
+    .support-page-family .support-family-contact {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .support-page-family .support-family-contact-actions {
+      max-width: 24rem;
+    }
+  }
+
+  @media (width <= 700px) {
+    .support-page-family {
+      padding-block: 0 2.5rem;
+    }
+
+    .support-page-family .support-intro {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.875rem;
+      min-height: 0;
+      margin-bottom: 2rem;
+      padding-block: 3rem 2.25rem;
+    }
+
+    .support-page-family .support-intro h1 {
+      max-width: 13ch;
+      font-size: clamp(2.5rem, 10vw, 3.375rem);
+    }
+
+    .support-page-family .support-description {
+      margin-top: 0.375rem;
+      font-size: 1rem;
+    }
+
+    .support-family-hero-actions {
+      align-items: flex-start;
+      margin-top: 0.75rem;
+    }
+
+    .support-family-hero-actions span {
+      align-self: center;
+      font-size: 0.875rem;
+    }
+
+    .support-family-hero-art {
+      width: min(62vw, 15rem);
+      grid-column: 1;
+      grid-row: 5;
+      justify-self: end;
+      margin-top: -2rem;
+      margin-bottom: -2.5rem;
+    }
+
+    .support-page-family .support-section,
+    .support-page-family .support-section-muted {
+      padding: 1.5rem 1.25rem;
+    }
+
+    .support-page-family .support-family-first-contact .support-section-content,
+    .support-page-family .support-family-support-section .support-section-content,
+    .support-page-family .support-family-questions-section .support-section-content {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: 'heading' 'copy' 'callout' 'art' 'note' 'questions' 'privacy';
+      gap: 1rem;
+    }
+
+    .support-page-family .support-family-steps {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .support-page-family .support-family-steps li {
+      min-height: 0;
+      padding: 1.375rem;
+    }
+
+    .support-family-step-number {
+      margin-bottom: 1rem;
+    }
+
+    .support-family-illustration {
+      width: min(72%, 17.5rem);
+      margin: 0 auto 0.5rem;
+    }
+
+    .support-page-family .support-family-privacy {
+      padding: 1.25rem;
+    }
+
+    .support-page-family .support-family-contact {
+      margin-top: 1.5rem;
+      padding: 1.75rem 1.375rem;
+    }
+
+    .support-page-family .support-family-contact h2 {
+      font-size: 2rem;
+    }
+
+    .support-page-family .support-family-contact-actions {
+      max-width: none;
+    }
+
+    .support-page-family .support-family-contact-actions a {
+      width: 100%;
     }
   }
 </style>
