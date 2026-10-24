@@ -1,4 +1,8 @@
 ---
+import { Image } from 'astro:assets'
+import consultationPhoto from '../../../../design/Спокійна консультація редизайн.png'
+import residentialPhoto from '../../../../design/Затишна кімната редизайн.png'
+import homeVisitPhoto from '../../../../design/Редизайн Медик Havenhub.png'
 import { careFormats, dependencyTypes } from '../content/customer-materials'
 import { landingSections } from '../content/landing'
 
@@ -14,10 +18,37 @@ const dependencyImages = [
   '/havenhub-gambling-dependency.jpg',
   '/havenhub-narcotic-dependency.jpg',
 ]
-const formatDescriptions = [
-  'Комплексний підхід до відновлення фізичного та психологічного стану. Склад і тривалість програми визначаються індивідуально після консультації.',
-  'Професійна підтримка без постійного перебування в реабілітаційному центрі. Індивідуальний план, консультації та супровід фахівців.',
-  'Виїзд додому у Львові та Львівській області.',
+const formatCards = [
+  {
+    id: 'outpatient',
+    title: careFormats[1],
+    description:
+      'Зустрічі без постійного перебування у центрі. Зміст програми уточнюють під час звернення.',
+    linkLabel: 'Про амбулаторну програму',
+    image: consultationPhoto,
+    alt: 'Розмова чоловіка з фахівчинею під час консультації',
+    href: detailRoutesAvailable ? '/napriamy/#care-format-outpatient' : '/site/#clinic-lead-form',
+  },
+  {
+    id: 'residential',
+    title: careFormats[0],
+    description:
+      'Програма з перебуванням у центрі. Умови та зміст обговорюють під час консультації.',
+    linkLabel: 'Про стаціонарну програму',
+    image: residentialPhoto,
+    alt: 'Світла кімната центру з ліжком і місцем для відпочинку',
+    href: detailRoutesAvailable ? '/napriamy/#care-format-residential' : '/site/#clinic-lead-form',
+  },
+  {
+    id: 'home-visit',
+    title: 'Допомога вдома',
+    description:
+      'Виїзд додому у Львові та Львівській області. Можливість і умови уточнюють під час звернення.',
+    linkLabel: 'Про допомогу вдома',
+    image: homeVisitPhoto,
+    alt: 'Медичний фахівець із сумкою прямує до автомобіля',
+    href: detailRoutesAvailable ? '/napriamy/#care-format-home-visit' : '/site/#clinic-lead-form',
+  },
 ]
 ---
 
@@ -72,31 +103,254 @@ const formatDescriptions = [
 
 <section class="landing-section formats" id="formats" aria-labelledby="formats-title">
   <div class="wrap">
-    <div class="section-intro">
-      <h2 id="formats-title">{landingSections[3].title}</h2>
-      <p>{landingSections[3].introduction}</p>
+    <div class="format-heading">
+      <h2 id="formats-title">Оберіть зручний формат підтримки</h2>
+      <p>Можливість і умови участі обговорюються з фахівцем</p>
     </div>
-    <ul class="format-list">
+    <ul class="format-cards">
       {
-        careFormats.map((name, index) => (
-          <li>
-            <>
-              <h3>{name}</h3>
-              <p>{formatDescriptions[index]}</p>
-              <a class="text-link" href="#clinic-lead-form">
-                Замовити консультацію
+        formatCards.map((card) => (
+          <li class:list={['format-card', `format-card--${card.id}`]}>
+            <Image class="format-photo" src={card.image} alt={card.alt} />
+            <div class="format-card-copy">
+              <h3>{card.title}</h3>
+              <p>{card.description}</p>
+              <a class="text-link" href={card.href}>
+                {card.linkLabel}
               </a>
-            </>
+            </div>
           </li>
         ))
       }
     </ul>
-    {
-      detailRoutesAvailable && (
-        <a class="text-link" href="/napriamy/">
-          Більше про напрями й формати <span aria-hidden="true">→</span>
-        </a>
-      )
-    }
+    <div class="format-contact">
+      <p>Потрібна допомога з вибором?</p>
+      <a class="button" href="/site/#clinic-lead-form">Обговорити формати</a>
+    </div>
   </div>
 </section>
+
+<style>
+  .format-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(15rem, 0.9fr);
+    align-items: end;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .format-heading h2 {
+    max-width: 18ch;
+    margin: 0;
+  }
+
+  .format-heading p {
+    max-width: 38ch;
+    margin: 0 0 0.35rem;
+    color: #435852;
+    font-size: 1.0625rem;
+    line-height: 1.55;
+  }
+
+  .format-cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1.22fr) minmax(0, 1fr);
+    grid-template-rows: repeat(2, minmax(13rem, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .format-card {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+    overflow: hidden;
+    border: 1px solid rgb(11 48 42 / 10%);
+    border-radius: var(--radius-lg);
+    background: #fff;
+  }
+
+  .format-card--outpatient {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  }
+
+  .format-photo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 13rem;
+    object-fit: cover;
+  }
+
+  .format-card--outpatient .format-photo {
+    object-position: 50% 34%;
+  }
+
+  .format-card--residential .format-photo {
+    object-position: 50% 48%;
+  }
+
+  .format-card--home-visit .format-photo {
+    object-position: 62% 54%;
+  }
+
+  .format-card-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: clamp(1rem, 2.3vw, 2rem);
+  }
+
+  .format-card-copy h3 {
+    margin: 0 0 0.75rem;
+    color: #0b302a;
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 2vw, 1.8rem);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .format-card-copy p {
+    max-width: 38ch;
+    margin: 0 0 0.75rem;
+    color: #354943;
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .format-card-copy .text-link {
+    margin-top: auto;
+    font-size: 0.9375rem;
+  }
+
+  .format-card--outpatient .format-card-copy {
+    padding: clamp(1.25rem, 2.5vw, 2.25rem);
+    background: #0b302a;
+    color: #f7f5ec;
+  }
+
+  .format-card--outpatient .format-card-copy h3,
+  .format-card--outpatient .format-card-copy p,
+  .format-card--outpatient .format-card-copy .text-link {
+    color: #f7f5ec;
+  }
+
+  .format-card--outpatient .format-card-copy h3 {
+    font-size: clamp(1.4rem, 2.5vw, 2.25rem);
+  }
+
+  .format-card--outpatient .format-card-copy .text-link:focus-visible {
+    outline-color: #b9e9ed;
+  }
+
+  .format-contact {
+    display: flex;
+    min-height: 5.5rem;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding: 1rem clamp(1rem, 3vw, 2rem);
+    border-radius: var(--radius-lg);
+    background: #e5f1eb;
+  }
+
+  .format-contact p {
+    min-width: 0;
+    margin: 0;
+    color: #0b302a;
+    font-family: var(--font-display);
+    font-size: clamp(1.1rem, 2vw, 1.5rem);
+    font-weight: 600;
+  }
+
+  .format-contact .button {
+    min-height: 2.75rem;
+    flex: 0 1 auto;
+  }
+
+  .format-card-copy a:focus-visible,
+  .format-contact a:focus-visible {
+    outline: 3px solid #08717a;
+    outline-offset: 3px;
+  }
+
+  @media (width <= 900px) {
+    .format-heading {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.25rem;
+    }
+
+    .format-cards {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto;
+    }
+
+    .format-card--outpatient {
+      grid-column: auto;
+      grid-row: auto;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .format-card--outpatient .format-photo {
+      aspect-ratio: 16 / 10;
+    }
+  }
+
+  @media (width <= 600px) {
+    .format-heading {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.75rem;
+    }
+
+    .format-heading h2 {
+      max-width: 16ch;
+    }
+
+    .format-card:not(.format-card--outpatient) {
+      grid-template-columns: minmax(5.5rem, 0.34fr) minmax(0, 0.66fr);
+    }
+
+    .format-card:not(.format-card--outpatient) .format-photo {
+      min-height: 8.5rem;
+    }
+
+    .format-card-copy {
+      padding: 0.8rem;
+    }
+
+    .format-card-copy h3 {
+      margin-bottom: 0.35rem;
+      font-size: 1.125rem;
+    }
+
+    .format-card-copy p {
+      margin-bottom: 0.25rem;
+      font-size: 0.875rem;
+      line-height: 1.4;
+    }
+
+    .format-card-copy .text-link {
+      min-height: 2.5rem;
+      font-size: 0.8125rem;
+      line-height: 1.3;
+    }
+
+    .format-contact {
+      align-items: flex-start;
+      flex-direction: column;
+      padding: 1rem;
+    }
+
+    .format-contact .button {
+      width: 100%;
+    }
+  }
+</style>

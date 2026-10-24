@@ -34,7 +34,7 @@ test('renders the complete main site in editorial order without old placeholders
     'Отримайте консультацію',
     'З чого почати',
     'З якими залежностями працюємо',
-    'Формати допомоги',
+    'Оберіть зручний формат підтримки',
     'Що входить до програми',
     'Як звернутися',
     'Підтримка для рідних і близьких',
@@ -69,6 +69,77 @@ test('keeps distinct dependency and care-format lists with sourced boundaries', 
   await expect(page.locator('main')).not.toContainText(
     /300[–-]400|гарантоване одужання|повна анонімність/,
   )
+  await expect(page.locator('#formats h3')).toHaveText([
+    'Амбулаторна програма',
+    'Стаціонарна програма',
+    'Допомога вдома',
+  ])
+  await expect(page.locator('#formats img')).toHaveCount(3)
+  await expect(page.locator('#formats img').nth(0)).toHaveAttribute(
+    'alt',
+    'Розмова чоловіка з фахівчинею під час консультації',
+  )
+  await expect(page.locator('#formats img').nth(1)).toHaveAttribute(
+    'alt',
+    'Світла кімната центру з ліжком і місцем для відпочинку',
+  )
+  await expect(page.locator('#formats img').nth(2)).toHaveAttribute(
+    'alt',
+    'Медичний фахівець із сумкою прямує до автомобіля',
+  )
+  const formatLinks = page.locator('#formats .format-card-copy a')
+  await expect(formatLinks).toHaveText([
+    'Про амбулаторну програму',
+    'Про стаціонарну програму',
+    'Про допомогу вдома',
+  ])
+  for (const [index, id] of ['outpatient', 'residential', 'home-visit'].entries()) {
+    await expect(formatLinks.nth(index)).toHaveAttribute(
+      'href',
+      staging ? `/napriamy/#care-format-${id}` : '/site/#clinic-lead-form',
+    )
+  }
+  await expect(page.getByRole('link', { name: 'Обговорити формати' })).toHaveAttribute(
+    'href',
+    '/site/#clinic-lead-form',
+  )
+})
+
+test('matches the asymmetric format-card grid on wide screens', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/site/')
+  const geometry = await page.locator('#formats .format-cards').evaluate((grid) => {
+    const [primary, upper, lower] = Array.from(grid.querySelectorAll('.format-card')).map(
+      (card) => {
+        const { x, y, width, height } = card.getBoundingClientRect()
+        return { x, y, width, height }
+      },
+    )
+    return { primary, upper, lower }
+  })
+  expect(geometry.primary.x).toBeLessThan(geometry.upper.x)
+  expect(geometry.upper.y).toBeLessThan(geometry.lower.y)
+  expect(Math.abs(geometry.primary.y - geometry.upper.y)).toBeLessThan(2)
+  expect(
+    Math.abs(
+      geometry.primary.y + geometry.primary.height - (geometry.lower.y + geometry.lower.height),
+    ),
+  ).toBeLessThan(2)
+})
+
+test('format detail links reach their matching sections when routes are published', async ({
+  page,
+}) => {
+  test.skip(!staging, 'supporting routes are published only in staging and production builds')
+  await page.goto('/site/')
+  for (const id of [
+    'care-format-outpatient',
+    'care-format-residential',
+    'care-format-home-visit',
+  ]) {
+    await page.goto(`/napriamy/#${id}`)
+    await expect(page.locator(`#${id}`)).toBeVisible()
+  }
 })
 
 test('presents program details as a labelled list of informational cards', async ({ page }) => {
@@ -95,8 +166,12 @@ test('shows phone and Telegram actions and only links to built detail routes', a
     await expect(page.locator(`#${section} a[href="https://t.me/HavenRehub"]`)).toBeVisible()
   }
   for (const route of ['/programa/', '/umovy/', '/rodyni/', '/napriamy/']) {
-    await expect(page.locator(`main a[href="${route}"]`)).toHaveCount(
-      staging ? (route === '/rodyni/' ? 2 : 1) : 0,
+    const links =
+      route === '/napriamy/'
+        ? page.locator('main a[href^="/napriamy/#"]')
+        : page.locator(`main a[href="${route}"]`)
+    await expect(links).toHaveCount(
+      staging ? (route === '/rodyni/' ? 2 : route === '/napriamy/' ? 3 : 1) : 0,
     )
   }
   await expect(page.locator('#contact')).toContainText('Перша первинна консультація безкоштовна')
@@ -117,7 +192,7 @@ test('keeps one landmark, usable links, and no critical accessibility violations
   expect(result.violations).toEqual([])
 })
 
-for (const width of [320, 390, 768, 1440]) {
+for (const width of [320, 360, 390, 768, 1024, 1440]) {
   test(`landing fits ${width}px without horizontal scrolling`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/site/')
@@ -128,6 +203,17 @@ for (const width of [320, 390, 768, 1440]) {
     await expect(page.locator('#contact')).toBeVisible()
   })
 }
+
+test('format section fits the equivalent of 200% browser zoom', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 900 })
+  await page.goto('/site/')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  )
+  await expect(page.locator('#formats h2')).toBeVisible()
+  await expect(page.locator('#formats .format-card')).toHaveCount(3)
+  await expect(page.getByRole('link', { name: 'Обговорити формати' })).toBeVisible()
+})
 
 test('skip link transfers keyboard focus into the main content', async ({ page }) => {
   await page.goto('/site/')

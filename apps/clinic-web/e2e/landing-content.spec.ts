@@ -4,6 +4,8 @@ import { claimRegister } from '../src/content/claims'
 import { careFormats, dependencyTypes } from '../src/content/customer-materials'
 import { landingSections } from '../src/content/landing'
 
+const staging = process.env.CLINIC_SITE_MODE === 'staging'
+
 test('keeps the landing copy within confirmed service and publication boundaries', () => {
   expect(dependencyTypes).toEqual([
     'Алкогольна залежність',
@@ -109,9 +111,7 @@ test('records customer authorization separately from claim verification', () => 
   }
 })
 
-test('overview cards summarize the PDFs and format cards link to consultation', async ({
-  page,
-}) => {
+test('overview cards distinguish care formats and link to available details', async ({ page }) => {
   await page.goto('/site/')
 
   await expect(page.locator('#dependencies .editorial-list > li > p')).toHaveText([
@@ -119,36 +119,41 @@ test('overview cards summarize the PDFs and format cards link to consultation', 
     'Підтримка з урахуванням ігрової залежності та індивідуальних потреб.',
     'Враховуємо фізичний стан, психологічне благополуччя й ризики припинення вживання.',
   ])
-  await expect(page.locator('#formats .format-list > li > h3')).toHaveText(careFormats)
-  await expect(page.locator('#formats .format-list > li > p')).toHaveText([
-    'Комплексний підхід до відновлення фізичного та психологічного стану. Склад і тривалість програми визначаються індивідуально після консультації.',
-    'Професійна підтримка без постійного перебування в реабілітаційному центрі. Індивідуальний план, консультації та супровід фахівців.',
-    'Виїзд додому у Львові та Львівській області.',
+  await expect(page.locator('#formats .format-card h3')).toHaveText([
+    careFormats[1],
+    careFormats[0],
+    'Допомога вдома',
+  ])
+  await expect(page.locator('#formats .format-card p')).toHaveText([
+    'Зустрічі без постійного перебування у центрі. Зміст програми уточнюють під час звернення.',
+    'Програма з перебуванням у центрі. Умови та зміст обговорюють під час консультації.',
+    'Виїзд додому у Львові та Львівській області. Можливість і умови уточнюють під час звернення.',
   ])
 
-  const consultationLinks = page.locator('#formats a[href="#clinic-lead-form"]')
-  await expect(consultationLinks).toHaveText([
-    'Замовити консультацію',
-    'Замовити консультацію',
-    'Замовити консультацію',
+  const formatLinks = page.locator('#formats .format-card-copy a')
+  await expect(formatLinks).toHaveText([
+    'Про амбулаторну програму',
+    'Про стаціонарну програму',
+    'Про допомогу вдома',
   ])
-  for (const link of await consultationLinks.all()) {
-    await link.click()
-    await expect(page).toHaveURL(/#clinic-lead-form$/)
-    await expect(page.locator('#clinic-lead-form')).toBeVisible()
+  for (const [index, id] of ['outpatient', 'residential', 'home-visit'].entries()) {
+    await expect(formatLinks.nth(index)).toHaveAttribute(
+      'href',
+      staging ? `/napriamy/#care-format-${id}` : '/site/#clinic-lead-form',
+    )
   }
 
-  for (const width of [1440, 768, 390, 320]) {
+  for (const width of [1440, 1024, 768, 390, 360, 320]) {
     await page.setViewportSize({ width, height: 844 })
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
   }
 
   await page.setViewportSize({ width: 1440, height: 900 })
-  await consultationLinks.first().focus()
+  await formatLinks.first().focus()
   await page.keyboard.press('Tab')
-  await expect(consultationLinks.nth(1)).toBeFocused()
+  await expect(formatLinks.nth(1)).toBeFocused()
   await page.keyboard.press('Tab')
-  await expect(consultationLinks.nth(2)).toBeFocused()
+  await expect(formatLinks.nth(2)).toBeFocused()
 })
 
 test('renders only the confirmed center location and home-visit coverage', async ({ page }) => {

@@ -154,3 +154,5 @@ prompts/
 output/*
 
 design/
+
+apps/clinic-web/output

@@ -1,0 +1,63 @@
+- generic [active] [ref=e1]:
+  - link "Перейти до вмісту" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - banner [ref=e3]:
+    - link "HAVENHUB — головна" [ref=e5] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e6]:
+        - img [aria-hidden] [ref=e7]:
+          - generic [ref=e8]: H
+        - generic [ref=e10]: HAVENHUB
+  - main [ref=e11]:
+    - region [ref=e12]:
+      - generic [ref=e13]:
+        - paragraph [ref=e14]:
+          - generic [ref=e15]: ПРОФЕСІОНАЛІЗМ
+          - generic [ref=e16]: ПІДТРИМКА
+          - generic [ref=e17]: НОВЕ ЖИТТЯ
+        - heading "Підтримка на шляху до нового життя" [level=1] [ref=e18]
+        - paragraph [ref=e19]: Якщо ви шукаєте підтримки для себе або близької людини, зателефонуйте чи напишіть у Telegram. Під час першої розмови можна обговорити запит і наступний крок.
+        - list "Як можна звернутися по підтримку" [ref=e20]:
+          - listitem [ref=e21]:
+            - generic [ref=e25]: Шукаю допомогу для себе
+            - generic [ref=e26]: Обговоріть ситуацію та можливі наступні кроки.
+          - listitem [ref=e27]:
+            - generic [ref=e30]: Допомагаю близькій людині
+            - generic [ref=e31]: Обговоріть підтримку для близьких.
+          - listitem [ref=e32]:
+            - generic [ref=e35]: Обговорити наступний крок
+            - generic [ref=e36]: Розкажіть, що саме вас турбує.
+      - generic "Контакти та основний сайт" [ref=e38]:
+        - generic [ref=e42]:
+          - generic [ref=e43]: Контактний телефон
+          - link "+380 77 974 24 22" [ref=e44] [cursor=pointer]:
+            - /url: tel:+380779742422
+          - link "Telegram HAVENHUB" [ref=e45] [cursor=pointer]:
+            - /url: https://t.me/HavenRehub
+            - text: Написати в Telegram
+        - link "Перейти на основний сайт" [ref=e46] [cursor=pointer]:
+          - /url: /site/
+      - list "Важлива інформація" [ref=e49]:
+        - listitem [ref=e50]: Для себе й близьких
+        - listitem [ref=e53]: Телефон та Telegram
+        - listitem [ref=e56]: Наступний крок — після розмови
+  - contentinfo [ref=e59]:
+    - generic [ref=e60]:
+      - link "HAVENHUB — головна" [ref=e61] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e62]:
+          - img [aria-hidden] [ref=e63]:
+            - generic [ref=e64]: H
+          - generic [ref=e66]: HAVENHUB
+      - generic "Контакти HAVENHUB" [ref=e67]:
+        - 'link "Зателефонувати на гарячу лінію: +380 77 974 24 22" [ref=e68] [cursor=pointer]':
+          - /url: tel:+380779742422
+          - text: +380 77 974 24 22
+        - link "Telegram HAVENHUB" [ref=e69] [cursor=pointer]:
+          - /url: https://t.me/HavenRehub
+          - text: Telegram
+  - generic [ref=e72]:
+    - button [ref=e73]
+    - button [ref=e79]
+    - button [ref=e83]
+    - button [ref=e88]

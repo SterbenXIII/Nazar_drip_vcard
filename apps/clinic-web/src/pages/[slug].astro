@@ -210,7 +210,17 @@ const isConditionsPage = page.slug === 'umovy'
                     ]}
                   >
                     {section.items.map((item, itemIndex) => (
-                      <li>
+                      <li
+                        id={
+                          isDirectionsPage && index === 1
+                            ? [
+                                'care-format-residential',
+                                'care-format-outpatient',
+                                'care-format-home-visit',
+                              ][itemIndex]
+                            : undefined
+                        }
+                      >
                         {isConditionsPage && index === 1 && (
                           <span class="support-conditions-number" aria-hidden="true">
                             {String(itemIndex + 1).padStart(2, '0')}

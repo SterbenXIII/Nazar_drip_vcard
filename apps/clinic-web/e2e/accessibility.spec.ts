@@ -46,9 +46,18 @@ test('200%-equivalent reduced CSS viewport plus 200% text resizing retains acces
   await page.goto('/site/')
   await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
 
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
-  )
+  const layout = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+    overflowingElements: Array.from(document.body.querySelectorAll<HTMLElement>('*'))
+      .map((element) => ({
+        element: `${element.tagName.toLowerCase()}.${element.className}`,
+        right: Math.round(element.getBoundingClientRect().right),
+      }))
+      .filter(({ right }) => right > window.innerWidth + 1)
+      .slice(0, 8),
+  }))
+  expect(layout.scrollWidth, JSON.stringify(layout)).toBeLessThanOrEqual(layout.viewportWidth)
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   await expect(page.locator('#contact a[href="tel:+380779742422"]')).toBeVisible()
   await expect(page.locator('#contact a[href="https://t.me/HavenRehub"]')).toBeVisible()
