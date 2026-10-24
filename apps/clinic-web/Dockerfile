@@ -3,6 +3,7 @@ FROM node:24.20.0-bookworm-slim AS builder
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 ENV CLINIC_ENABLE_SERVICE_PREVIEW=false
+ENV CLINIC_SITE_MODE=staging
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@10.29.1 --activate
@@ -20,7 +21,7 @@ COPY apps/clinic-web/src ./apps/clinic-web/src
 COPY apps/clinic-web/public ./apps/clinic-web/public
 COPY apps/clinic-web/scripts/check-metadata.mjs apps/clinic-web/scripts/emit-seo-artifacts.mjs ./apps/clinic-web/scripts/
 RUN pnpm --filter @vcard/shared build && \
-    pnpm --filter @vcard/clinic-web build:normal && \
+    pnpm --filter @vcard/clinic-web build:staging && \
     pnpm --filter @vcard/clinic-web check:metadata
 
 FROM nginx:1.25.4-alpine@sha256:31bad00311cb5eeb8a6648beadcf67277a175da89989f14727420a80e2e76742 AS runtime

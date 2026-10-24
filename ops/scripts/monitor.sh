@@ -1,13 +1,15 @@
 #!/bin/bash
 # monitor.sh - Basic container health check
 
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
 # Load environment variables if .env exists
-if [ -f "../.env" ]; then
-  source ../.env
+if [ -f "$SCRIPT_DIR/../.env" ]; then
+  source "$SCRIPT_DIR/../.env"
 fi
 
 # Check Docker containers
-CONTAINERS=("vcard-api" "vcard-web" "caddy")
+CONTAINERS=("vcard-api" "vcard-clinic-web" "vcard-proxy")
 FAILED_CONTAINERS=()
 
 for container in "${CONTAINERS[@]}"; do

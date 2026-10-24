@@ -13,9 +13,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  DOMAIN_NAME: ${{ vars.DOMAIN_NAME || 'localhost' }}
   DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/emerald-recovery' }}
   VPS_IP: ${{ vars.VPS_IP || 'localhost' }}
+  DOMAIN_NAME: havenhub.tech
   SSH_KNOWN_HOSTS: ${{ secrets.HOSTINGER_SSH_KNOWN_HOSTS }}
 
 jobs:
@@ -50,6 +50,39 @@ jobs:
           pip install ansible
           ansible-galaxy collection install -r ops/ansible/requirements.yml
 
+      - name: 🛡️ Validate rollback VPS IP
+        env:
+          VPS_IP: ${{ env.VPS_IP }}
+        run: |
+          if [ -z "$VPS_IP" ] || [ "$VPS_IP" = "localhost" ]; then
+            echo '❌ Set the repository variable VPS_IP to the public VPS IPv4 address.'
+            exit 1
+          fi
+
+          if ! python3 -c 'import ipaddress, os; ipaddress.IPv4Address(os.environ["VPS_IP"])'; then
+            echo '❌ VPS_IP must be a valid IPv4 address.'
+            exit 1
+          fi
+
+      - name: 🔐 Prepare staging authentication
+        env:
+          STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
+        run: |
+          if [ "${#STAGE_BASIC_AUTH_PASSWORD}" -lt 16 ]; then
+            echo '❌ STAGE_BASIC_AUTH_PASSWORD must contain at least 16 characters.'
+            exit 1
+          fi
+
+          STAGE_BASIC_AUTH_HASH=$(docker run --rm --entrypoint sh \
+            -e STAGE_BASIC_AUTH_PASSWORD caddy:2-alpine \
+            -c 'caddy hash-password --plaintext "$STAGE_BASIC_AUTH_PASSWORD"')
+          if [ -z "$STAGE_BASIC_AUTH_HASH" ]; then
+            echo '❌ Failed to prepare the staging authentication hash.'
+            exit 1
+          fi
+          echo "::add-mask::$STAGE_BASIC_AUTH_HASH"
+          printf 'STAGE_BASIC_AUTH_HASH=%s\n' "$STAGE_BASIC_AUTH_HASH" >> "$GITHUB_ENV"
+
       - name: 🔠 Lowercase Repository Name
         run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
 
@@ -72,28 +105,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANSIBLE_HOST_KEY_CHECKING: 'True'
           HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          VPS_IP: ${{ env.VPS_IP }}
           DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
           DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
+          STAGE_BASIC_AUTH_HASH: ${{ env.STAGE_BASIC_AUTH_HASH }}
+          STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
           NODE_ENV: 'production'
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_MASTER_ID: ${{ secrets.TELEGRAM_MASTER_ID }}
           TELEGRAM_ALLOWED_CHAT_IDS: ${{ secrets.TELEGRAM_ALLOWED_CHAT_IDS }}
           TELEGRAM_NOTIFY_IDS: ${{ secrets.TELEGRAM_NOTIFY_IDS }}
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           ENABLED_PROVIDERS: 'TELEGRAM'
-          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           BACKEND_PORT: '5678'
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          N8N_PORT: ${{ vars.N8N_PORT || '5679' }}
-          N8N_HOST: ${{ vars.N8N_HOST || env.DOMAIN_NAME }}
-          N8N_PROTOCOL: ${{ vars.N8N_PROTOCOL || 'https' }}
-          N8N_ENCRYPTION_KEY: ${{ secrets.N8N_ENCRYPTION_KEY }}
-          N8N_COMMUNITY_PACKAGES_ENABLED: ${{ vars.N8N_COMMUNITY_PACKAGES_ENABLED || 'true' }}
-          GENERIC_TIMEZONE: ${{ vars.GENERIC_TIMEZONE || 'Europe/Kyiv' }}
-          POSTGRES_NON_ROOT_USER: ${{ vars.POSTGRES_NON_ROOT_USER || 'n8n' }}
-          POSTGRES_NON_ROOT_PASSWORD: ${{ secrets.POSTGRES_NON_ROOT_PASSWORD || secrets.POSTGRES_PASSWORD }}
-          PUBLIC_GSC_VERIFICATION: ${{ vars.PUBLIC_GSC_VERIFICATION || '' }}
         run: |
           cd ops/ansible
           ansible-playbook playbook.yml \
@@ -104,15 +128,16 @@ jobs:
             --extra-vars "ansible_user=${HOSTINGER_SSH_USER}" \
             --extra-vars "ansible_ssh_private_key_file=$HOME/.ssh/deploy_key" \
             --extra-vars "deploy_path=${DEPLOY_PATH}" \
-            --extra-vars "domain_name=${DOMAIN_NAME}" \
+            --extra-vars "vps_ip=${VPS_IP}" \
             --extra-vars "github_repository_path=${{ github.repository }}.git" \
             --extra-vars "image_registry=ghcr.io/${{ env.REPO_LC }}/" \
             --extra-vars "rollback_mode=true" \
             --extra-vars "image_tag=${{ inputs.commit_sha }}"
 
       - name: 🔍 Verify rollback (smoke tests)
+        env:
+          STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
         run: |
-          DOMAIN="${{ env.DOMAIN_NAME }}"
           MAX_ATTEMPTS=5
           RETRY_DELAY=15
 
@@ -122,8 +147,8 @@ jobs:
             local status
 
             for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
-              status=$(curl --silent --show-error --location --output /dev/null \
-                --write-out '%{http_code}' --max-time 20 "$url") || status=000
+              status=$(curl --silent --show-error --location --user "stage:${STAGE_BASIC_AUTH_PASSWORD}" \
+                --output /dev/null --write-out '%{http_code}' --max-time 20 "$url") || status=000
               if [ "$status" = "200" ]; then
                 echo "✅ $label: HTTP $status"
                 return 0
@@ -136,33 +161,42 @@ jobs:
             return 1
           }
 
-          check_csp() {
-            local headers status csp
+          BASE_URL="https://${{ env.DOMAIN_NAME }}"
+          echo "⏳ Checking authenticated HTTPS rollback endpoints..."
+          check_https 'Clinic frontend (apex)' "$BASE_URL/"
+          check_https 'Clinic frontend (www)' "https://www.${{ env.DOMAIN_NAME }}/"
+          check_https 'API health' "$BASE_URL/api/health"
 
-            for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
-              headers=$(curl --silent --show-error --location --dump-header - --output /dev/null \
-                --max-time 20 "https://$DOMAIN/") || headers=''
-              status=$(printf '%s\n' "$headers" | awk '/^HTTP/{status=$2} END{print status}')
-              csp=$(printf '%s\n' "$headers" | awk 'tolower($1) == "content-security-policy:" {sub(/^[^:]*:[[:space:]]*/, ""); value=$0} END{print value}')
-              if [ "$status" = "200" ] \
-                && printf '%s' "$csp" | grep -q 'https://www.googletagmanager.com' \
-                && printf '%s' "$csp" | grep -q 'connect-src'; then
-                echo "✅ CSP: required production directives found"
-                return 0
-              fi
-              echo "⚠️ CSP attempt $attempt/$MAX_ATTEMPTS: HTTP ${status:-000}, required directives missing"
-              [ "$attempt" -lt "$MAX_ATTEMPTS" ] && sleep "$RETRY_DELAY"
-            done
+          status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --max-time 20 "$BASE_URL/") || status=000
+          if [ "$status" != "401" ]; then
+            echo "❌ Staging homepage must require authentication; got HTTP $status."
+            exit 1
+          fi
 
-            echo "❌ CSP failed after $MAX_ATTEMPTS attempts: https://$DOMAIN/"
-            return 1
-          }
+          status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --max-time 20 "http://${{ env.DOMAIN_NAME }}/") || status=000
+          if [ "$status" != "308" ]; then
+            echo "❌ HTTP homepage must redirect to HTTPS; got HTTP $status."
+            exit 1
+          fi
 
-          echo "⏳ Checking public HTTPS rollback endpoints..."
-          check_https 'Frontend' "https://$DOMAIN/"
-          check_https 'API health' "https://$DOMAIN/api/health"
-          check_csp
-          echo "✅ Rollback verified through the public proxy."
+          status=$(curl --silent --show-error --request POST --data '{}' \
+            --output /dev/null --write-out '%{http_code}' --max-time 20 \
+            "http://${{ env.DOMAIN_NAME }}/api/leads/submit") || status=000
+          if [ "$status" != "403" ]; then
+            echo "❌ HTTP lead submissions must be blocked before redirect; got HTTP $status."
+            exit 1
+          fi
+
+          status=$(curl --silent --show-error --user "stage:${STAGE_BASIC_AUTH_PASSWORD}" \
+            --request POST --output /dev/null --write-out '%{http_code}' \
+            --max-time 20 "$BASE_URL/api/leads/submit") || status=000
+          if [ "$status" != "403" ]; then
+            echo "❌ Staging lead submission must remain disabled; got HTTP $status."
+            exit 1
+          fi
+          echo "✅ Rollback TLS/auth and disabled lead-submission checks passed."
 
       - name: 💬 Notify Telegram (success)
         if: success()
@@ -175,7 +209,7 @@ jobs:
             ⏪ Rollback Success
 
             Version: ${{ inputs.commit_sha }}
-            Domain: https://${{ env.DOMAIN_NAME }}
+            Access: https://${{ env.DOMAIN_NAME }}
             verified ✓
 
       - name: 🚨 Notify Telegram (failure)

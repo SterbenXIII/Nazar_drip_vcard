@@ -7,7 +7,7 @@
   failed_when: false
   loop:
     - vcard-api
-    - vcard-web
+    - vcard-clinic-web
     - vcard-proxy
   tags: [health, check]
 
@@ -68,35 +68,97 @@
 - name: ✅ Verify API health endpoint
   ansible.builtin.uri:
     url: 'https://{{ domain_name }}/api/health'
+    url_username: stage
+    url_password: '{{ stage_basic_auth_password }}'
+    force_basic_auth: true
     method: GET
     status_code: 200
     timeout: 15
   register: health_check
+  no_log: true
   retries: 3
   delay: 10
   until: health_check.status == 200
   when: node_env == 'production'
   tags: [health, verify]
 
-- name: Verify production homepage and Content-Security-Policy
+- name: Verify protected HTTPS staging homepage
   ansible.builtin.uri:
     url: 'https://{{ domain_name }}/'
+    url_username: stage
+    url_password: '{{ stage_basic_auth_password }}'
+    force_basic_auth: true
     method: GET
     status_code: 200
     timeout: 15
-  register: production_homepage_check
+  register: staging_homepage_check
+  no_log: true
   retries: 3
   delay: 15
-  until: production_homepage_check.status == 200
+  until: staging_homepage_check.status == 200
   when: node_env == 'production'
   tags: [health, verify]
 
-- name: Assert production Content-Security-Policy is current
-  ansible.builtin.assert:
-    that:
-      - "production_homepage_check.content_security_policy | default('') is search('https://www.googletagmanager.com')"
-      - "production_homepage_check.content_security_policy | default('') is search('connect-src')"
-    fail_msg: Production is still serving an outdated Content-Security-Policy header.
+- name: Verify staging authentication blocks unauthenticated requests
+  ansible.builtin.uri:
+    url: 'https://{{ domain_name }}/'
+    method: GET
+    status_code: 401
+    timeout: 15
+  register: unauthenticated_stage_check
+  retries: 3
+  delay: 10
+  until: unauthenticated_stage_check.status == 401
+  no_log: true
+  when: node_env == 'production'
+  tags: [health, verify]
+
+- name: Verify HTTP redirects to HTTPS
+  ansible.builtin.uri:
+    url: 'http://{{ domain_name }}/'
+    method: GET
+    status_code: 308
+    timeout: 15
+    follow_redirects: none
+  register: http_redirect_check
+  retries: 3
+  delay: 10
+  until: http_redirect_check.status == 308
+  no_log: true
+  when: node_env == 'production'
+  tags: [health, verify]
+
+- name: Verify HTTP stage lead submissions are rejected before redirect
+  ansible.builtin.uri:
+    url: 'http://{{ domain_name }}/api/leads/submit'
+    method: POST
+    body: '{}'
+    body_format: json
+    status_code: 403
+    timeout: 15
+  register: http_stage_submission_check
+  retries: 3
+  delay: 10
+  until: http_stage_submission_check.status == 403
+  no_log: true
+  when: node_env == 'production'
+  tags: [health, verify]
+
+- name: Verify public stage lead submissions stay disabled
+  ansible.builtin.uri:
+    url: 'https://{{ domain_name }}/api/leads/submit'
+    method: POST
+    body: '{}'
+    body_format: json
+    status_code: 403
+    timeout: 15
+    url_username: stage
+    url_password: '{{ stage_basic_auth_password }}'
+    force_basic_auth: true
+  register: stage_submission_check
+  retries: 3
+  delay: 10
+  until: stage_submission_check.status == 403
   no_log: true
   when: node_env == 'production'
   tags: [health, verify]

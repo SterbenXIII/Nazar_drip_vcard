@@ -276,51 +276,47 @@ The playbook is designed to be called from GitHub Actions. See `.github/workflow
 
 ### Production deployment contract
 
-- Use one canonical repository path on the VPS: the GitHub Actions `DEPLOY_PATH` repository variable. All deployment and rollback workflows default to `/home/emerald-recovery`; set the variable explicitly if the VPS uses another path.
-- The API listens on port `5678` **only inside the Docker `web-gateway` network**. It is not a public VPS port and must not be used for CI smoke checks.
-- Deployment and rollback verification use the public proxy endpoints `https://DOMAIN_NAME/` and `https://DOMAIN_NAME/api/health`, then verify the production Content-Security-Policy header. Each check retries before failing with endpoint and HTTP-status context.
-- Deployment failures fail the workflow. Telegram notifications are best-effort only and must not turn a failed deployment into a successful workflow.
+- Deploy `apps/api`, `apps/clinic-web`, and Caddy from immutable commit-SHA images. The canonical production Compose invocation does not start `apps/web`, n8n, or PostgreSQL.
+- `VPS_IP` is the public IPv4 address used for SSH. The stage hostname is fixed in the workflows to `havenhub.tech`; Caddy serves the apex and `www` over HTTPS. `DEPLOY_PATH` defaults to `/home/emerald-recovery`.
+- Inbound TCP ports 80 and 443 must reach this VPS. The published apex and `www` A/AAAA records must all route to this server before Caddy can obtain and renew public certificates.
+- The stage build uses `CLINIC_SITE_MODE=staging` with `noindex,nofollow` and Caddy Basic Auth. HTTP redirects to HTTPS, except `POST /api/leads/submit*`, which gets 403 before redirect; HTTPS submissions also get 403. Stage cannot collect visitor data.
+- Deployment and rollback verify authenticated `https://havenhub.tech/`, `https://www.havenhub.tech/`, and the API health endpoint. They also verify unauthenticated access receives 401 and stage lead submissions receive 403. API port `5678` remains internal to `web-gateway`.
+- A public production release remains separate: it requires owner-approved content, a gated production SEO build with the approved canonical origin, and explicit release review. The stage intentionally has no HSTS policy.
 
 ### Rollback safety
 
-The rollback workflow accepts only a full lowercase commit SHA, verifies that the exact images are pullable before service recreation, and uses the same `DEPLOY_PATH` and public HTTPS checks. Before rollback mutation, Ansible starts an ephemeral container from the API image with the persistent `api_data` volume attached, so it can use SQLite's backup API even when `vcard-api` is stopped. It does not blindly copy `leads.db` or its WAL sidecars, and it **does not delete Docker volumes or the SQLite database**. Do not add `docker compose down --volumes`, `docker volume rm`, or prune commands with `--volumes` to rollback steps.
+The rollback workflow accepts only a full lowercase commit SHA, verifies that the exact images are pullable before service recreation, and uses the same `DEPLOY_PATH`, protected HTTPS hostnames, and staging access checks. Before rollback mutation, Ansible starts an ephemeral container from the API image with the persistent `api_data` volume attached, so it can use SQLite's backup API even when `vcard-api` is stopped. It does not blindly copy `leads.db` or its WAL sidecars, and it **does not delete Docker volumes or the SQLite database**. Do not add `docker compose down --volumes`, `docker volume rm`, or prune commands with `--volumes` to rollback steps.
 
 The application rollback contract is limited: an older image is supported only when its migrations remain readable with the existing database schema. The repository has forward-only startup migrations and no general backward-compatibility guarantee. If an older image cannot read the schema, restore from the pre-rollback SQLite backup instead of assuming that image replacement alone is safe.
+The VPS provider currently backs up weekly. Before enabling lead collection for a public release, add a separate daily SQLite backup and verify a restore; the rollback snapshot is not a scheduled backup.
 
 ### Notification provider contract
 
-`ENABLED_PROVIDERS` is validated by the API before startup. `TELEGRAM` requires `TELEGRAM_BOT_TOKEN`. `EMAIL` requires `ADMIN_EMAIL` and either complete generic SMTP (`SMTP_USER`, `SMTP_HOST`, `SMTP_PASS`, optional `SMTP_PORT`) or complete Gmail OAuth2 (`SMTP_USER`, `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`). The deploy workflow transports these values through protected GitHub secrets/variables; Ansible writes them to the mode `0600` `.env` without logging them.
+The VPS sets `ENABLED_PROVIDERS=TELEGRAM`; `TELEGRAM_BOT_TOKEN` is required. Email remains available to other environments but is not configured in this deployment. `TELEGRAM_ALLOWED_CHAT_IDS` is required as comma-separated numeric IDs and is written to `apps/api/allowed_chats.json` with mode `0600` and `no_log: true`.
 
-### Turnstile and client identity contract
+### GitHub Actions variables and secrets
 
-`TURNSTILE_SECRET_KEY` is optional by the current product contract: when absent, server-side Turnstile verification is disabled; when present, the API verifies every submitted token. This phase does not change the separate browser widget integration. Turnstile requests do not receive a client IP because that value was not available from a verified application boundary. For rate limiting, Caddy overwrites `X-Forwarded-For` with the connecting client address and removes `CF-Connecting-IP`; production API containers have no host port and are reachable through the `web-gateway` proxy path only.
+Set these in repository settings before running deployment:
 
-### Required GitHub Secrets
+| Name | Type | Requirement | Purpose |
+| --- | --- | --- | --- |
+| `VPS_IP` | Variable | Required | Public VPS IPv4 for SSH |
+| `DEPLOY_PATH` | Variable | Optional | VPS checkout path; defaults to `/home/emerald-recovery` |
+| `HOSTINGER_SSH_KEY` | Secret | Required | Private deployment key |
+| `HOSTINGER_SSH_USER` | Secret | Required | VPS SSH account |
+| `HOSTINGER_SSH_KNOWN_HOSTS` | Secret | Required | Pinned SSH host key entry for the VPS |
+| `STAGE_BASIC_AUTH_PASSWORD` | Secret | Required | Stage password, at least 16 characters; user name is `stage` |
+| `TELEGRAM_BOT_TOKEN` | Secret | Required | Bot credential for API and workflow notifications |
+| `TELEGRAM_MASTER_ID` | Secret | Required | Primary notification recipient |
+| `TELEGRAM_ALLOWED_CHAT_IDS` | Secret | Required | Comma-separated numeric production allowlist |
+| `TELEGRAM_NOTIFY_IDS` | Secret | Optional | Additional notification recipients |
+| `WEBHOOK_SECRET` | Secret | Optional | Shared secret for authenticated Telegram webhook requests |
 
-| Secret                           | Description                                                   |
-| -------------------------------- | ------------------------------------------------------------- |
-| `HOSTINGER_SSH_KEY`              | Private SSH key (ed25519)                                     |
-| `HOSTINGER_VPS_HOST`             | VPS IP address                                                |
-| `HOSTINGER_SSH_USER`             | SSH user (e.g., vps_user)                                     |
-| `DEPLOY_PATH`                    | Project path on VPS                                           |
-| `TELEGRAM_BOT_TOKEN`             | Telegram bot token                                            |
-| `TELEGRAM_MASTER_ID`             | Telegram admin user ID                                        |
-| `TELEGRAM_ALLOWED_CHAT_IDS`      | Comma-separated numeric Telegram IDs (required in production) |
-| `SMTP_USER`                      | Gmail address                                                 |
-| `GMAIL_CLIENT_ID`                | Google OAuth client ID                                        |
-| `GMAIL_CLIENT_SECRET`            | Google OAuth client secret                                    |
-| `GMAIL_REFRESH_TOKEN`            | Google OAuth refresh token                                    |
-| `ADMIN_EMAIL`                    | Email for lead notifications                                  |
-| `N8N_PORT`                       | n8n port (default: 5679)                                      |
-| `N8N_HOST`                       | n8n public host                                               |
-| `N8N_PROTOCOL`                   | n8n protocol (default: https)                                 |
-| `N8N_ENCRYPTION_KEY`             | Persistent n8n encryption key (required in production)        |
-| `N8N_COMMUNITY_PACKAGES_ENABLED` | Enable n8n community packages                                 |
-| `GENERIC_TIMEZONE`               | n8n timezone (default: Europe/Kyiv)                           |
-| `POSTGRES_PASSWORD`              | PostgreSQL password                                           |
-| `POSTGRES_NON_ROOT_USER`         | n8n PostgreSQL user (default: n8n)                            |
-| `POSTGRES_NON_ROOT_PASSWORD`     | PostgreSQL password (required in production)                  |
-| `PUBLIC_GSC_VERIFICATION`        | Google Search Console token (optional)                        |
+The stage hostname is fixed to `havenhub.tech`; no `DOMAIN_NAME` variable is required. Actions provides `GITHUB_TOKEN`; the workflow grants `packages: write` to publish GHCR images and Ansible uses it to pull private images. Do not create a separate `GITHUB_TOKEN` secret.
+Actions derives the Caddy password hash from `STAGE_BASIC_AUTH_PASSWORD`; only the hash is passed to Caddy. The plaintext is used for authenticated smoke checks and is not written to the VPS.
+The provided VPS account is `root`, but a dedicated SSH user with sudo is recommended for GitHub Actions.
+Manual `make up` and `make rebuild` runs require `STAGE_BASIC_AUTH_HASH`; they stop before modifying the stack when it is absent. `make verify-deploy` requires `STAGE_BASIC_AUTH_PASSWORD` for its authenticated checks.
+Generate a manual Caddy hash interactively with `docker run --rm -it caddy:2-alpine caddy hash-password`; keep the plaintext password out of `.env` and Git.
 
 ## 🔒 Security Notes
 
@@ -328,7 +324,7 @@ The application rollback contract is limited: an older image is supported only w
 2. **Permissions**: `.env` file is created with `0600` permissions
 3. **Secrets**: Never commit `.env` or private keys to Git
 4. **Network**: `web-gateway` network isolates containers
-5. **Host Key Checking**: Disabled for CI/CD, but SSH keys are verified
+5. **Host Key Checking**: Enabled; the workflow verifies the pinned VPS host key
 
 ## 📚 Further Reading
 

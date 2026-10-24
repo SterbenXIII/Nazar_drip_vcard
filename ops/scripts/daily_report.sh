@@ -2,8 +2,9 @@
 # daily_report.sh - Daily summary of lead notifications
 
 # Load environment variables if .env exists
-if [ -f "../.env" ]; then
-  source ../.env
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+if [ -f "$SCRIPT_DIR/../.env" ]; then
+  source "$SCRIPT_DIR/../.env"
 fi
 
 # Basic report logic (placeholder - would typically query DB or logs)

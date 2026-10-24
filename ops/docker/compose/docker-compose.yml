@@ -1,14 +1,10 @@
 services:
-  # Frontend (Astro + Nginx)
-  web:
-    image: ${IMAGE_REGISTRY:-}vcard-web:${IMAGE_TAG:-latest}
+  clinic-web:
+    image: ${IMAGE_REGISTRY:-}vcard-clinic-web:${IMAGE_TAG:-latest}
     build:
       context: ../../../
-      dockerfile: ops/docker/web/Dockerfile
-      target: runtime
-      args:
-        - DOMAIN_NAME=${DOMAIN_NAME:-localhost}
-    container_name: vcard-web
+      dockerfile: apps/clinic-web/Dockerfile
+    container_name: vcard-clinic-web
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -18,9 +14,6 @@ services:
     tmpfs:
       - /var/cache/nginx:uid=101,gid=101
       - /var/run:uid=101,gid=101
-      - /etc/nginx/conf.d:uid=101,gid=101 # Allow envsubst to write config
-    environment:
-      - DOMAIN_NAME=${DOMAIN_NAME:-localhost}
     networks:
       - web-gateway
     depends_on:

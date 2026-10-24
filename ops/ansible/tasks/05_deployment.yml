@@ -31,14 +31,16 @@
       -f ops/docker/compose/docker-compose.yml \
       -f ops/docker/compose/docker-compose.proxy.yml pull --quiet
   environment:
+    VPS_IP: '{{ vps_ip }}'
     DOMAIN_NAME: '{{ domain_name }}'
+    STAGE_BASIC_AUTH_HASH: '{{ stage_basic_auth_hash }}'
     NODE_ENV: '{{ node_env }}'
     BACKEND_PORT: '{{ backend_port }}'
     TELEGRAM_NOTIFY_IDS: '{{ telegram_notify_ids }}'
     IMAGE_REGISTRY: '{{ image_registry }}'
     IMAGE_TAG: '{{ image_tag }}'
-    ADMIN_EMAIL: '{{ admin_email }}'
   register: image_pull_result
+  no_log: true
   changed_when: true
   tags: [docker, deploy, verify]
 
@@ -52,21 +54,23 @@
       -f ops/docker/compose/docker-compose.proxy.yml \
       up -d --force-recreate --remove-orphans
   environment:
+    VPS_IP: '{{ vps_ip }}'
     DOMAIN_NAME: '{{ domain_name }}'
+    STAGE_BASIC_AUTH_HASH: '{{ stage_basic_auth_hash }}'
     NODE_ENV: '{{ node_env }}'
     BACKEND_PORT: '{{ backend_port }}'
     TELEGRAM_NOTIFY_IDS: '{{ telegram_notify_ids }}'
     IMAGE_REGISTRY: '{{ image_registry }}'
     IMAGE_TAG: '{{ image_tag }}'
-    ADMIN_EMAIL: '{{ admin_email }}'
   register: compose_result
+  no_log: true
   changed_when: true
   tags: [docker, deploy]
 
 - name: 🔍 Verify deployed containers share the gateway network
   ansible.builtin.shell: |
     set -o pipefail
-    for container in vcard-api vcard-web vcard-proxy; do
+    for container in vcard-api vcard-clinic-web vcard-proxy; do
       docker inspect -f '{% raw %}{{.State.Status}} {{range $name, $network := .NetworkSettings.Networks}}{{$name}} {{end}}{% endraw %}' "$container"
     done
   args:

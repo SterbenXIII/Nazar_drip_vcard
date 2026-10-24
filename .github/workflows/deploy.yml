@@ -11,9 +11,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  DOMAIN_NAME: ${{ vars.DOMAIN_NAME || 'localhost' }}
   DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/emerald-recovery' }}
   VPS_IP: ${{ vars.VPS_IP || 'localhost' }}
+  DOMAIN_NAME: havenhub.tech
   COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
   SSH_KNOWN_HOSTS: ${{ secrets.HOSTINGER_SSH_KNOWN_HOSTS }}
 
@@ -60,19 +60,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: 📦 Build and push Web
+      - name: 📦 Build and push clinic-web
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: .
-          file: ops/docker/web/Dockerfile
-          target: runtime
+          file: apps/clinic-web/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ env.REPO_LC }}/vcard-web:latest
-            ghcr.io/${{ env.REPO_LC }}/vcard-web:${{ env.COMMIT_SHA }}
-          build-args: |
-            DOMAIN_NAME=${{ env.DOMAIN_NAME }}
-            PUBLIC_TURNSTILE_SITE_KEY=${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
+            ghcr.io/${{ env.REPO_LC }}/vcard-clinic-web:latest
+            ghcr.io/${{ env.REPO_LC }}/vcard-clinic-web:${{ env.COMMIT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -80,19 +76,6 @@ jobs:
       #   uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8
       #   with:
       #     image-ref: ghcr.io/${{ env.REPO_LC }}/vcard-api:${{ github.sha }}
-      #     format: 'table'
-      #     exit-code: '1'
-      #     ignore-unfixed: true
-      #     vuln-type: 'os,library'
-      #     severity: 'CRITICAL,HIGH'
-      #   env:
-      #     TRIVY_USERNAME: ${{ github.actor }}
-      #     TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-
-      # - name: 🛡️ Run Trivy vulnerability scanner (Web)
-      #   uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8
-      #   with:
-      #     image-ref: ghcr.io/${{ env.REPO_LC }}/vcard-web:${{ github.sha }}
       #     format: 'table'
       #     exit-code: '1'
       #     ignore-unfixed: true
@@ -131,17 +114,38 @@ jobs:
           ansible-galaxy collection install -r ops/ansible/requirements.yml
           ansible --version
 
-      - name: 🛡️ Validate deploy host/domain vars
+      - name: 🛡️ Validate deploy VPS IP
+        env:
+          VPS_IP: ${{ env.VPS_IP }}
         run: |
-          if [ "${{ env.DOMAIN_NAME }}" = "localhost" ]; then
-            echo "❌ DOMAIN_NAME is localhost. Set repository variable DOMAIN_NAME for production deploys."
+          if [ -z "$VPS_IP" ] || [ "$VPS_IP" = "localhost" ]; then
+            echo '❌ Set the repository variable VPS_IP to the public VPS IPv4 address.'
             exit 1
           fi
 
-          if [ "${{ env.VPS_IP }}" = "localhost" ]; then
-            echo "❌ VPS_IP is localhost. Set repository variable VPS_IP for production deploys."
+          if ! python3 -c 'import ipaddress, os; ipaddress.IPv4Address(os.environ["VPS_IP"])'; then
+            echo '❌ VPS_IP must be a valid IPv4 address.'
             exit 1
           fi
+
+      - name: 🔐 Prepare staging authentication
+        env:
+          STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
+        run: |
+          if [ "${#STAGE_BASIC_AUTH_PASSWORD}" -lt 16 ]; then
+            echo '❌ STAGE_BASIC_AUTH_PASSWORD must contain at least 16 characters.'
+            exit 1
+          fi
+
+          STAGE_BASIC_AUTH_HASH=$(docker run --rm --entrypoint sh \
+            -e STAGE_BASIC_AUTH_PASSWORD caddy:2-alpine \
+            -c 'caddy hash-password --plaintext "$STAGE_BASIC_AUTH_PASSWORD"')
+          if [ -z "$STAGE_BASIC_AUTH_HASH" ]; then
+            echo '❌ Failed to prepare the staging authentication hash.'
+            exit 1
+          fi
+          echo "::add-mask::$STAGE_BASIC_AUTH_HASH"
+          printf 'STAGE_BASIC_AUTH_HASH=%s\n' "$STAGE_BASIC_AUTH_HASH" >> "$GITHUB_ENV"
 
       - name: 🔠 Lowercase Repository Name
         run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
@@ -236,35 +240,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANSIBLE_HOST_KEY_CHECKING: 'True'
           HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          VPS_IP: ${{ env.VPS_IP }}
           DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
           DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
+          STAGE_BASIC_AUTH_HASH: ${{ env.STAGE_BASIC_AUTH_HASH }}
+          STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
           NODE_ENV: 'production'
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_MASTER_ID: ${{ secrets.TELEGRAM_MASTER_ID }}
           TELEGRAM_ALLOWED_CHAT_IDS: ${{ secrets.TELEGRAM_ALLOWED_CHAT_IDS }}
           TELEGRAM_NOTIFY_IDS: ${{ secrets.TELEGRAM_NOTIFY_IDS }}
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          ENABLED_PROVIDERS: ${{ secrets.ENABLED_PROVIDERS || 'TELEGRAM,EMAIL' }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ vars.SMTP_PORT || '465' }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
-          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
-          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
-          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          ENABLED_PROVIDERS: 'TELEGRAM'
           BACKEND_PORT: '5678'
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          N8N_PORT: ${{ vars.N8N_PORT || '5679' }}
-          N8N_HOST: ${{ vars.N8N_HOST || env.DOMAIN_NAME }}
-          N8N_PROTOCOL: ${{ vars.N8N_PROTOCOL || 'https' }}
-          N8N_ENCRYPTION_KEY: ${{ secrets.N8N_ENCRYPTION_KEY }}
-          N8N_COMMUNITY_PACKAGES_ENABLED: ${{ vars.N8N_COMMUNITY_PACKAGES_ENABLED || 'true' }}
-          GENERIC_TIMEZONE: ${{ vars.GENERIC_TIMEZONE || 'Europe/Kyiv' }}
-          POSTGRES_NON_ROOT_USER: ${{ vars.POSTGRES_NON_ROOT_USER || 'n8n' }}
-          POSTGRES_NON_ROOT_PASSWORD: ${{ secrets.POSTGRES_NON_ROOT_PASSWORD || secrets.POSTGRES_PASSWORD }}
-          PUBLIC_GSC_VERIFICATION: ${{ vars.PUBLIC_GSC_VERIFICATION || '' }}
         run: |
           cd ops/ansible
           ansible-playbook playbook.yml \
@@ -275,14 +263,16 @@ jobs:
             --extra-vars "ansible_user=${HOSTINGER_SSH_USER}" \
             --extra-vars "ansible_ssh_private_key_file=$HOME/.ssh/deploy_key" \
             --extra-vars "deploy_path=${DEPLOY_PATH}" \
-            --extra-vars "domain_name=${DOMAIN_NAME}" \
+            --extra-vars "vps_ip=${VPS_IP}" \
             --extra-vars "github_repository_path=${{ github.repository }}.git" \
             --extra-vars "image_registry=ghcr.io/${{ env.REPO_LC }}/" \
             --extra-vars "image_tag=${{ env.COMMIT_SHA }}"
 
       - name: 🔍 Verify deployment (smoke tests)
+        env:
+          STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
         run: |
-          DOMAIN="${{ env.DOMAIN_NAME }}"
+          BASE_URL="https://${{ env.DOMAIN_NAME }}"
           MAX_ATTEMPTS=5
           RETRY_DELAY=15
 
@@ -292,8 +282,8 @@ jobs:
             local status
 
             for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
-              status=$(curl --silent --show-error --location --output /dev/null \
-                --write-out '%{http_code}' --max-time 20 "$url") || status=000
+              status=$(curl --silent --show-error --location --user "stage:${STAGE_BASIC_AUTH_PASSWORD}" \
+                --output /dev/null --write-out '%{http_code}' --max-time 20 "$url") || status=000
               if [ "$status" = "200" ]; then
                 echo "✅ $label: HTTP $status"
                 return 0
@@ -306,33 +296,41 @@ jobs:
             return 1
           }
 
-          check_csp() {
-            local headers status csp
+          echo "⏳ Checking authenticated HTTPS staging endpoints..."
+          check_https 'Clinic frontend (apex)' "$BASE_URL/"
+          check_https 'Clinic frontend (www)' "https://www.${DOMAIN_NAME}/"
+          check_https 'API health' "$BASE_URL/api/health"
 
-            for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
-              headers=$(curl --silent --show-error --location --dump-header - --output /dev/null \
-                --max-time 20 "https://$DOMAIN/") || headers=''
-              status=$(printf '%s\n' "$headers" | awk '/^HTTP/{status=$2} END{print status}')
-              csp=$(printf '%s\n' "$headers" | awk 'tolower($1) == "content-security-policy:" {sub(/^[^:]*:[[:space:]]*/, ""); value=$0} END{print value}')
-              if [ "$status" = "200" ] \
-                && printf '%s' "$csp" | grep -q 'https://www.googletagmanager.com' \
-                && printf '%s' "$csp" | grep -q 'connect-src'; then
-                echo "✅ CSP: required production directives found"
-                return 0
-              fi
-              echo "⚠️ CSP attempt $attempt/$MAX_ATTEMPTS: HTTP ${status:-000}, required directives missing"
-              [ "$attempt" -lt "$MAX_ATTEMPTS" ] && sleep "$RETRY_DELAY"
-            done
+          status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --max-time 20 "$BASE_URL/") || status=000
+          if [ "$status" != "401" ]; then
+            echo "❌ Staging homepage must require authentication; got HTTP $status."
+            exit 1
+          fi
 
-            echo "❌ CSP failed after $MAX_ATTEMPTS attempts: https://$DOMAIN/"
-            return 1
-          }
+          status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --max-time 20 "http://${DOMAIN_NAME}/") || status=000
+          if [ "$status" != "308" ]; then
+            echo "❌ HTTP homepage must redirect to HTTPS; got HTTP $status."
+            exit 1
+          fi
 
-          echo "⏳ Checking public HTTPS deployment endpoints..."
-          check_https 'Frontend' "https://$DOMAIN/"
-          check_https 'API health' "https://$DOMAIN/api/health"
-          check_csp
-          echo "✨ Public frontend, API, and CSP checks passed."
+          status=$(curl --silent --show-error --request POST --data '{}' \
+            --output /dev/null --write-out '%{http_code}' --max-time 20 \
+            "http://${DOMAIN_NAME}/api/leads/submit") || status=000
+          if [ "$status" != "403" ]; then
+            echo "❌ HTTP lead submissions must be blocked before redirect; got HTTP $status."
+            exit 1
+          fi
+
+          status=$(curl --silent --show-error --user "stage:${STAGE_BASIC_AUTH_PASSWORD}" \
+            --request POST --output /dev/null --write-out '%{http_code}' \
+            --max-time 20 "$BASE_URL/api/leads/submit") || status=000
+          if [ "$status" != "403" ]; then
+            echo "❌ Staging lead submission must remain disabled; got HTTP $status."
+            exit 1
+          fi
+          echo "✨ Authenticated staging, TLS, and disabled lead-submission checks passed."
 
       - name: 💬 Notify Telegram (success)
         if: success()
@@ -344,8 +342,7 @@ jobs:
           message: |
             ✅ Deployment Success
 
-            Access: http://${{ env.VPS_IP }}
-            Domain: ${{ env.DOMAIN_NAME }}
+            Access: https://${{ env.DOMAIN_NAME }}
             Commit: ${{ env.COMMIT_SHA }}
             Branch: main
 
@@ -361,7 +358,7 @@ jobs:
           message: |
             ❌ Deployment Failed
 
-            Domain: ${{ env.DOMAIN_NAME }}
+            Access: https://${{ env.DOMAIN_NAME }}
             Commit: ${{ env.COMMIT_SHA }}
 
             Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

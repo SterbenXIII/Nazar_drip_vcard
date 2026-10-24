@@ -23,17 +23,11 @@ make dev
 # → API: http://localhost:5678
 ```
 
-### Production Deployment
+### VPS Stage Deployment
 
-```bash
-# ONE-TIME setup (15 minutes)
-make deploy-setup
+Before the first deploy, configure SSH access, DNS, and inbound ports 80/443, then add the GitHub Actions variables and secrets listed in the [deployment contract](./ops/ansible/README.md#github-actions-variables-and-secrets). A successful CI run on `main` triggers deployment. The old `make deploy-setup` helper is disabled because it does not match the current protected HTTPS stack.
 
-# Then every push triggers automatic deployment:
-git push origin main  # ✅ Deployed automatically
-```
-
-**That's it!** No manual VPS configuration needed. See [Ansible deployment quick reference](./docs/deployment/ansible-quickref.md) for details.
+The VPS stage target is `havenhub.tech` and `www.havenhub.tech`; it is authenticated, noindex, and does not accept lead submissions. No deployment has been performed by this change.
 
 ---
 
@@ -43,9 +37,8 @@ git push origin main  # ✅ Deployed automatically
 | ------------------- | ------------------------------------------------ |
 | `make help`         | Show all commands                                |
 | `make dev`          | Start local stack                                |
-| `make deploy-setup` | 🔴 **ONE-TIME: Auto VPS setup + GitHub secrets** |
 | `make logs`         | View service logs                                |
-| `make cert-init`    | Production SSL (Let's Encrypt)                   |
+| `make verify-deploy` | Authenticated stage and API health checks        |
 
 ---
 

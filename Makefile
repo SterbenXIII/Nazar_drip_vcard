@@ -3,7 +3,7 @@
 export
 
 # --- Конфігурація шляхів та Docker ---
-# Припускаємо, що назви сервісів у docker-compose відповідають іменам: vcard-api, vcard-web, n8n, nginx-proxy
+# Compose service names include vcard-api, vcard-clinic-web, n8n, and vcard-proxy.
 DC_APP         = docker compose -p astro-vcard -f ops/docker/compose/docker-compose.yml
 DC_N8N         = docker compose -p astro-vcard -f ops/docker/compose/docker-compose.n8n.yml
 DC_PROXY       = docker compose -p astro-vcard -f ops/docker/compose/docker-compose.proxy.yml
@@ -26,7 +26,7 @@ YELLOW = \033[1;33m
 RED    = \033[1;31m
 NC     = \033[0m
 
-.PHONY: help init setup-net build dev dev-down dev-rebuild up down rebuild logs ps clean clean-all backup-to-tg db-check verify-deploy refresh deploy-setup secret-scan secret-history-scan remote-preflight-dev remote-deploy-dev remote-preflight-prod remote-deploy-prod remote-status remote-logs remote-logs-follow remote-backup remote-recover remote-rollback clinic-shared clinic-dev clinic-build clinic-preview clinic-content-preview clinic-check clinic-acceptance clinic-docker-build clinic-docker-up clinic-docker-down clinic-docker-logs clinic-docker-check
+.PHONY: help init setup-net build dev dev-down dev-rebuild up down rebuild logs ps clean clean-all backup-to-tg db-check verify-deploy refresh deploy-setup secret-scan secret-history-scan remote-preflight-dev remote-deploy-dev remote-preflight-prod remote-deploy-prod remote-status remote-logs remote-logs-follow remote-backup remote-recover remote-rollback clinic-shared clinic-dev clinic-build clinic-preview clinic-content-preview clinic-check clinic-acceptance clinic-docker-build clinic-docker-up clinic-docker-down clinic-docker-logs clinic-docker-check check-stage-auth
 
 # --- Допомога ---
 
@@ -48,7 +48,7 @@ help:
 	@echo "  $(GREEN)make clinic-docker-check$(NC) - HTTP і браузерний smoke clinic container"
 	@echo "  $(GREEN)make refresh$(NC)        - Ядерне очищення: видалення node_modules та перевстановлення"
 	@echo ""
-	@echo "  $(RED)make deploy-setup$(NC)     - 🔴 ONE-TIME: автоматична підготовка VPS та GitHub secrets"
+	@echo "  $(RED)make deploy-setup$(NC)     - Legacy helper disabled; see ops/ansible/README.md"
 	@echo ""
 	@echo "  $(GREEN)make backup-to-tg$(NC)   - Зробити бекап SQLite та відправити в Telegram"
 	@echo "  $(GREEN)make db-check$(NC)       - Переглянути останні записи в БД всередині контейнера"
@@ -134,9 +134,9 @@ force-clean:
 # --- Deployment Setup (ONE-TIME) ---
 
 deploy-setup:
-	@echo "$(BLUE)🚀 Starting VPS deployment setup...$(NC)"
-	@chmod +x ops/scripts/setup-vps-deploy.sh
-	@bash ops/scripts/setup-vps-deploy.sh
+	@echo "$(RED)Legacy VPS setup helper is disabled for the authenticated HTTPS stage.$(NC)"
+	@echo "See ops/ansible/README.md for the current deployment contract."
+	@exit 1
 
 # --- Розробка & Продакшн ---
 
@@ -149,7 +149,7 @@ dev: setup-net
 dev-down:
 	$(DC_LOCAL) down
 
-up: setup-net
+up: check-stage-auth setup-net
 	@echo "$(GREEN)🚀 Запуск PRODUCTION стеку...$(NC)"
 	$(DC_STACK) up -d --remove-orphans
 
@@ -164,9 +164,14 @@ dev-rebuild: dev-down
 	@echo "$(YELLOW)🔄 Перезбірка LOCAL образів та запуск...$(NC)"
 	$(DC_LOCAL) up -d --build
 
-rebuild: down setup-net
+rebuild: check-stage-auth
+	$(MAKE) down
+	$(MAKE) setup-net
 	@echo "$(YELLOW)🔄 Перезбірка PRODUCTION образів та запуск...$(NC)"
 	$(DC_STACK) up -d --build --force-recreate --remove-orphans
+
+check-stage-auth:
+	@test -n "$${STAGE_BASIC_AUTH_HASH}" || (echo "$(RED)Set STAGE_BASIC_AUTH_HASH before starting the protected stage stack.$(NC)" && exit 1)
 
 # --- Обслуговування & Логи ---
 
@@ -214,17 +219,20 @@ clean-all: down
 
 
 verify-deploy:
+	@test -n "$${STAGE_BASIC_AUTH_PASSWORD}" || (echo "$(RED)Set STAGE_BASIC_AUTH_PASSWORD to run authenticated smoke checks.$(NC)" && exit 1)
 	@echo "$(BLUE)🔍 Перевірка розгортання...$(NC)"
 	@sleep 15
 	@echo "🌐 Перевірка фронтенду..."
-	@STATUS=$$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "https://$(DOMAIN_NAME)"); \
+	@stage_curl_auth="stage:$${STAGE_BASIC_AUTH_PASSWORD}"; \
+	STATUS=$$(curl -s -o /dev/null -w "%{http_code}" --user "$$stage_curl_auth" --max-time 15 "https://$(DOMAIN_NAME)"); \
 	if [ "$$STATUS" = "200" ]; then \
 		echo "$(GREEN)✅ Frontend OK ($$STATUS)$(NC)"; \
 	else \
 		echo "$(RED)❌ Frontend помилка: $$STATUS$(NC)" && exit 1; \
 	fi
 	@echo "🔧 Перевірка API health..."
-	@STATUS=$$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "https://$(DOMAIN_NAME)/api/health"); \
+	@stage_curl_auth="stage:$${STAGE_BASIC_AUTH_PASSWORD}"; \
+	STATUS=$$(curl -s -o /dev/null -w "%{http_code}" --user "$$stage_curl_auth" --max-time 15 "https://$(DOMAIN_NAME)/api/health"); \
 	if [ "$$STATUS" = "200" ]; then \
 		echo "$(GREEN)✅ API OK ($$STATUS)$(NC)"; \
 	else \
