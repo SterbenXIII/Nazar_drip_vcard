@@ -77,15 +77,23 @@ jobs:
           docker network create --internal candidate-network
           trap 'docker rm -f candidate-api candidate-clinic-web >/dev/null 2>&1 || true; docker network rm candidate-network >/dev/null 2>&1 || true' EXIT
           printf '[123456789]\n' > "$RUNNER_TEMP/allowed_chats.json"
+          cat > "$RUNNER_TEMP/mock-telegram.mjs" <<'EOF'
+          globalThis.fetch = async () => new Response(JSON.stringify({ ok: true, result: { message_id: 1 } }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          })
+          EOF
 
           docker run -d --name candidate-api --network candidate-network --network-alias api \
             --mount "type=bind,src=$RUNNER_TEMP/allowed_chats.json,dst=/app/allowed_chats.json,readonly" \
+            --mount "type=bind,src=$RUNNER_TEMP/mock-telegram.mjs,dst=/tmp/mock-telegram.mjs,readonly" \
             -e NODE_ENV=production \
             -e ENABLED_PROVIDERS=TELEGRAM \
             -e TELEGRAM_BOT_TOKEN=synthetic-token \
             -e TELEGRAM_MASTER_ID=123456789 \
             -e BACKEND_PORT=5678 \
-            "local/vcard-api:$COMMIT_SHA"
+            --entrypoint node "local/vcard-api:$COMMIT_SHA" \
+            --import /tmp/mock-telegram.mjs apps/api/dist/index.js
 
           for attempt in $(seq 1 20); do
             if docker exec candidate-api curl --fail --silent http://localhost:5678/api/health; then
@@ -97,6 +105,12 @@ jobs:
             fi
             sleep 2
           done
+
+          lead_response=$(docker exec candidate-api curl --fail --silent --show-error \
+            --header 'Content-Type: application/json' \
+            --data '{"name":"test","phone":"+380000000000","district":"","services":[],"source":"clinic-web"}' \
+            http://127.0.0.1:5678/api/leads/submit)
+          printf '%s\n' "$lead_response" | grep -q '"success":true'
 
           docker run -d --name candidate-clinic-web --network candidate-network \
             "local/vcard-clinic-web:$COMMIT_SHA"
