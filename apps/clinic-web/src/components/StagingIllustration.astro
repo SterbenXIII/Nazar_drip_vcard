@@ -38,7 +38,9 @@ const descriptions = {
     '[data-staging-illustration] img',
   )) {
     const removeBrokenIllustration = () => {
+      const layout = image.closest('.conditions-layout')
       image.closest('[data-staging-illustration]')?.remove()
+      layout?.classList.add('conditions-layout-text-only')
     }
 
     image.addEventListener('error', removeBrokenIllustration, { once: true })

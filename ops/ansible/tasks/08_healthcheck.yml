@@ -174,41 +174,42 @@
   when: node_env == 'production'
   tags: [health, verify]
 
-- name: Verify HTTP lead submissions are rejected on both domains
+- name: Verify HTTP lead requests redirect to HTTPS on both domains
   ansible.builtin.uri:
     url: 'http://{{ item }}/api/leads/submit'
     method: POST
     body: '{}'
     body_format: json
-    status_code: 403
+    status_code: 308
     timeout: 15
-  register: http_stage_submission_checks
+    follow_redirects: none
+  register: http_stage_submission_redirect_checks
   no_log: true
   retries: 3
   delay: 10
-  until: http_stage_submission_checks.status == 403
+  until: http_stage_submission_redirect_checks.status == 308
   loop:
     - '{{ domain_name }}'
     - 'www.{{ domain_name }}'
   when: node_env == 'production'
   tags: [health, verify]
 
-- name: Verify authenticated HTTPS lead submissions remain disabled on both domains
+- name: Verify authenticated HTTPS lead requests reach API validation on both domains
   ansible.builtin.uri:
     url: '{{ item }}/api/leads/submit'
     method: POST
     body: '{}'
     body_format: json
-    status_code: 403
+    status_code: 400
     timeout: 15
     url_username: stage
     url_password: '{{ stage_basic_auth_password }}'
     force_basic_auth: true
-  register: stage_submission_checks
+  register: stage_submission_validation_checks
   no_log: true
   retries: 3
   delay: 10
-  until: stage_submission_checks.status == 403
+  until: stage_submission_validation_checks.status == 400
   loop:
     - 'https://{{ domain_name }}'
     - 'https://www.{{ domain_name }}'
@@ -217,6 +218,6 @@
 
 - name: Display safe health check result
   ansible.builtin.debug:
-    msg: 'Service state, API health, HTTPS authentication, robots policy, and disabled lead submission checks passed.'
+    msg: 'Service state, API health, HTTPS authentication, robots policy, and API lead validation checks passed.'
   when: node_env == 'production'
   tags: [health]

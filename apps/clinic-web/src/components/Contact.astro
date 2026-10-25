@@ -1,5 +1,8 @@
 ---
 import { email, hotline, telegram, whatsapp } from '../content/customer-materials'
+import EmailIcon from './EmailIcon.astro'
+import PhoneIcon from './PhoneIcon.astro'
+import TelegramIcon from './TelegramIcon.astro'
 import WhatsAppIcon from './WhatsAppIcon.astro'
 import { landingSections } from '../content/landing'
 
@@ -19,14 +22,7 @@ const copy = landingSections[8]
         href={hotline.href}
         aria-label={`Зателефонувати на гарячу лінію: ${hotline.display}`}
       >
-        <svg class="contact-method-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path
-            d="M21 16.4v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 1.1 3.7 2 2 0 0 1 3.1 1.5h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L7 9.3a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.9 2.2Z"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.7"></path>
-        </svg>
+        <PhoneIcon />
         <span class="contact-action-copy">
           <strong>Зателефонувати</strong>
           <small>{hotline.display}</small>
@@ -37,20 +33,7 @@ const copy = landingSections[8]
         href={telegram.href}
         aria-label={telegram.accessibleName}
       >
-        <svg class="contact-method-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path
-            d="m22 2-7 20-4-9-9-4 20-7Z"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.7"></path>
-          <path
-            d="M22 2 11 13"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.7"></path>
-        </svg>
+        <TelegramIcon />
         <span class="contact-action-copy">
           <strong>Telegram</strong>
           <small>Написати</small>
@@ -68,16 +51,7 @@ const copy = landingSections[8]
         </span>
       </a>
       <a class="button secondary contact-email" href={email.href} aria-label={email.accessibleName}>
-        <svg class="contact-method-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="1.7"
-          ></rect>
-          <path
-            d="m3 6 9 7 9-7"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.7"></path>
-        </svg>
+        <EmailIcon />
         <span class="contact-action-copy">
           <strong>{email.label}</strong>
           <small>{email.address}</small>

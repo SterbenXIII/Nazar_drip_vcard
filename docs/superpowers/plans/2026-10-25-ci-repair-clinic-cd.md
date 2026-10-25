@@ -16,7 +16,7 @@
 - `apps/web`, n8n і PostgreSQL не входять у цей deployment.
 - GitHub Environment зберігає назву `production`; clinic залишається у режимі `staging`.
 - HTTPS і Basic Auth обов’язкові для обох доменів. Логін — `stage`.
-- Зберегти `noindex,nofollow` та блокування lead POST із відповіддю `403`.
+- Зберегти `noindex,nofollow`; staging приймає заявки за Basic Auth і передає їх у Telegram.
 - Зберегти SQLite named volume, існуючий bind mount `allowed_chats.json` і права файла `0600`.
 - Не змінювати lead schema, правила вибору Telegram-одержувачів або обробку webhook у межах цього плану.
 - Секрети не потрапляють у Git, Docker-образи, release artifacts або відкриті логи.
@@ -183,11 +183,11 @@
 - [ ] Виправити джерело monitoring scripts на `{{ playbook_dir }}/../scripts/{{ item }}`. Перевірити встановлені файли й cron paths; старі root-level скрипти не видаляти поза цією задачею.
 - [ ] Monitor перевіряє running/health states і внутрішній API health. Daily report повідомляє поточний стан, не стверджує відсутність інцидентів за добу без відповідних даних.
 - [ ] Перевіряти обидва HTTPS-домени: без credentials — `401`, із правильними — `200`, із неправильними — `401`; `/api/health` із credentials — `200`.
-- [ ] Перевіряти HTTP redirect `308`, lead POST `403` на HTTP та authenticated HTTPS, staging robots metadata, відсутність зовнішнього доступу до API-порту.
+- [ ] Перевіряти HTTP redirect `308`, API validation `400` для порожньої HTTPS-заявки, staging robots metadata, відсутність зовнішнього доступу до API-порту.
 - [ ] Використати однакову перевірену Caddy version/digest для password hashing і runtime. Plaintext staging password не записувати на VPS.
 - [ ] Обмежити Actions diagnostics станами контейнерів, exit codes, release SHA і безпечними повідомленнями. Сирі application logs та секретні task results закрити `no_log`; не пересилати сирі logs у Telegram.
 - [ ] Telegram success надсилати після всіх smoke checks. Помилка допоміжного сповіщення відображається окремо й не приховує результат deploy.
-- [ ] Запустити `bash tests/test_clinic_monitoring.sh`, clinic/phase2 contract-тести, Ansible syntax-check і lab smoke; очікування `PASS` для health/auth/403/metadata та жодного raw application log у failure artifact.
+- [ ] Запустити `bash tests/test_clinic_monitoring.sh`, clinic/phase2 contract-тести, Ansible syntax-check і lab smoke; очікування `PASS` для health/auth/API-validation/metadata та жодного raw application log у failure artifact.
 
 ## Task 8: Локальна готовність і репетиція Ubuntu 26.04
 
@@ -210,7 +210,7 @@
 
 - [ ] До push звірити SSH host fingerprint із довіреним каналом, A/AAAA обох доменів із VPS, доступність 80/443, актуальність GitHub Environment secrets/vars і наявність тижневого backup. Підтвердити відкликання/ротацію історично відкритих ключів і credentials із `AGENTS.md`; якщо доказу немає, статус `BLOCKED`. Не друкувати значення secrets; кожен preflight має статус.
 - [ ] Після окремо дозволеного merge/push у `main` простежити один ланцюжок `CI → GHCR → Ansible → smoke checks` за run IDs і точним SHA. Якщо CI падає або CD skip — виправити причину й повторити новим кандидатом; не запускати ручний обхід gate.
-- [ ] Зовні перевірити довірений TLS, Basic Auth, API health, noindex/nofollow та lead POST `403` для apex і www; API port `5678` не має приймати зовнішні з’єднання.
+- [ ] Зовні перевірити довірений TLS, Basic Auth, API health, noindex/nofollow та безпечний invalid lead POST `400` для apex і www; API port `5678` не має приймати зовнішні з’єднання.
 - [ ] Звірити VPS `release.json`, checkout HEAD, OCI revisions та running digests; перевірити операційне Telegram-сповіщення без тестової заявки.
 - [ ] Оновити report/runbook фактичними доказами. Завершення — працюючий захищений staging і перевірений manual rollback у лабораторії; live rollback позначити `NOT VERIFIED`, доки немає попереднього live-релізу.
 

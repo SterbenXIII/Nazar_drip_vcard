@@ -2,6 +2,8 @@
 import Footer from './Footer.astro'
 import Header from './Header.astro'
 import { email, hotline, mainSiteCta, telegram, whatsapp } from '../content/customer-materials'
+import EmailIcon from './EmailIcon.astro'
+import TelegramIcon from './TelegramIcon.astro'
 import WhatsAppIcon from './WhatsAppIcon.astro'
 import { landingSections } from '../content/landing'
 
@@ -78,12 +80,14 @@ const highlights = [
         <span>Контактний телефон</span>
         <a href={hotline.href}>{hotline.display}</a>
         <a class="entry-telegram" href={telegram.href} aria-label={telegram.accessibleName}>
+          <TelegramIcon />
           Написати в Telegram
         </a>
         <a class="entry-telegram" href={whatsapp.href} aria-label={whatsapp.accessibleName}>
           <WhatsAppIcon /> Написати в WhatsApp
         </a>
         <a class="entry-telegram" href={email.href} aria-label={email.accessibleName}>
+          <EmailIcon />
           Написати на email
         </a>
       </div>
@@ -382,7 +386,9 @@ const highlights = [
   }
 
   .entry-telegram {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
     color: #b9e9ed;
     font-size: 1rem;
     text-underline-offset: 0.2em;

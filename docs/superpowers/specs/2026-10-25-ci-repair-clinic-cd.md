@@ -14,8 +14,9 @@ bootstrap may install missing prerequisites before service creation.
   n8n and PostgreSQL outside this release; give legacy web a separate, non-gating CI workflow.
 - The GitHub Environment remains named `production`, while clinic-web is built in `staging`
   mode. Keep `noindex,nofollow`, Basic Auth user `stage` and HTTPS on both hosts.
-- `POST /api/leads/submit` must return `403` before reaching the API on HTTP and authenticated
-  HTTPS. No live lead submissions in this release. Keep the API private behind the proxy.
+- Authenticated staging users may submit leads over HTTPS. HTTP requests redirect to HTTPS;
+  the API persists valid leads and sends Telegram notifications. Keep the API private behind
+  the proxy and retain Basic Auth on both site and API routes.
 - Preserve the existing Compose project, SQLite named volume and protected
   `apps/api/allowed_chats.json` bind mount. Production needs a non-empty numeric
   `TELEGRAM_ALLOWED_CHAT_IDS`; write the file with mode `0600` and make it readable by the
@@ -44,8 +45,8 @@ bootstrap may install missing prerequisites before service creation.
    immutable digests, OCI revisions, checked-out SHA and release manifest agree on the VPS.
 3. A fresh Ubuntu 26.04 host bootstraps through Ansible. Runtime checks prove allowlist access,
    SQLite persistence and backup integrity without logging protected data.
-4. Both public hosts present trusted TLS, Basic Auth, staging metadata, a healthy API and
-   blocked lead submissions. Operational Telegram notification follows successful smoke checks.
+4. Both stage hosts present trusted TLS, Basic Auth, staging metadata and a healthy API.
+   Invalid lead payloads reach API validation without persisting a lead or sending a message.
 5. Manual rollback is rehearsed with synthetic data on an isolated host. The first live release
    records enough evidence for a later rollback, but no live rollback is claimed until a previous
    successful live release exists. A failure after service recreation requires operator

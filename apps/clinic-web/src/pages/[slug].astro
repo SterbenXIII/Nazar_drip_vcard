@@ -5,6 +5,9 @@ import Footer from '../components/Footer.astro'
 import PhotoGallery from '../components/PhotoGallery.astro'
 import StagingIllustration from '../components/StagingIllustration.astro'
 import { email, hotline, telegram, whatsapp } from '../content/customer-materials'
+import EmailIcon from '../components/EmailIcon.astro'
+import PhoneIcon from '../components/PhoneIcon.astro'
+import TelegramIcon from '../components/TelegramIcon.astro'
 import WhatsAppIcon from '../components/WhatsAppIcon.astro'
 import { supportingPages, type SupportingPage } from '../content/supporting-pages'
 
@@ -426,12 +429,14 @@ const isConditionsPage = page.slug === 'umovy'
             isConditionsPage && 'support-conditions-contact-actions',
           ]}
         >
-          <a class="support-primary-action" href={hotline.href}>Зателефонувати</a>
-          <a class="support-secondary-action" href={telegram.href}>Написати в Telegram</a>
+          <a class="support-primary-action" href={hotline.href}><PhoneIcon /> Зателефонувати</a>
+          <a class="support-secondary-action" href={telegram.href}
+            ><TelegramIcon /> Написати в Telegram</a
+          >
           <a class="support-secondary-action" href={whatsapp.href}>
             <WhatsAppIcon /> Написати в WhatsApp
           </a>
-          <a class="support-secondary-action" href={email.href}>Написати на email</a>
+          <a class="support-secondary-action" href={email.href}><EmailIcon /> Написати на email</a>
         </div>
       </section>
     </div>
@@ -587,6 +592,7 @@ const isConditionsPage = page.slug === 'umovy'
     min-height: 2.75rem;
     align-items: center;
     justify-content: center;
+    gap: 0.5rem;
     padding: 0.75rem 1.125rem;
     border: 1px solid transparent;
     border-radius: var(--radius-sm);

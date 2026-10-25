@@ -386,6 +386,17 @@ a {
   margin-top: 1.625rem;
 }
 
+.hero-actions .button {
+  gap: 0.5rem;
+}
+
+.contact-method-icon {
+  width: 1.1em;
+  height: 1.1em;
+  flex: none;
+  vertical-align: -0.15em;
+}
+
 .hero-action-group {
   display: grid;
   justify-items: start;
@@ -1410,7 +1421,6 @@ a {
     gap: clamp(1.25rem, 3vw, 2rem);
     padding-block: 7rem 3rem;
   }
-
 }
 
 @media (width <= 900px) {
@@ -1461,7 +1471,6 @@ a {
   .site-main .hero-note {
     display: none;
   }
-
 }
 
 .site-main .audience,
@@ -1664,6 +1673,10 @@ a {
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(12rem, 0.72fr);
   align-items: center;
   gap: clamp(1.5rem, 3.4vw, 3rem);
+}
+
+.site-main .conditions-layout-text-only {
+  grid-template-columns: minmax(0, 1.25fr) minmax(15rem, 0.75fr);
 }
 
 .site-main .conditions-visual,
@@ -2056,6 +2069,10 @@ a {
   .site-main .conditions-layout {
     grid-template-columns: minmax(0, 1fr);
     gap: 1.5rem;
+  }
+
+  .site-main .conditions-layout-text-only {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .site-main .conditions-facts {

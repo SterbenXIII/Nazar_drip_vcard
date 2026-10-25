@@ -279,15 +279,32 @@ The playbook is designed to be called from GitHub Actions. See `.github/workflow
 - Deploy `apps/api`, `apps/clinic-web`, and Caddy from immutable commit-SHA images. The canonical production Compose invocation does not start `apps/web`, n8n, or PostgreSQL.
 - `VPS_IP` is the public IPv4 address used for SSH. The stage hostname is fixed in the workflows to `havenhub.tech`; Caddy serves the apex and `www` over HTTPS. `DEPLOY_PATH` defaults to `/home/emerald-recovery`.
 - Inbound TCP ports 80 and 443 must reach this VPS. The published apex and `www` A/AAAA records must all route to this server before Caddy can obtain and renew public certificates.
-- The stage build uses `CLINIC_SITE_MODE=staging` with `noindex,nofollow` and Caddy Basic Auth. HTTP redirects to HTTPS, except `POST /api/leads/submit*`, which gets 403 before redirect; HTTPS submissions also get 403. Stage cannot collect visitor data.
-- Deployment and rollback verify authenticated `https://havenhub.tech/`, `https://www.havenhub.tech/`, and the API health endpoint. They also verify unauthenticated access receives 401 and stage lead submissions receive 403. API port `5678` remains internal to `web-gateway`.
+- The stage build uses `CLINIC_SITE_MODE=staging` with `noindex,nofollow` and Caddy Basic Auth. Authenticated HTTPS lead submissions reach the API and use the configured Telegram notification provider; HTTP requests redirect to HTTPS. The API persists submissions in its existing SQLite store. API port `5678` remains internal to `web-gateway`.
+- Deployment and rollback verify authenticated `https://havenhub.tech/`, `https://www.havenhub.tech/`, and the API health endpoint. They also verify unauthenticated access receives 401, HTTP lead requests redirect with 308, and an invalid HTTPS lead payload reaches API validation and receives 400 without sending a notification or saving a lead.
 - A public production release remains separate: it requires owner-approved content, a gated production SEO build with the approved canonical origin, and explicit release review. The stage intentionally has no HSTS policy.
+
+### Verified live staging rollout
+
+On 2026-10-25, CI run `40223729739` and deploy run `40223918442` released commit
+`abb4878c023c7f61eeeebeee579acf35f46cd569`. API image digest:
+`sha256:e19a3f36998ddecc822689e4b0c4aef0b221f8f5d17da8d1913128a886241e1b`;
+clinic-web image digest:
+`sha256:f3fb62289eee1c40faf38a89ec201f3372e25a1ced982f68d46d8fd6a5d7ceee`.
+Ansible health checks and public smoke checks passed for both `havenhub.tech`
+and `www.havenhub.tech`: authenticated homepage/API health returned 200,
+unauthenticated and invalid credentials returned 401, HTTP redirected with 308,
+lead submissions returned 403 over HTTP and HTTPS, and staging robots metadata
+was present. This confirms staging only; historical credential rotation, daily
+SQLite backup/restore, external port `5678` reachability, and live rollback are
+not verified. That deployed SHA predates staging lead submissions; the updated
+Telegram delivery path is not live until CD deploys this change and a real,
+authorized submission is confirmed in Telegram.
 
 ### Rollback safety
 
 Every successful deploy records both `releases/<sha>.json` and the atomically updated `releases/current.json`. Before either a deploy or rollback changes the checkout or containers, Ansible validates the current manifest and snapshots an existing SQLite database from its recorded API image into `backups/`. The snapshot directory is mode `0700`; verified snapshots are mode `0600` and must pass SQLite `integrity_check`. A first launch with no existing data skips the snapshot. Existing volumes without a valid current manifest, missing prior images, or failed backups block recreation.
 
-Manual rollback accepts only a full lowercase SHA whose release manifest is on the VPS, whose commit is an ancestor of `main`, and whose CI and deploy workflow runs succeeded. It verifies the manifest's digest images are pullable and their OCI revisions match the SHA before Ansible runs. The current release SHA cannot be selected. After service recreation, the HTTPS/auth/health/403 checks must pass before `current.json` changes.
+Manual rollback accepts only a full lowercase SHA whose release manifest is on the VPS, whose commit is an ancestor of `main`, and whose CI and deploy workflow runs succeeded. It verifies the manifest's digest images are pullable and their OCI revisions match the SHA before Ansible runs. The current release SHA cannot be selected. After service recreation, HTTPS/auth/health and API validation checks must pass before `current.json` changes.
 
 Ansible atomically writes `releases/reconciliation-required.json` immediately before Compose recreation. The marker includes the candidate SHA and image digests, previous successful SHA, and snapshot path. The workflow removes it only after the release manifest/current pointer has been recorded following successful smoke checks. A remaining marker blocks all later deploys and rollbacks until an operator reconciles the running containers, checkout, backup and SQLite schema. On failure, the workflow reports the previous successful SHA and available snapshot path. No automatic rollback runs because forward-only migrations may make the old API incompatible with the current database.
 
