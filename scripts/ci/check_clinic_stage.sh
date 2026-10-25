@@ -41,10 +41,11 @@ for host_url in "$BASE_URL" "$WWW_URL"; do
   check_status "$label homepage with invalid credentials" 401 "$host_url/" \
     --user 'stage:deliberately-invalid-stage-password'
   check_status "$label HTTP redirect" 308 "http://$label/"
-  check_status "$label HTTP lead submission block" 403 "http://$label/api/leads/submit" \
+  check_status "$label HTTP lead submission redirects to HTTPS" 308 "http://$label/api/leads/submit" \
     --request POST --data '{}'
-  check_status "$label HTTPS lead submission block" 403 "$host_url/api/leads/submit" \
-    --user "stage:$STAGE_BASIC_AUTH_PASSWORD" --request POST --data '{}'
+  check_status "$label HTTPS lead validation reaches API" 400 "$host_url/api/leads/submit" \
+    --user "stage:$STAGE_BASIC_AUTH_PASSWORD" --request POST \
+    --header 'Content-Type: application/json' --data '{}'
   check_robots "$label" "$host_url/"
 done
 
@@ -55,4 +56,4 @@ if [[ "$api_port_status" != '000' ]]; then
   exit 1
 fi
 
-echo 'PASS: staging HTTPS, authentication, robots, lead blocking, and API port checks.'
+echo 'PASS: staging HTTPS, authentication, robots, API lead validation, and API port checks.'

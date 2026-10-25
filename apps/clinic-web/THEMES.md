@@ -32,7 +32,7 @@ You can also put `HAVENHUB_THEME=navy-teal` in `apps/clinic-web/.env.production.
 
 The selection is embedded as `<html data-theme="...">` in generated HTML. `src/styles/global.css` provides semantic CSS custom properties for both token systems, including primary buttons, background surfaces, headings, contact band, and footer. Only the chosen system is active in a given static build; theme changes require rebuilding. `src/config/theme.mjs` validates the supported names and is shared by the Astro build config and layout.
 
-`HAVENHUB_THEME` is independent of `CLINIC_SITE_MODE`; it must never bypass the existing normal/staging/production publication guards, robots policy, or disabled lead form.
+`HAVENHUB_THEME` is independent of `CLINIC_SITE_MODE`; it must never bypass the existing normal/staging/production publication guards, robots policy, or Basic Auth protection around staging lead submissions.
 
 ## Verification
 

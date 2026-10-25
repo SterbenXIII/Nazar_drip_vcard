@@ -28,7 +28,7 @@ if [[ "$url" == 'http://192.0.2.1:5678/api/health' ]]; then
   status=${API_PORT_STATUS:-000}
 elif [[ "$url" == https://* ]]; then
   if [[ "$url" == */api/leads/submit ]]; then
-    status=403
+    if [[ -z "$credentials" ]]; then status=401; else status=${LEAD_VALIDATION_STATUS:-400}; fi
   elif [[ -z "$credentials" ]]; then
     status=401
   elif [[ "$credentials" == 'stage:deliberately-invalid-stage-password' ]]; then
@@ -37,7 +37,7 @@ elif [[ "$url" == https://* ]]; then
     status=200
   fi
 elif [[ "$url" == http://* ]]; then
-  if [[ "$method" == POST ]]; then status=403; else status=308; fi
+  status=308
 fi
 
 if ((write_status)); then

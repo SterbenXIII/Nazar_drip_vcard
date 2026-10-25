@@ -1,12 +1,5 @@
 http://{$DOMAIN_NAME}, http://www.{$DOMAIN_NAME} {
-	route {
-		@leadSubmission {
-			method POST
-			path /api/leads/submit*
-		}
-		respond @leadSubmission "Stage lead submissions are disabled" 403
-		redir https://{host}{uri} 308
-	}
+	redir https://{host}{uri} 308
 }
 
 {$DOMAIN_NAME}, www.{$DOMAIN_NAME} {
@@ -40,12 +33,6 @@ http://{$DOMAIN_NAME}, http://www.{$DOMAIN_NAME} {
 			path /.env* /.git* /.config* /package.json /pnpm-lock.yaml
 		}
 		respond @sensitive "Access Denied" 403
-
-		@leadSubmission {
-			method POST
-			path /api/leads/submit*
-		}
-		respond @leadSubmission "Stage lead submissions are disabled" 403
 
 		handle /api/* {
 			reverse_proxy api:5678 {
