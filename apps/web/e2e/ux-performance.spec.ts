@@ -5,7 +5,9 @@ test.describe('UX & Interactive Performance', () => {
     // Visit a page with content (base service page usually has ToC)
     await page.goto('/vyvedennya-iz-zapoyu-lviv')
 
-    const toc = page.locator('nav[aria-label="Зміст"], nav[aria-label="Содержание"]')
+    const toc = page.locator(
+      'nav[aria-label="Зміст сторінки"], nav[aria-label="Содержание страницы"]',
+    )
     await expect(toc).toBeVisible()
 
     const firstLink = toc.locator('a').first()

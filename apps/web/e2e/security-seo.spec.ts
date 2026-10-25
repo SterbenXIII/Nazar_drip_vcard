@@ -9,18 +9,6 @@ import { REPRESENTATIVE_URLS, type RepresentativeUrl } from './fixtures'
 test.describe('Security Headers', () => {
   const homeUrl: RepresentativeUrl = REPRESENTATIVE_URLS[0]
 
-  test('Content-Security-Policy meta tag is present', async ({ page }) => {
-    await page.goto(homeUrl.path, { waitUntil: 'domcontentloaded' })
-
-    const csp = page.locator('meta[http-equiv="Content-Security-Policy"]')
-    await expect(csp).toBeAttached()
-
-    const content = await csp.getAttribute('content')
-    expect(content).toBeTruthy()
-    expect(content).toContain('default-src')
-    expect(content).toContain('script-src')
-  })
-
   test('External links have rel="noopener noreferrer"', async ({ page }) => {
     await page.goto(homeUrl.path, { waitUntil: 'domcontentloaded' })
 
@@ -50,12 +38,11 @@ test.describe('Security Headers', () => {
       const href = await link.getAttribute('href')
       const target = await link.getAttribute('target')
 
-      // Internal links: start with / or contain the site domain
+      const pageOrigin = new URL(page.url()).origin
+      const canonicalUrl = await page.locator('link[rel="canonical"]').getAttribute('href')
+      const siteOrigin = canonicalUrl ? new URL(canonicalUrl).origin : pageOrigin
       const isInternal =
-        href?.startsWith('/') ||
-        href?.startsWith('#') ||
-        href?.includes('localhost:4321') ||
-        href?.includes('krapelnytsia.lviv.ua')
+        href !== null && [pageOrigin, siteOrigin].includes(new URL(href, page.url()).origin)
 
       if (isInternal && target === '_blank') {
         // Internal links should not open in new tab
@@ -107,6 +94,8 @@ test.describe('SEO Integrity', () => {
 
     for (const url of REPRESENTATIVE_URLS) {
       await page.goto(url.path, { waitUntil: 'domcontentloaded' })
+      const charset = await page.locator('meta[charset]').getAttribute('charset')
+      expect(charset?.toLowerCase(), `Missing UTF-8 charset on ${url.path}`).toBe('utf-8')
       const title = await page.title()
       expect(title.length, `Empty title on ${url.path}`).toBeGreaterThan(0)
       expect(title.length, `Title too long on ${url.path}: ${title}`).toBeLessThanOrEqual(70)

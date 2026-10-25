@@ -5,14 +5,14 @@ failures=0
 CADDY_IMAGE_REF='docker.io/library/caddy:2-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f'
 
 assert_contains() {
-  if ! rg -q --fixed-strings -- "$2" "$1"; then
+  if ! grep -Fq -- "$2" "$1"; then
     echo "FAIL: $1 is missing: $2" >&2
     failures=$((failures + 1))
   fi
 }
 
 assert_not_contains() {
-  if rg -q --fixed-strings -- "$2" "$1"; then
+  if grep -Fq -- "$2" "$1"; then
     echo "FAIL: $1 contains forbidden text: $2" >&2
     failures=$((failures + 1))
   fi
@@ -37,6 +37,7 @@ assert_contains ops/docker/compose/docker-compose.proxy.yml 'CADDY_IMAGE_REF:-do
 assert_contains ops/docker/compose/docker-compose.proxy.yml "$CADDY_IMAGE_REF"
 assert_contains ops/docker/compose/docker-compose.proxy.yml "'443:443'"
 assert_contains ops/docker/caddy/Caddyfile '{$DOMAIN_NAME}, www.{$DOMAIN_NAME}'
+assert_contains ops/docker/caddy/Caddyfile 'Content-Security-Policy "default-src'
 assert_contains ops/docker/caddy/Caddyfile 'http://{$DOMAIN_NAME}, http://www.{$DOMAIN_NAME}'
 assert_contains ops/docker/caddy/Caddyfile 'redir https://{host}{uri} 308'
 assert_contains ops/docker/caddy/Caddyfile 'basic_auth {'

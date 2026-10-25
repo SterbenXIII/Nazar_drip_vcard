@@ -60,6 +60,12 @@ export const BUSINESS = {
   },
 } as const
 
+function buildBusinessNode(includeReviews: boolean) {
+  if (includeReviews) return BUSINESS
+  const { aggregateRating: _aggregateRating, ...business } = BUSINESS
+  return business
+}
+
 /**
  * Generates a BreadcrumbList schema node.
  */
@@ -295,14 +301,13 @@ export function buildServicePageSchema(
   page: SeoPage,
   pageUrl: string,
   locale: Locale,
-  _includeReviews: boolean = true,
+  includeReviews: boolean = true,
 ): string {
   const localeData = page[locale]
   const siteUrl = siteConfig.url
   const uiT = useTranslations(locale)
 
-  // Reviews are disabled, so BUSINESS node is used directly
-  const businessNode = BUSINESS
+  const businessNode = buildBusinessNode(includeReviews)
 
   const schema = {
     '@context': 'https://schema.org',
@@ -324,6 +329,12 @@ export function buildServicePageSchema(
           validFrom: page.dateModified,
         },
         areaServed: { '@type': 'City', name: 'Львів' },
+      },
+      {
+        '@type': 'MedicalTherapy',
+        name: localeData.h1,
+        description: localeData.seo.description,
+        url: pageUrl,
       },
       {
         '@type': 'FAQPage',
@@ -364,7 +375,7 @@ export function buildServicePageSchema(
  *   Set to false for district/city matrix pages to avoid schema spam on thin pages.
  *   Defaults to false for matrix pages as per Task 26 anti-spam rules.
  */
-export function buildMatrixPageSchema(page: MatrixPage, _includeReviews: boolean = false): string {
+export function buildMatrixPageSchema(page: MatrixPage, includeReviews: boolean = false): string {
   const siteUrl = siteConfig.url
   const locale = page.locale
 
@@ -393,8 +404,7 @@ export function buildMatrixPageSchema(page: MatrixPage, _includeReviews: boolean
   const schema = {
     '@context': 'https://schema.org',
     '@graph': [
-      // Reviews are disabled, use BUSINESS directly
-      BUSINESS,
+      buildBusinessNode(includeReviews),
       buildPersonSchema(),
       {
         '@type': 'Service',
@@ -411,6 +421,12 @@ export function buildMatrixPageSchema(page: MatrixPage, _includeReviews: boolean
           validFrom: page.content.dateModified,
         },
         areaServed: { '@type': 'City', name: areaName },
+      },
+      {
+        '@type': 'MedicalTherapy',
+        name: page.content.h1,
+        description: page.seo.description,
+        url: page.canonicalUrl,
       },
       {
         '@type': 'FAQPage',

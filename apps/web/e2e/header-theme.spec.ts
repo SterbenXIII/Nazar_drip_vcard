@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('Homepage header and theme controls', () => {
-  test('keeps the redesigned header spaced from the viewport and removes certificate navigation', async ({
+  test('keeps the redesigned header padded and removes certificate navigation', async ({
     page,
   }) => {
     await page.addInitScript(() => localStorage.setItem('vcard:welcome-dismissed', '1'))
@@ -12,10 +12,10 @@ test.describe('Homepage header and theme controls', () => {
     await expect(header).toContainText('Медична детоксикація вдома у Львові')
     await expect(header.locator('a[href="/certificate"]')).toHaveCount(0)
 
-    const marginTop = await header.evaluate((element) =>
-      Number.parseFloat(getComputedStyle(element).marginTop),
+    const paddingTop = await header.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).paddingTop),
     )
-    expect(marginTop).toBeGreaterThanOrEqual(24)
+    expect(paddingTop).toBeGreaterThanOrEqual(24)
   })
 
   test('toggles dark mode, updates the accessible label, and persists the choice', async ({
