@@ -145,10 +145,15 @@ docs/superpowers/*
 !docs/superpowers/specs/
 docs/superpowers/specs/*
 !docs/superpowers/specs/2026-10-07-havenhub-landing-seo-design.md
+!docs/superpowers/specs/2026-10-25-ci-repair-clinic-cd.md
 !docs/superpowers/plans/
 docs/superpowers/plans/*
 !docs/superpowers/plans/2026-10-08-havenhub-landing-seo.md
 !docs/superpowers/plans/2026-10-23-havenhub-design-specs.md
+!docs/superpowers/plans/2026-10-25-ci-repair-clinic-cd.md
+!docs/superpowers/reports/
+docs/superpowers/reports/*
+!docs/superpowers/reports/clinic-cd-readiness.md
 prompts/
 .superpowers
 output/*

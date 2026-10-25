@@ -29,7 +29,11 @@ test('renders the demonstration template with accessible links and controls', as
     } else {
       const target = new URL(href, page.url())
       if (target.origin !== new URL(page.url()).origin) {
-        expect(href).toBe('https://t.me/HavenRehub')
+        expect([
+          'https://t.me/HavenRehub',
+          'https://wa.me/380779742422',
+          'mailto:havenrehub@gmail.com',
+        ]).toContain(href)
         continue
       }
       const response = await page.request.get(target.href)

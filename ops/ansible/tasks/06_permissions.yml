@@ -1,25 +1,33 @@
 ---
-- name: 🔐 Set permissions for SQLite data directory
-  ansible.builtin.file:
-    path: '{{ data_dir }}'
-    state: directory
-    owner: '{{ ansible_user }}'
-    group: '{{ ansible_user }}'
-    mode: '0755'
-    recurse: true
-  tags: [permissions]
+- name: Verify the API SQLite mount is a named volume
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    set -euo pipefail
+    mount_info=$(docker inspect --format '{% raw %}{{range .Mounts}}{{if eq .Destination "/app/data"}}{{.Type}} {{.Name}}{{end}}{{end}}{% endraw %}' vcard-api)
+    test "${mount_info%% *}" = volume
+    test -n "${mount_info#* }"
+  args:
+    executable: /bin/bash
+  changed_when: false
+  tags: [permissions, verify]
 
-- name: 🔍 Check if SQLite database file exists
-  ansible.builtin.stat:
-    path: '{{ data_dir }}/leads.db'
-  register: sqlite_db
-  tags: [permissions]
-
-- name: 🔐 Set permissions for SQLite database file
-  ansible.builtin.file:
-    path: '{{ data_dir }}/leads.db'
-    owner: '{{ ansible_user }}'
-    group: '{{ ansible_user }}'
-    mode: '0644'
-  when: sqlite_db.stat.exists
-  tags: [permissions]
+- name: Verify the API runtime can read and write its named SQLite volume
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    docker exec vcard-api node -e '
+      const fs = require("node:fs")
+      const directory = "/app/data"
+      const probe = `${directory}/.permission-check-${process.pid}`
+      fs.accessSync(directory, fs.constants.R_OK | fs.constants.W_OK)
+      if (fs.existsSync(`${directory}/leads.db`)) {
+        fs.accessSync(`${directory}/leads.db`, fs.constants.R_OK | fs.constants.W_OK)
+      }
+      fs.writeFileSync(probe, "ok", { flag: "wx" })
+      fs.unlinkSync(probe)
+    '
+  args:
+    executable: /bin/bash
+  changed_when: false
+  tags: [permissions, verify]

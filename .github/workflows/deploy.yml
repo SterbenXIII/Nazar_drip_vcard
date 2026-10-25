@@ -14,28 +14,100 @@ env:
   DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/emerald-recovery' }}
   VPS_IP: ${{ vars.VPS_IP || 'localhost' }}
   DOMAIN_NAME: havenhub.tech
+  CADDY_IMAGE_REF: docker.io/library/caddy:2-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f
   COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
   SSH_KNOWN_HOSTS: ${{ secrets.HOSTINGER_SSH_KNOWN_HOSTS }}
 
 jobs:
   build-and-push:
-    name: Build & Push to GHCR
+    name: Build, smoke, and publish release images
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.id == github.event.workflow_run.repository.id &&
+      github.event.workflow_run.head_branch == 'main' &&
       (github.event.workflow_run.event == 'push' ||
       github.event.workflow_run.event == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    outputs:
+      api_image_ref: ${{ steps.publish.outputs.api_image_ref }}
+      clinic_web_image_ref: ${{ steps.publish.outputs.clinic_web_image_ref }}
     steps:
       - name: 🚚 Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: ${{ env.COMMIT_SHA }}
+          ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: 🔠 Lowercase Repository Name
-        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
+      - name: 🔍 Verify release checkout
+        run: test "$(git rev-parse HEAD)" = "$COMMIT_SHA"
+
+      - name: 🏗️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: 📦 Build API candidate for VPS architecture
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          context: .
+          file: ops/docker/api/Dockerfile
+          target: runtime
+          platforms: linux/amd64
+          load: true
+          tags: local/vcard-api:${{ env.COMMIT_SHA }}
+          build-args: VCS_REF=${{ env.COMMIT_SHA }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 📦 Build clinic-web candidate for VPS architecture
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          context: .
+          file: apps/clinic-web/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: local/vcard-clinic-web:${{ env.COMMIT_SHA }}
+          build-args: VCS_REF=${{ env.COMMIT_SHA }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 🧪 Smoke test candidate images without external network access
+        run: |
+          set -euo pipefail
+          docker network create --internal candidate-network
+          trap 'docker rm -f candidate-api candidate-clinic-web >/dev/null 2>&1 || true; docker network rm candidate-network >/dev/null 2>&1 || true' EXIT
+          printf '[123456789]\n' > "$RUNNER_TEMP/allowed_chats.json"
+
+          docker run -d --name candidate-api --network candidate-network --network-alias api \
+            --mount "type=bind,src=$RUNNER_TEMP/allowed_chats.json,dst=/app/allowed_chats.json,readonly" \
+            -e NODE_ENV=production \
+            -e ENABLED_PROVIDERS=TELEGRAM \
+            -e TELEGRAM_BOT_TOKEN=synthetic-token \
+            -e TELEGRAM_MASTER_ID=123456789 \
+            -e BACKEND_PORT=5678 \
+            "local/vcard-api:$COMMIT_SHA"
+
+          for attempt in $(seq 1 20); do
+            if docker exec candidate-api curl --fail --silent http://localhost:5678/api/health; then
+              break
+            fi
+            if [ "$attempt" -eq 20 ]; then
+              echo 'Candidate API failed its health check.'
+              exit 1
+            fi
+            sleep 2
+          done
+
+          docker run -d --name candidate-clinic-web --network candidate-network \
+            "local/vcard-clinic-web:$COMMIT_SHA"
+          docker exec candidate-clinic-web wget -qO- http://127.0.0.1:8080/ | grep -qi 'noindex'
+          missing_response=$(docker exec candidate-clinic-web sh -c \
+            'wget -S -O /dev/null http://127.0.0.1:8080/contract-not-found 2>&1 || true')
+          printf '%s\n' "$missing_response" | grep -q 'HTTP/1.1 404'
+
+          for image in "local/vcard-api:$COMMIT_SHA" "local/vcard-clinic-web:$COMMIT_SHA"; do
+            test "$(docker image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "$COMMIT_SHA"
+          done
 
       - name: 🐳 Log in to GitHub Container Registry
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
@@ -44,55 +116,45 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🏗️ Set up Docker Buildx
-        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+      - name: 📤 Publish tested image IDs and record registry digests
+        id: publish
+        run: |
+          set -euo pipefail
+          REPO_LC=${GITHUB_REPOSITORY,,}
+          API_LOCAL="local/vcard-api:$COMMIT_SHA"
+          CLINIC_LOCAL="local/vcard-clinic-web:$COMMIT_SHA"
+          API_TAG="ghcr.io/$REPO_LC/vcard-api:$COMMIT_SHA"
+          CLINIC_TAG="ghcr.io/$REPO_LC/vcard-clinic-web:$COMMIT_SHA"
+          API_ID=$(docker image inspect "$API_LOCAL" --format '{{.Id}}')
+          CLINIC_ID=$(docker image inspect "$CLINIC_LOCAL" --format '{{.Id}}')
 
-      - name: 📦 Build and push API
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
-        with:
-          context: .
-          file: ops/docker/api/Dockerfile
-          target: runtime
-          push: true
-          tags: |
-            ghcr.io/${{ env.REPO_LC }}/vcard-api:latest
-            ghcr.io/${{ env.REPO_LC }}/vcard-api:${{ env.COMMIT_SHA }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          docker tag "$API_LOCAL" "$API_TAG"
+          docker tag "$CLINIC_LOCAL" "$CLINIC_TAG"
+          docker push "$API_TAG" 2>&1 | tee "$RUNNER_TEMP/api-push.log"
+          docker push "$CLINIC_TAG" 2>&1 | tee "$RUNNER_TEMP/clinic-push.log"
 
-      - name: 📦 Build and push clinic-web
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
-        with:
-          context: .
-          file: apps/clinic-web/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/${{ env.REPO_LC }}/vcard-clinic-web:latest
-            ghcr.io/${{ env.REPO_LC }}/vcard-clinic-web:${{ env.COMMIT_SHA }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # - name: 🛡️ Run Trivy vulnerability scanner (API)
-      #   uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8
-      #   with:
-      #     image-ref: ghcr.io/${{ env.REPO_LC }}/vcard-api:${{ github.sha }}
-      #     format: 'table'
-      #     exit-code: '1'
-      #     ignore-unfixed: true
-      #     vuln-type: 'os,library'
-      #     severity: 'CRITICAL,HIGH'
-      #   env:
-      #     TRIVY_USERNAME: ${{ github.actor }}
-      #     TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          API_DIGEST=$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/api-push.log" | tail -n 1)
+          CLINIC_DIGEST=$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/clinic-push.log" | tail -n 1)
+          test -n "$API_DIGEST"
+          test -n "$CLINIC_DIGEST"
+          test "$(docker image inspect "$API_LOCAL" --format '{{.Id}}')" = "$API_ID"
+          test "$(docker image inspect "$CLINIC_LOCAL" --format '{{.Id}}')" = "$CLINIC_ID"
+          echo "api_image_ref=ghcr.io/$REPO_LC/vcard-api@$API_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "clinic_web_image_ref=ghcr.io/$REPO_LC/vcard-clinic-web@$CLINIC_DIGEST" >> "$GITHUB_OUTPUT"
 
   deploy-to-vps:
     name: Deploy with Ansible
     needs: build-and-push
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.id == github.event.workflow_run.repository.id &&
+      github.event.workflow_run.head_branch == 'main' &&
       (github.event.workflow_run.event == 'push' ||
       github.event.workflow_run.event == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     environment:
       name: production
       url: https://${{ env.DOMAIN_NAME }}
@@ -100,17 +162,19 @@ jobs:
       - name: 🚚 Checkout code (for Ansible playbook)
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          fetch-depth: 0
-          ref: ${{ env.COMMIT_SHA }}
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: 🔍 Verify deployment checkout
+        run: test "$(git rev-parse HEAD)" = "$COMMIT_SHA"
 
       - name: 🔧 Set up Python
         uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: 📦 Install Ansible and dependencies
         run: |
-          pip install ansible==11.3.0
+          pip install ansible-core==2.21.5
           ansible-galaxy collection install -r ops/ansible/requirements.yml
           ansible --version
 
@@ -128,6 +192,11 @@ jobs:
             exit 1
           fi
 
+          if ! [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9/_-]+$ ]]; then
+            echo '❌ DEPLOY_PATH must be an absolute path with letters, digits, slash, underscore, or hyphen.'
+            exit 1
+          fi
+
       - name: 🔐 Prepare staging authentication
         env:
           STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
@@ -138,7 +207,7 @@ jobs:
           fi
 
           STAGE_BASIC_AUTH_HASH=$(docker run --rm --entrypoint sh \
-            -e STAGE_BASIC_AUTH_PASSWORD caddy:2-alpine \
+            -e STAGE_BASIC_AUTH_PASSWORD "$CADDY_IMAGE_REF" \
             -c 'caddy hash-password --plaintext "$STAGE_BASIC_AUTH_PASSWORD"')
           if [ -z "$STAGE_BASIC_AUTH_HASH" ]; then
             echo '❌ Failed to prepare the staging authentication hash.'
@@ -146,9 +215,6 @@ jobs:
           fi
           echo "::add-mask::$STAGE_BASIC_AUTH_HASH"
           printf 'STAGE_BASIC_AUTH_HASH=%s\n' "$STAGE_BASIC_AUTH_HASH" >> "$GITHUB_ENV"
-
-      - name: 🔠 Lowercase Repository Name
-        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
 
       - name: 🔐 Configure SSH key
         env:
@@ -164,8 +230,7 @@ jobs:
           chmod 600 ~/.ssh/known_hosts
           ssh-keygen -F "$SSH_HOST" -f ~/.ssh/known_hosts >/dev/null
           echo "✓ SSH key configured"
-          echo "🔑 Key fingerprint:"
-          ssh-keygen -lf ~/.ssh/deploy_key || echo "⚠️ Cannot read key fingerprint"
+          echo 'SSH key configured.'
 
       - name: 🛠️ Test SSH connectivity
         env:
@@ -176,7 +241,7 @@ jobs:
           RETRY_DELAY=15
           SUCCESS=0
 
-          for i in $(seq 1 $MAX_RETRIES); do
+          for i in $(seq 1 "$MAX_RETRIES"); do
             echo "Testing SSH to ${SSH_USER}@${SSH_HOST} (Attempt $i/$MAX_RETRIES)..."
             if ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes \
               -i ~/.ssh/deploy_key "${SSH_USER}@${SSH_HOST}" "echo SSH_OK"; then
@@ -185,57 +250,61 @@ jobs:
               break
             else
               echo "⚠️ SSH connection failed on attempt $i."
-              if [ $i -lt $MAX_RETRIES ]; then
+              if [ "$i" -lt "$MAX_RETRIES" ]; then
                 echo "Sleeping $RETRY_DELAY seconds before retrying..."
                 sleep $RETRY_DELAY
               fi
             fi
           done
 
-          if [ $SUCCESS -eq 0 ]; then
-            echo "❌ SSH connection failed after $MAX_RETRIES attempts. Debugging:"
-            echo "  User: ${SSH_USER}"
-            echo "  Host: ${SSH_HOST}"
-            echo "  Key file exists: $(test -f ~/.ssh/deploy_key && echo yes || echo no)"
-            echo "  Key permissions: $(ls -la ~/.ssh/deploy_key)"
-            echo ""
-            echo "Running verbose SSH for diagnostics..."
-            ssh -vvv -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes \
-              -i ~/.ssh/deploy_key "${SSH_USER}@${SSH_HOST}" "echo SSH_OK" 2>&1 | tail -30
+          if [ "$SUCCESS" -eq 0 ]; then
+            echo 'SSH connectivity check failed; no verbose SSH trace was recorded.'
             exit 1
           fi
 
-      - name: 🔍 VPS Pre-flight Check
+      - name: 🌐 Verify staging DNS against the VPS addresses
+        env:
+          SSH_HOST: ${{ env.VPS_IP }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          EXPECTED_VPS_IPV4: ${{ env.VPS_IP }}
+          DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ secrets.HOSTINGER_SSH_USER }}@${{ env.VPS_IP }} "
-            set -e
-            echo '--- Disk Space ---'
-            df -h /
-            echo '--- Memory ---'
-            free -m
-            echo '--- Docker Status ---'
-            systemctl is-active docker
+          set -euo pipefail
+          VPS_IPV6_ADDRESSES=$(ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
+            "ip -j -6 address show scope global | python3 -c 'import json,sys; print(\",\".join(address[\"local\"] for link in json.load(sys.stdin) for address in link[\"addr_info\"]))'")
+          python3 scripts/ci/check_stage_dns.py \
+            --host "$DOMAIN_NAME" \
+            --host "www.$DOMAIN_NAME" \
+            --vps-ip "$EXPECTED_VPS_IPV4" \
+            --vps-ipv6 "$VPS_IPV6_ADDRESSES"
 
-            DISK_AVAILABLE_KB=\$(df -Pk / | awk 'NR==2 {print \$4}')
-            MEM_AVAILABLE_MB=\$(free -m | awk '/^Mem:/ {print \$7}')
+      - name: 🔍 VPS Pre-flight Check
+        env:
+          SSH_HOST: ${{ env.VPS_IP }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          echo '--- Disk Space ---'
+          df -h /
+          echo '--- Memory ---'
+          free -m
+          disk_available_kb=$(df -Pk / | awk 'NR == 2 {print $4}')
+          memory_available_mb=$(free -m | awk '/^Mem:/ {print $7}')
+          test "$disk_available_kb" -ge 1048576
+          test "$memory_available_mb" -ge 200
+          echo '✅ Pre-flight resource checks passed.'
+          REMOTE
 
-            echo \"Computed free disk: \${DISK_AVAILABLE_KB} KB\"
-            echo \"Computed available memory: \${MEM_AVAILABLE_MB} MB\"
-
-            if [ \"\${DISK_AVAILABLE_KB}\" -lt 1048576 ]; then
-              echo '❌ Pre-flight failed: free disk is below 1 GB.'
-              exit 1
-            fi
-
-            if [ \"\${MEM_AVAILABLE_MB}\" -lt 200 ]; then
-              echo '❌ Pre-flight failed: available memory is below 200 MB.'
-              exit 1
-            fi
-
-            echo '✅ Pre-flight resource checks passed.'
-          "
+      - name: 🧭 Skip superseded release before VPS mutation
+        id: release_gate
+        env:
+          RELEASE_SHA: ${{ env.COMMIT_SHA }}
+          MAIN_REPOSITORY_URL: https://github.com/${{ github.repository }}.git
+        run: bash scripts/ci/check_release_head.sh
 
       - name: 🚀 Deploy with Ansible
+        if: steps.release_gate.outputs.deployment_result == 'deployed'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANSIBLE_HOST_KEY_CHECKING: 'True'
@@ -253,87 +322,128 @@ jobs:
           ENABLED_PROVIDERS: 'TELEGRAM'
           BACKEND_PORT: '5678'
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          RELEASE_SHA: ${{ env.COMMIT_SHA }}
+          API_IMAGE_REF: ${{ needs.build-and-push.outputs.api_image_ref }}
+          CLINIC_WEB_IMAGE_REF: ${{ needs.build-and-push.outputs.clinic_web_image_ref }}
         run: |
           cd ops/ansible
           ansible-playbook playbook.yml \
             -vv \
             -i inventory.ini \
-            --private-key $HOME/.ssh/deploy_key \
+            --private-key "$HOME/.ssh/deploy_key" \
             --extra-vars "target_host=${{ env.VPS_IP }}" \
             --extra-vars "ansible_user=${HOSTINGER_SSH_USER}" \
             --extra-vars "ansible_ssh_private_key_file=$HOME/.ssh/deploy_key" \
             --extra-vars "deploy_path=${DEPLOY_PATH}" \
             --extra-vars "vps_ip=${VPS_IP}" \
             --extra-vars "github_repository_path=${{ github.repository }}.git" \
-            --extra-vars "image_registry=ghcr.io/${{ env.REPO_LC }}/" \
-            --extra-vars "image_tag=${{ env.COMMIT_SHA }}"
+            --extra-vars "release_sha=${RELEASE_SHA}" \
+            --extra-vars "api_image_ref=${API_IMAGE_REF}" \
+            --extra-vars "clinic_web_image_ref=${CLINIC_WEB_IMAGE_REF}"
 
       - name: 🔍 Verify deployment (smoke tests)
+        if: steps.release_gate.outputs.deployment_result == 'deployed'
         env:
+          DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
+          VPS_IP: ${{ env.VPS_IP }}
           STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
+        run: bash scripts/ci/check_clinic_stage.sh
+
+      - name: 📋 Create and atomically record release manifest
+        if: steps.release_gate.outputs.deployment_result == 'deployed'
+        env:
+          RELEASE_SHA: ${{ env.COMMIT_SHA }}
+          API_IMAGE_REF: ${{ needs.build-and-push.outputs.api_image_ref }}
+          CLINIC_WEB_IMAGE_REF: ${{ needs.build-and-push.outputs.clinic_web_image_ref }}
+          CI_RUN_ID: ${{ github.event.workflow_run.id }}
+          DEPLOY_RUN_ID: ${{ github.run_id }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
         run: |
-          BASE_URL="https://${{ env.DOMAIN_NAME }}"
-          MAX_ATTEMPTS=5
-          RETRY_DELAY=15
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
 
-          check_https() {
-            local label="$1"
-            local url="$2"
-            local status
-
-            for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
-              status=$(curl --silent --show-error --location --user "stage:${STAGE_BASIC_AUTH_PASSWORD}" \
-                --output /dev/null --write-out '%{http_code}' --max-time 20 "$url") || status=000
-              if [ "$status" = "200" ]; then
-                echo "✅ $label: HTTP $status"
-                return 0
-              fi
-              echo "⚠️ $label attempt $attempt/$MAX_ATTEMPTS: HTTP $status"
-              [ "$attempt" -lt "$MAX_ATTEMPTS" ] && sleep "$RETRY_DELAY"
-            done
-
-            echo "❌ $label failed after $MAX_ATTEMPTS attempts: $url"
-            return 1
+          manifest = {
+              'release_sha': os.environ['RELEASE_SHA'],
+              'api_image_ref': os.environ['API_IMAGE_REF'],
+              'clinic_web_image_ref': os.environ['CLINIC_WEB_IMAGE_REF'],
+              'ci_run_id': os.environ['CI_RUN_ID'],
+              'deploy_run_id': os.environ['DEPLOY_RUN_ID'],
           }
+          Path('release.json').write_text(
+              json.dumps(manifest, sort_keys=True, separators=(',', ':')) + '\n',
+              encoding='utf-8',
+          )
+          PY
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            release.json "$SSH_USER@$VPS_IP:$DEPLOY_PATH/releases/.$RELEASE_SHA.json.pending"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$VPS_IP" \
+            "DEPLOY_PATH='$DEPLOY_PATH' RELEASE_SHA='$RELEASE_SHA' bash -s" <<'REMOTE'
+          set -euo pipefail
+          pending="$DEPLOY_PATH/releases/.$RELEASE_SHA.json.pending"
+          target="$DEPLOY_PATH/releases/$RELEASE_SHA.json"
+          current_pending="$DEPLOY_PATH/releases/.current.json.pending"
+          current="$DEPLOY_PATH/releases/current.json"
+          trap 'rm -f "$pending" "$current_pending"' EXIT
+          chmod 600 "$pending"
+          mapfile -t manifest_fields < <(python3 - "$pending" <<'PY'
+          import json
+          import re
+          import sys
 
-          echo "⏳ Checking authenticated HTTPS staging endpoints..."
-          check_https 'Clinic frontend (apex)' "$BASE_URL/"
-          check_https 'Clinic frontend (www)' "https://www.${DOMAIN_NAME}/"
-          check_https 'API health' "$BASE_URL/api/health"
+          with open(sys.argv[1], encoding='utf-8') as source:
+              manifest = json.load(source)
+          expected = {'release_sha', 'api_image_ref', 'clinic_web_image_ref', 'ci_run_id', 'deploy_run_id'}
+          if set(manifest) != expected:
+              raise SystemExit('Invalid release manifest keys')
+          if not re.fullmatch(r'[0-9a-f]{40}', manifest['release_sha']):
+              raise SystemExit('Invalid release SHA')
+          if not re.fullmatch(r'ghcr\.io/[a-z0-9._/-]+/vcard-api@sha256:[0-9a-f]{64}', manifest['api_image_ref']):
+              raise SystemExit('Invalid API digest reference')
+          if not re.fullmatch(r'ghcr\.io/[a-z0-9._/-]+/vcard-clinic-web@sha256:[0-9a-f]{64}', manifest['clinic_web_image_ref']):
+              raise SystemExit('Invalid clinic digest reference')
+          if not all(str(manifest[key]).isdigit() for key in ('ci_run_id', 'deploy_run_id')):
+              raise SystemExit('Invalid run IDs')
+          for key in ('release_sha', 'api_image_ref', 'clinic_web_image_ref'):
+              print(manifest[key])
+          PY
+          )
+          manifest_sha="${manifest_fields[0]}"
+          api_ref="${manifest_fields[1]}"
+          clinic_ref="${manifest_fields[2]}"
+          test "$manifest_sha" = "$RELEASE_SHA"
+          test "$(git -C "$DEPLOY_PATH" rev-parse HEAD)" = "$RELEASE_SHA"
+          verify_image() {
+            container="$1"
+            expected_ref="$2"
+            test "$(docker inspect --format '{{.Config.Image}}' "$container")" = "$expected_ref"
+            container_id=$(docker inspect --format '{{.Image}}' "$container")
+            expected_id=$(docker image inspect --format '{{.Id}}' "$expected_ref")
+            test "$container_id" = "$expected_id"
+            revision=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$container_id")
+            test "$revision" = "$RELEASE_SHA"
+          }
+          verify_image vcard-api "$api_ref"
+          verify_image vcard-clinic-web "$clinic_ref"
+          mv -f -- "$pending" "$target"
+          install -m 0600 "$target" "$current_pending"
+          mv -f -- "$current_pending" "$current"
+          rm -f -- "$DEPLOY_PATH/releases/reconciliation-required.json"
+          trap - EXIT
+          REMOTE
 
-          status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
-            --max-time 20 "$BASE_URL/") || status=000
-          if [ "$status" != "401" ]; then
-            echo "❌ Staging homepage must require authentication; got HTTP $status."
-            exit 1
-          fi
-
-          status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
-            --max-time 20 "http://${DOMAIN_NAME}/") || status=000
-          if [ "$status" != "308" ]; then
-            echo "❌ HTTP homepage must redirect to HTTPS; got HTTP $status."
-            exit 1
-          fi
-
-          status=$(curl --silent --show-error --request POST --data '{}' \
-            --output /dev/null --write-out '%{http_code}' --max-time 20 \
-            "http://${DOMAIN_NAME}/api/leads/submit") || status=000
-          if [ "$status" != "403" ]; then
-            echo "❌ HTTP lead submissions must be blocked before redirect; got HTTP $status."
-            exit 1
-          fi
-
-          status=$(curl --silent --show-error --user "stage:${STAGE_BASIC_AUTH_PASSWORD}" \
-            --request POST --output /dev/null --write-out '%{http_code}' \
-            --max-time 20 "$BASE_URL/api/leads/submit") || status=000
-          if [ "$status" != "403" ]; then
-            echo "❌ Staging lead submission must remain disabled; got HTTP $status."
-            exit 1
-          fi
-          echo "✨ Authenticated staging, TLS, and disabled lead-submission checks passed."
+      - name: 📦 Upload release manifest artifact
+        if: steps.release_gate.outputs.deployment_result == 'deployed'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-${{ env.COMMIT_SHA }}
+          path: release.json
+          if-no-files-found: error
 
       - name: 💬 Notify Telegram (success)
-        if: success()
+        if: success() && steps.release_gate.outputs.deployment_result == 'deployed'
         uses: appleboy/telegram-action@214f06cfa3d3a588c1472116889437e7c6fd29b1 # v1.1.1
         continue-on-error: true
         with:

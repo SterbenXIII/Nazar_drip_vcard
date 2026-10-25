@@ -16,12 +16,17 @@ env:
   DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/emerald-recovery' }}
   VPS_IP: ${{ vars.VPS_IP || 'localhost' }}
   DOMAIN_NAME: havenhub.tech
+  CADDY_IMAGE_REF: docker.io/library/caddy:2-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f
   SSH_KNOWN_HOSTS: ${{ secrets.HOSTINGER_SSH_KNOWN_HOSTS }}
 
 jobs:
   rollback:
     name: Rollback to ${{ inputs.commit_sha }}
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      packages: read
     environment:
       name: production
       url: https://${{ env.DOMAIN_NAME }}
@@ -35,19 +40,27 @@ jobs:
         env:
           ROLLBACK_SHA: ${{ inputs.commit_sha }}
         run: |
+          if [ "$GITHUB_REF" != 'refs/heads/main' ]; then
+            echo '❌ Manual rollback must use the main branch workflow definition.'
+            exit 1
+          fi
           if ! [[ "$ROLLBACK_SHA" =~ ^[0-9a-f]{40}$ ]]; then
             echo '❌ commit_sha must be a full lowercase 40-character commit SHA.'
             exit 1
           fi
+          git cat-file -e "$ROLLBACK_SHA^{commit}"
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$ROLLBACK_SHA" origin/main
+          echo '✓ Rollback commit is present in main history.'
 
       - name: 🔧 Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: 📦 Install Ansible and dependencies
         run: |
-          pip install ansible
+          pip install ansible-core==2.21.5
           ansible-galaxy collection install -r ops/ansible/requirements.yml
 
       - name: 🛡️ Validate rollback VPS IP
@@ -64,6 +77,11 @@ jobs:
             exit 1
           fi
 
+          if ! [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9/_-]+$ ]]; then
+            echo '❌ DEPLOY_PATH must be an absolute path with letters, digits, slash, underscore, or hyphen.'
+            exit 1
+          fi
+
       - name: 🔐 Prepare staging authentication
         env:
           STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
@@ -74,7 +92,7 @@ jobs:
           fi
 
           STAGE_BASIC_AUTH_HASH=$(docker run --rm --entrypoint sh \
-            -e STAGE_BASIC_AUTH_PASSWORD caddy:2-alpine \
+            -e STAGE_BASIC_AUTH_PASSWORD "$CADDY_IMAGE_REF" \
             -c 'caddy hash-password --plaintext "$STAGE_BASIC_AUTH_PASSWORD"')
           if [ -z "$STAGE_BASIC_AUTH_HASH" ]; then
             echo '❌ Failed to prepare the staging authentication hash.'
@@ -82,9 +100,6 @@ jobs:
           fi
           echo "::add-mask::$STAGE_BASIC_AUTH_HASH"
           printf 'STAGE_BASIC_AUTH_HASH=%s\n' "$STAGE_BASIC_AUTH_HASH" >> "$GITHUB_ENV"
-
-      - name: 🔠 Lowercase Repository Name
-        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
 
       - name: 🔐 Configure SSH key
         env:
@@ -99,6 +114,113 @@ jobs:
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
           ssh-keygen -F "$SSH_HOST" -f ~/.ssh/known_hosts >/dev/null
+
+      - name: 🛠️ Test SSH connectivity
+        env:
+          SSH_HOST: ${{ env.VPS_IP }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+        run: |
+          ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes \
+            -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" 'echo SSH_OK'
+
+      - name: 🌐 Verify staging DNS against the VPS addresses
+        env:
+          SSH_HOST: ${{ env.VPS_IP }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          EXPECTED_VPS_IPV4: ${{ env.VPS_IP }}
+          DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
+        run: |
+          set -euo pipefail
+          VPS_IPV6_ADDRESSES=$(ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
+            "ip -j -6 address show scope global | python3 -c 'import json,sys; print(\",\".join(address[\"local\"] for link in json.load(sys.stdin) for address in link[\"addr_info\"]))'")
+          python3 scripts/ci/check_stage_dns.py \
+            --host "$DOMAIN_NAME" \
+            --host "www.$DOMAIN_NAME" \
+            --vps-ip "$EXPECTED_VPS_IPV4" \
+            --vps-ipv6 "$VPS_IPV6_ADDRESSES"
+
+      - name: 🔍 VPS resource preflight
+        env:
+          SSH_HOST: ${{ env.VPS_IP }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          df -h /
+          free -m
+          disk_available_kb=$(df -Pk / | awk 'NR == 2 {print $4}')
+          memory_available_mb=$(free -m | awk '/^Mem:/ {print $7}')
+          test "$disk_available_kb" -ge 1048576
+          test "$memory_available_mb" -ge 200
+          REMOTE
+
+      - name: 📥 Read current and requested release manifests from the VPS
+        env:
+          SSH_HOST: ${{ env.VPS_IP }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          ROLLBACK_SHA: ${{ inputs.commit_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rollback-manifests"
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/releases/current.json" \
+            "$RUNNER_TEMP/rollback-manifests/current.json"
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/releases/$ROLLBACK_SHA.json" \
+            "$RUNNER_TEMP/rollback-manifests/$ROLLBACK_SHA.json"
+
+      - name: 🔐 Validate previous successful release and immutable images
+        id: validate_release
+        env:
+          ROLLBACK_SHA: ${{ inputs.commit_sha }}
+          SSH_HOST: ${{ env.VPS_IP }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          manifest="$RUNNER_TEMP/rollback-manifests/$ROLLBACK_SHA.json"
+          current="$RUNNER_TEMP/rollback-manifests/current.json"
+          python3 scripts/ci/validate_release_manifest.py \
+            --manifest "$manifest" \
+            --current "$current" \
+            --sha "$ROLLBACK_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --output "$GITHUB_OUTPUT"
+
+          CI_RUN_ID=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["ci_run_id"])' "$manifest")
+          DEPLOY_RUN_ID=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["deploy_run_id"])' "$manifest")
+          ci_run=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CI_RUN_ID")
+          printf '%s' "$ci_run" | jq -e --arg sha "$ROLLBACK_SHA" \
+            '.name == "CI" and .head_sha == $sha and .head_branch == "main" and
+             (.event == "push" or .event == "workflow_dispatch") and
+             .status == "completed" and .conclusion == "success"' >/dev/null
+
+          deploy_run=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$DEPLOY_RUN_ID")
+          printf '%s' "$deploy_run" | jq -e \
+            '(.path | split("@")[0]) == ".github/workflows/deploy.yml" and
+             .event == "workflow_run" and
+             .status == "completed" and .conclusion == "success"' >/dev/null
+
+          API_IMAGE_REF=$(sed -n 's/^api_image_ref=//p' "$GITHUB_OUTPUT" | tail -n 1)
+          CLINIC_WEB_IMAGE_REF=$(sed -n 's/^clinic_web_image_ref=//p' "$GITHUB_OUTPUT" | tail -n 1)
+          docker_config=$(mktemp -d)
+          chmod 700 "$docker_config"
+          trap 'docker logout ghcr.io >/dev/null 2>&1 || true; rm -rf "$docker_config"' EXIT
+          export DOCKER_CONFIG="$docker_config"
+          printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker pull "$API_IMAGE_REF"
+          docker pull "$CLINIC_WEB_IMAGE_REF"
+          VPS_ARCH=$(ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" 'dpkg --print-architecture')
+          for image_ref in "$API_IMAGE_REF" "$CLINIC_WEB_IMAGE_REF"; do
+            revision=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$image_ref")
+            architecture=$(docker image inspect --format '{{.Architecture}}' "$image_ref")
+            test "$revision" = "$ROLLBACK_SHA"
+            test "$architecture" = "$VPS_ARCH"
+          done
+          echo '✓ Prior successful workflow runs and digest images validated.'
 
       - name: 🚀 Run Rollback with Ansible
         env:
@@ -118,85 +240,123 @@ jobs:
           ENABLED_PROVIDERS: 'TELEGRAM'
           BACKEND_PORT: '5678'
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          RELEASE_SHA: ${{ steps.validate_release.outputs.release_sha }}
+          API_IMAGE_REF: ${{ steps.validate_release.outputs.api_image_ref }}
+          CLINIC_WEB_IMAGE_REF: ${{ steps.validate_release.outputs.clinic_web_image_ref }}
         run: |
           cd ops/ansible
           ansible-playbook playbook.yml \
             -vv \
             -i inventory.ini \
-            --private-key $HOME/.ssh/deploy_key \
+            --private-key "$HOME/.ssh/deploy_key" \
             --extra-vars "target_host=${{ env.VPS_IP }}" \
             --extra-vars "ansible_user=${HOSTINGER_SSH_USER}" \
             --extra-vars "ansible_ssh_private_key_file=$HOME/.ssh/deploy_key" \
             --extra-vars "deploy_path=${DEPLOY_PATH}" \
             --extra-vars "vps_ip=${VPS_IP}" \
             --extra-vars "github_repository_path=${{ github.repository }}.git" \
-            --extra-vars "image_registry=ghcr.io/${{ env.REPO_LC }}/" \
+            --extra-vars "release_sha=${RELEASE_SHA}" \
+            --extra-vars "api_image_ref=${API_IMAGE_REF}" \
+            --extra-vars "clinic_web_image_ref=${CLINIC_WEB_IMAGE_REF}" \
             --extra-vars "rollback_mode=true" \
-            --extra-vars "image_tag=${{ inputs.commit_sha }}"
+            --extra-vars "image_tag=${RELEASE_SHA}"
 
       - name: 🔍 Verify rollback (smoke tests)
         env:
+          DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
+          VPS_IP: ${{ env.VPS_IP }}
           STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
+        run: bash scripts/ci/check_clinic_stage.sh
+
+      - name: 📋 Record successful rollback as the current release
+        if: success()
+        env:
+          ROLLBACK_SHA: ${{ steps.validate_release.outputs.release_sha }}
+          API_IMAGE_REF: ${{ steps.validate_release.outputs.api_image_ref }}
+          CLINIC_WEB_IMAGE_REF: ${{ steps.validate_release.outputs.clinic_web_image_ref }}
+          SSH_HOST: ${{ env.VPS_IP }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
         run: |
-          MAX_ATTEMPTS=5
-          RETRY_DELAY=15
+          set -euo pipefail
+          pending="$DEPLOY_PATH/releases/.current.json.pending"
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "$RUNNER_TEMP/rollback-manifests/$ROLLBACK_SHA.json" \
+            "$SSH_USER@$SSH_HOST:$pending"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
+            "DEPLOY_PATH='$DEPLOY_PATH' ROLLBACK_SHA='$ROLLBACK_SHA' API_IMAGE_REF='$API_IMAGE_REF' CLINIC_WEB_IMAGE_REF='$CLINIC_WEB_IMAGE_REF' bash -s" <<'REMOTE'
+          set -euo pipefail
+          pending="$DEPLOY_PATH/releases/.current.json.pending"
+          current="$DEPLOY_PATH/releases/current.json"
+          marker="$DEPLOY_PATH/releases/reconciliation-required.json"
+          chmod 600 "$pending"
+          python3 - "$pending" "$marker" <<'PY'
+          import json
+          import os
+          import sys
 
-          check_https() {
-            local label="$1"
-            local url="$2"
-            local status
-
-            for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
-              status=$(curl --silent --show-error --location --user "stage:${STAGE_BASIC_AUTH_PASSWORD}" \
-                --output /dev/null --write-out '%{http_code}' --max-time 20 "$url") || status=000
-              if [ "$status" = "200" ]; then
-                echo "✅ $label: HTTP $status"
-                return 0
-              fi
-              echo "⚠️ $label attempt $attempt/$MAX_ATTEMPTS: HTTP $status"
-              [ "$attempt" -lt "$MAX_ATTEMPTS" ] && sleep "$RETRY_DELAY"
-            done
-
-            echo "❌ $label failed after $MAX_ATTEMPTS attempts: $url"
-            return 1
+          with open(sys.argv[1], encoding='utf-8') as source:
+              manifest = json.load(source)
+          with open(sys.argv[2], encoding='utf-8') as source:
+              marker = json.load(source)
+          expected = {
+              'release_sha': os.environ['ROLLBACK_SHA'],
+              'api_image_ref': os.environ['API_IMAGE_REF'],
+              'clinic_web_image_ref': os.environ['CLINIC_WEB_IMAGE_REF'],
           }
+          actual = {key: manifest[key] for key in expected}
+          marked = {
+              'candidate_sha': marker['candidate_sha'],
+              'api_image_ref': marker['api_image_ref'],
+              'clinic_web_image_ref': marker['clinic_web_image_ref'],
+          }
+          if actual != expected or marked != {
+              'candidate_sha': expected['release_sha'],
+              'api_image_ref': expected['api_image_ref'],
+              'clinic_web_image_ref': expected['clinic_web_image_ref'],
+          }:
+              raise SystemExit('Rollback manifest or reconciliation marker mismatch')
+          PY
+          mv -f -- "$pending" "$current"
+          rm -f -- "$marker"
+          REMOTE
 
-          BASE_URL="https://${{ env.DOMAIN_NAME }}"
-          echo "⏳ Checking authenticated HTTPS rollback endpoints..."
-          check_https 'Clinic frontend (apex)' "$BASE_URL/"
-          check_https 'Clinic frontend (www)' "https://www.${{ env.DOMAIN_NAME }}/"
-          check_https 'API health' "$BASE_URL/api/health"
+      - name: 🧾 Record rollback failure boundary
+        if: failure()
+        continue-on-error: true
+        env:
+          SSH_HOST: ${{ env.VPS_IP }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
+            "DEPLOY_PATH='$DEPLOY_PATH' bash -s" <<'REMOTE'
+          python3 - "$DEPLOY_PATH" <<'PY'
+          import glob
+          import json
+          import os
+          import sys
 
-          status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
-            --max-time 20 "$BASE_URL/") || status=000
-          if [ "$status" != "401" ]; then
-            echo "❌ Staging homepage must require authentication; got HTTP $status."
-            exit 1
-          fi
-
-          status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
-            --max-time 20 "http://${{ env.DOMAIN_NAME }}/") || status=000
-          if [ "$status" != "308" ]; then
-            echo "❌ HTTP homepage must redirect to HTTPS; got HTTP $status."
-            exit 1
-          fi
-
-          status=$(curl --silent --show-error --request POST --data '{}' \
-            --output /dev/null --write-out '%{http_code}' --max-time 20 \
-            "http://${{ env.DOMAIN_NAME }}/api/leads/submit") || status=000
-          if [ "$status" != "403" ]; then
-            echo "❌ HTTP lead submissions must be blocked before redirect; got HTTP $status."
-            exit 1
-          fi
-
-          status=$(curl --silent --show-error --user "stage:${STAGE_BASIC_AUTH_PASSWORD}" \
-            --request POST --output /dev/null --write-out '%{http_code}' \
-            --max-time 20 "$BASE_URL/api/leads/submit") || status=000
-          if [ "$status" != "403" ]; then
-            echo "❌ Staging lead submission must remain disabled; got HTTP $status."
-            exit 1
-          fi
-          echo "✅ Rollback TLS/auth and disabled lead-submission checks passed."
+          root = sys.argv[1]
+          marker_path = os.path.join(root, 'releases', 'reconciliation-required.json')
+          current_path = os.path.join(root, 'releases', 'current.json')
+          if os.path.exists(marker_path):
+              with open(marker_path, encoding='utf-8') as source:
+                  marker = json.load(source)
+              print(f"Candidate SHA: {marker.get('candidate_sha', 'unknown')}")
+              print(f"Previous successful SHA: {marker.get('previous_release_sha') or 'none'}")
+              print(f"SQLite snapshot: {marker.get('backup_path') or 'not created'}")
+              print('Reconciliation required before another deployment.')
+          else:
+              current_sha = 'unknown'
+              if os.path.exists(current_path):
+                  with open(current_path, encoding='utf-8') as source:
+                      current_sha = json.load(source).get('release_sha', 'unknown')
+              snapshots = sorted(glob.glob(os.path.join(root, 'backups', 'leads-*.db')), key=os.path.getmtime, reverse=True)
+              print(f'Previous successful SHA: {current_sha}')
+              latest = f'{snapshots[0]} (may predate this attempt)' if snapshots else 'not created'
+              print(f'SQLite snapshot: {latest}')
+          PY
+          REMOTE
 
       - name: 💬 Notify Telegram (success)
         if: success()

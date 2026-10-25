@@ -1,0 +1,30 @@
+{
+  "actions": [],
+  "advisories": {
+    "1102341": {
+      "findings": [
+        {
+          "version": "4.2.0",
+          "paths": ["apps__clinic-web>astro>http-cache-semantics"]
+        }
+      ],
+      "github_advisory_id": "GHSA-ch52-4w7c-c8xp",
+      "module_name": "http-cache-semantics",
+      "severity": "high"
+    }
+  },
+  "muted": [],
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 1,
+      "critical": 0
+    },
+    "dependencies": 1049,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 1049
+  }
+}

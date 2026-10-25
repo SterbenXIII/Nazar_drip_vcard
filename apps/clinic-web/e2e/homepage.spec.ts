@@ -75,6 +75,11 @@ test('keeps distinct dependency and care-format lists with sourced boundaries', 
     'Допомога вдома',
   ])
   await expect(page.locator('#formats img')).toHaveCount(3)
+  for (const image of await page.locator('#formats img').all()) {
+    await expect
+      .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
+      .toBeGreaterThan(0)
+  }
   await expect(page.locator('#formats img').nth(0)).toHaveAttribute(
     'alt',
     'Розмова чоловіка з фахівчинею під час консультації',

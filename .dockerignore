@@ -19,6 +19,9 @@ graphify-out/
 .codebase-memory/
 .tmp/
 tmp/
+design/
+apps/clinic-web/output/
+.playwright-cli/
 *.tmp
 *.tsbuildinfo
 .secret-scan.*

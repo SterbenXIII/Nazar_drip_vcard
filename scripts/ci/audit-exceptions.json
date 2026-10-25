@@ -1,0 +1,11 @@
+[
+  {
+    "advisoryId": "GHSA-ch52-4w7c-c8xp",
+    "package": "http-cache-semantics",
+    "version": "4.2.0",
+    "importerPath": "apps__clinic-web>astro>http-cache-semantics",
+    "evidence": "Astro 7.3.3 imports CachePolicy from this package only in astro/dist/assets/build/remote.js for remote-image response caching. A fresh clinic runtime image contains only Nginx and generated dist files; it has no Node.js executable or http-cache-semantics files.",
+    "rationale": "The vulnerable code runs only in Astro's static build path and is absent from the deployed runtime image. The GitHub-reviewed advisory reports no patched version: https://github.com/advisories/GHSA-ch52-4w7c-c8xp.",
+    "expires": "2026-11-24"
+  }
+]

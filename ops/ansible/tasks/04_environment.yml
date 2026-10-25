@@ -9,8 +9,7 @@
     backup: true
   no_log: true
   tags: [env, config]
-  # No notify: Restart_services — docker compose up --force-recreate in 05_deployment
-  # already recreates containers with the new .env, making a post-deploy restart redundant.
+  # Compose applies environment changes by recreating only affected services.
 
 - name: 🔒 Enforce .env file permissions (every run)
   ansible.builtin.file:
@@ -54,7 +53,7 @@
 
 - name: 📜 Copy monitoring scripts to VPS
   ansible.builtin.copy:
-    src: '../../scripts/{{ item }}'
+    src: '{{ playbook_dir }}/../scripts/{{ item }}'
     dest: '{{ project_dir }}/scripts/{{ item }}'
     owner: '{{ ansible_user }}'
     group: '{{ ansible_user }}'
