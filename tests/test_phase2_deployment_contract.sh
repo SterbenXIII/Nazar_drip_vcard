@@ -20,7 +20,7 @@ compose='ops/docker/compose/docker-compose.yml'
 assert_contains() {
   local file_name="$1"
   local expected="$2"
-  rg -q --fixed-strings -- "$expected" "$file_name" || {
+  grep -Fq -- "$expected" "$file_name" || {
     echo "FAIL: $file_name is missing: $expected" >&2
     exit 1
   }
@@ -29,7 +29,7 @@ assert_contains() {
 assert_not_contains() {
   local file_name="$1"
   local forbidden="$2"
-  if rg -q --fixed-strings -- "$forbidden" "$file_name"; then
+  if grep -Fq -- "$forbidden" "$file_name"; then
     echo "FAIL: $file_name contains forbidden text: $forbidden" >&2
     exit 1
   fi
@@ -115,25 +115,25 @@ assert_contains "$deploy" 'releases/current.json'
 assert_contains "$deploy" 'reconciliation-required.json'
 assert_not_contains "$playbook" 'docker system prune -f --volumes'
 
-system_tasks_line=$(rg -n -m 1 'include_tasks: tasks/01_preflight_system.yml' "$playbook" | cut -d: -f1)
-backup_tasks_line=$(rg -n -m 1 'include_tasks: tasks/backup_sqlite.yml' "$playbook" | cut -d: -f1)
-project_tasks_line=$(rg -n -m 1 'include_tasks: tasks/03_project.yml' "$playbook" | cut -d: -f1)
+system_tasks_line=$(grep -n -m 1 -F 'include_tasks: tasks/01_preflight_system.yml' "$playbook" | cut -d: -f1)
+backup_tasks_line=$(grep -n -m 1 -F 'include_tasks: tasks/backup_sqlite.yml' "$playbook" | cut -d: -f1)
+project_tasks_line=$(grep -n -m 1 -F 'include_tasks: tasks/03_project.yml' "$playbook" | cut -d: -f1)
 if (( backup_tasks_line <= system_tasks_line || backup_tasks_line >= project_tasks_line )); then
   echo 'FAIL: SQLite backup must run after Docker bootstrap and before repository checkout' >&2
   exit 1
 fi
 
-pull_line=$(rg -n -m 1 'pull --quiet' "$deployment" | cut -d: -f1)
-up_line=$(rg -n -m 1 'up -d --remove-orphans' "$deployment" | cut -d: -f1)
+pull_line=$(grep -n -m 1 -F 'pull --quiet' "$deployment" | cut -d: -f1)
+up_line=$(grep -n -m 1 -F 'up -d --remove-orphans' "$deployment" | cut -d: -f1)
 if (( pull_line >= up_line )); then
   echo "FAIL: image pull must precede service recreation" >&2
   exit 1
 fi
 
-backup_line=$(rg -n -m 1 'Create consistent SQLite snapshot' "$backup" | cut -d: -f1)
-up_line=$(rg -n -m 1 'up -d --remove-orphans' "$deployment" | cut -d: -f1)
-marker_line=$(rg -n -m 1 'Create reconciliation marker before service recreation' "$deployment" | cut -d: -f1)
-schema_probe_line=$(rg -n -m 1 'Verify candidate API schema compatibility against the SQLite snapshot' "$deployment" | cut -d: -f1)
+backup_line=$(grep -n -m 1 -F 'Create consistent SQLite snapshot' "$backup" | cut -d: -f1)
+up_line=$(grep -n -m 1 -F 'up -d --remove-orphans' "$deployment" | cut -d: -f1)
+marker_line=$(grep -n -m 1 -F 'Create reconciliation marker before service recreation' "$deployment" | cut -d: -f1)
+schema_probe_line=$(grep -n -m 1 -F 'Verify candidate API schema compatibility against the SQLite snapshot' "$deployment" | cut -d: -f1)
 if (( backup_line < 1 || schema_probe_line >= marker_line || marker_line >= up_line )); then
   echo 'FAIL: snapshot and candidate schema probe must precede the marker and service recreation' >&2
   exit 1
