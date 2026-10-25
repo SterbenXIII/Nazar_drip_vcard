@@ -131,8 +131,9 @@ jobs:
           DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
         run: |
           set -euo pipefail
-          VPS_IPV6_ADDRESSES=$(ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
-            "ip -j -6 address show scope global | python3 -c 'import json,sys; print(\",\".join(address[\"local\"] for link in json.load(sys.stdin) for address in link[\"addr_info\"]))'")
+          VPS_IPV6_JSON=$(ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
+            'ip -j -6 address show scope global')
+          VPS_IPV6_ADDRESSES=$(printf '%s' "$VPS_IPV6_JSON" | python3 scripts/ci/extract_vps_ipv6.py)
           python3 scripts/ci/check_stage_dns.py \
             --host "$DOMAIN_NAME" \
             --host "www.$DOMAIN_NAME" \
