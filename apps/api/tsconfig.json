@@ -10,8 +10,7 @@
     "composite": true,
     "types": ["node"],
     "paths": {
-      "@/*": ["./src/*"],
-      "@vcard/shared": ["../../packages/shared/src/index.ts"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src/**/*"],

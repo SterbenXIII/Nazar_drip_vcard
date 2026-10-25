@@ -34,6 +34,21 @@ describe('leadSchema contract', () => {
     })
   })
 
+  it('accepts empty optional fields from contact-only forms', () => {
+    expect(
+      leadSchema.parse({
+        name: 'test',
+        phone: '+380000000000',
+        district: '',
+        services: [],
+        source: 'clinic-web',
+      }),
+    ).toMatchObject({
+      district: '',
+      services: [],
+    })
+  })
+
   it('trims names and normalizes common Ukrainian phone formats', () => {
     for (const phone of ['067 123-45-67', '380 67 123 45 67', '+380 (67) 123-45-67']) {
       expect(
