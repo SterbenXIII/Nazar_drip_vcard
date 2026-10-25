@@ -6,39 +6,46 @@ Spec: [CI/CD design](../specs/2026-10-25-ci-repair-clinic-cd.md)
 
 ## Decision
 
-**Task 8 evidence is collected; Task 9 is BLOCKED.** The disposable lab and local
-checks passed, but there is no reviewed release candidate commit. `HEAD`
-`ce9344bf60aa4c7c5d032847848c7a59a22f4261` is the base revision; implementation
-changes remain uncommitted. Do not use that base SHA as the candidate release.
+**Task 9 staging deployment and smoke checks passed** for
+`abb4878c023c7f61eeeebeee579acf35f46cd569`. This verifies the staging path, not
+readiness for collecting real leads or a public production release. Historical
+credential/key rotation remains unverified; the provider backup schedule is
+weekly, and the required daily SQLite backup and live rollback remain unverified.
 
-No GitHub workflow, VPS, public DNS, or live deployment was changed or invoked.
-The lab used synthetic commits `6106d91562311e0f6d6d5d5b3e201f4bbc84c705`
-and `a9bfcbeb40970a3eba8d859d1bb769f1b17e266a`; they exist only in its temporary
-local Git remote and are not release candidates.
+The release was triggered by merged PR #7. CI run
+[40223729739](https://github.com/SterbenXIII/Nazar_drip_vcard/actions/runs/40223729739)
+and deploy run
+[40223918442](https://github.com/SterbenXIII/Nazar_drip_vcard/actions/runs/40223918442)
+completed successfully. The earlier run for `15dd3aa60d2e0c83e63452d3ea780c16f47e1982`
+failed before Ansible; it did not change the VPS.
 
 ## Verification matrix
 
-| Check                                                                        | Status       | Evidence                                                                                                                                                                              |
-| ---------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `actionlint` on CI, clinic, legacy, deploy, and rollback workflows           | PASS         | Containerized `rhysd/actionlint:latest` completed with exit 0.                                                                                                                        |
-| Ansible syntax                                                               | PASS         | `ansible-playbook ... playbook.yml --syntax-check`.                                                                                                                                   |
-| Docker Compose configuration                                                 | PASS         | Production and proxy Compose files passed `config --quiet`.                                                                                                                           |
-| Audit parser tests                                                           | PASS         | 8/8 tests.                                                                                                                                                                            |
-| API tests                                                                    | PASS         | 38/38 tests across 10 files.                                                                                                                                                          |
-| Clinic Astro, ESLint, Stylelint, and package Prettier checks                 | PASS         | `pnpm --filter @vcard/clinic-web check`; 0 Astro diagnostics.                                                                                                                         |
-| Clinic publication matrix                                                    | PASS         | 1/1 Playwright test.                                                                                                                                                                  |
-| TypeScript workspace check                                                   | PASS         | `pnpm typecheck`.                                                                                                                                                                     |
-| DNS parser tests                                                             | PASS         | 6/6 Python unit tests.                                                                                                                                                                |
-| Clinic CI, staging smoke, deployment, monitoring, and release-head contracts | PASS         | Six shell contract scripts completed successfully.                                                                                                                                    |
-| Current-tree secret scan                                                     | PASS         | `make secret-scan`; no leaks found.                                                                                                                                                   |
-| Codex Security diff scan                                                     | PASS         | Completed scan `fe830d50-795b-4f1c-a3d5-4777040cfdc7`; 26 changed-file inventory items reviewed, 0 reportable findings. Live systems were excluded.                                   |
-| Ubuntu 26.04 disposable rehearsal                                            | PASS         | Fresh VM, Docker bootstrap, two image builds, first deploy, same-SHA repeat, update, stale-SHA rejection, backup gates/integrity, reconciliation gate, and manual rollback completed. |
-| Root `pnpm lint`                                                             | FAIL         | Repository-wide ESLint reaches 218 existing issues, including `.worktrees/clinic-vps-http-deployment` and unrelated clinic scripts.                                                   |
-| Root `pnpm format:check`                                                     | FAIL         | Reports pre-existing/generated and unrelated files; changed readiness, plan, and Ansible README are checked separately.                                                               |
-| Root `pnpm mdlint`                                                           | FAIL         | 136 existing issues in 46 files, including `.worktrees`, generated graph reports, and unrelated docs.                                                                                 |
-| Full-history secret scan                                                     | BLOCKED      | Prior redacted scan recorded four historical findings. Rotate/revoke exposed credentials and keys before Task 9; no history rewrite or baseline was made.                             |
-| Candidate commit SHA                                                         | BLOCKED      | Changes are uncommitted; current `HEAD` is the base revision.                                                                                                                         |
-| Live GitHub, DNS, VPS, public TLS, Telegram, deploy, and rollback checks     | NOT VERIFIED | No live systems or credentials were used in this task.                                                                                                                                |
+| Check                                                                        | Status       | Evidence                                                                                                                                                                                                 |
+| ---------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `actionlint` on CI, clinic, legacy, deploy, and rollback workflows           | PASS         | Containerized `rhysd/actionlint:latest` completed with exit 0.                                                                                                                                           |
+| Ansible syntax                                                               | PASS         | `ansible-playbook ... playbook.yml --syntax-check`.                                                                                                                                                      |
+| Docker Compose configuration                                                 | PASS         | Production and proxy Compose files passed `config --quiet`.                                                                                                                                              |
+| Audit parser tests                                                           | PASS         | 8/8 tests.                                                                                                                                                                                               |
+| API tests                                                                    | PASS         | 38/38 tests across 10 files.                                                                                                                                                                             |
+| Clinic Astro, ESLint, Stylelint, and package Prettier checks                 | PASS         | `pnpm --filter @vcard/clinic-web check`; 0 Astro diagnostics.                                                                                                                                            |
+| Clinic publication matrix                                                    | PASS         | 1/1 Playwright test.                                                                                                                                                                                     |
+| TypeScript workspace check                                                   | PASS         | `pnpm typecheck`.                                                                                                                                                                                        |
+| DNS parser tests                                                             | PASS         | 6/6 Python unit tests.                                                                                                                                                                                   |
+| Clinic CI, staging smoke, deployment, monitoring, and release-head contracts | PASS         | Six shell contract scripts completed successfully.                                                                                                                                                       |
+| Current-tree secret scan                                                     | PASS         | `make secret-scan`; no leaks found.                                                                                                                                                                      |
+| Codex Security diff scan                                                     | PASS         | Completed scan `fe830d50-795b-4f1c-a3d5-4777040cfdc7`; 26 changed-file inventory items reviewed, 0 reportable findings. Live systems were excluded.                                                      |
+| Ubuntu 26.04 disposable rehearsal                                            | PASS         | Fresh VM, Docker bootstrap, two image builds, first deploy, same-SHA repeat, update, stale-SHA rejection, backup gates/integrity, reconciliation gate, and manual rollback completed.                    |
+| CI and GHCR release for `abb4878c023c7f61eeeebeee579acf35f46cd569`           | PASS         | CI run `40223729739`; API digest `sha256:e19a3f36998ddecc822689e4b0c4aef0b221f8f5d17da8d1913128a886241e1b`; clinic-web digest `sha256:f3fb62289eee1c40faf38a89ec201f3372e25a1ced982f68d46d8fd6a5d7ceee`. |
+| Live SSH, DNS, and VPS resource preflight                                    | PASS         | Deploy run `40223918442`; trusted VPS host-key fingerprint matched; DNS and VPS resource gates passed.                                                                                                   |
+| Ansible staging deploy                                                       | PASS         | Deploy run `40223918442`, exact release SHA above.                                                                                                                                                       |
+| Apex and www HTTPS smoke checks                                              | PASS         | Both hosts returned 200 with valid Basic Auth, 401 without/with invalid credentials, 308 HTTP redirect, 403 lead POST over HTTP/HTTPS, and staging robots metadata.                                      |
+| Root `pnpm lint`                                                             | FAIL         | Repository-wide ESLint reaches 218 existing issues, including `.worktrees/clinic-vps-http-deployment` and unrelated clinic scripts.                                                                      |
+| Root `pnpm format:check`                                                     | FAIL         | Reports pre-existing/generated and unrelated files; changed readiness, plan, and Ansible README are checked separately.                                                                                  |
+| Root `pnpm mdlint`                                                           | FAIL         | 136 existing issues in 46 files, including `.worktrees`, generated graph reports, and unrelated docs.                                                                                                    |
+| Full-history secret scan                                                     | BLOCKED      | Prior redacted scan recorded four historical findings. Rotation/revocation is not verified; no history rewrite or baseline was made.                                                                     |
+| Live external reachability of API port 5678                                  | NOT VERIFIED | A bounded TCP probe from this host timed out; this does not establish whether the VPS firewall or another network path filtered it.                                                                      |
+| Live rollback                                                                | NOT VERIFIED | This is the first live release; there is no prior live release to restore.                                                                                                                               |
 
 ### Ubuntu 26.04 lab details
 
@@ -66,22 +73,16 @@ Log: `/var/folders/px/lglfl_hn4zx5gqrzfzs2x4rh0000gn/T/clinic-cd-ubuntu2604-2026
   itself require Ansible's local connection. The rehearsal inventory uses
   `ansible_connection=local`; never set `lab_mode=true` for a VPS deployment.
 
-## Required before Task 9
+## Remaining gates before enabling real lead collection or a public release
 
-1. Produce and review a commit on the intended deployment branch. Use that exact
-   commit SHA as the candidate; do not use either synthetic lab SHA.
-2. Rotate/revoke credentials and keys represented by the four historical secret
+1. Rotate/revoke credentials and keys represented by the four historical secret
    findings. Decide separately whether history rewriting is authorized.
-3. Verify the production GitHub environment, required secrets/variables,
-   environment protections, branch protections, and pinned SSH host key.
-4. Verify live A and AAAA routing for both `havenhub.tech` and `www.havenhub.tech`,
-   inbound 80/443 reachability, Caddy public certificate issuance, Basic Auth,
-   noindex policy, API health, lead POST 403, and that port 5678 is not public.
-5. Confirm VPS provider backup status and the runtime Telegram allowlist. The
-   provider schedule shown earlier was weekly; add and verify a separate daily
-   SQLite backup before enabling real lead collection.
-6. Follow one trusted `CI → GHCR → Ansible → smoke checks` run by run ID and exact
-   commit SHA. Do not treat this local rehearsal as live deployment proof.
+2. Confirm the runtime Telegram allowlist and verify that external connections to
+   port `5678` are blocked.
+3. Add and verify a separate daily SQLite backup and restore before enabling real
+   lead collection; the provider schedule shown earlier is weekly.
+4. Perform a live rollback only after a prior live release exists, following the
+   documented schema and backup checks. Automatic rollback remains disabled.
 
 ## Rollback boundary
 
