@@ -6,6 +6,7 @@ deploy='.github/workflows/deploy.yml'
 rollback='.github/workflows/rollback.yml'
 playbook='ops/ansible/playbook.yml'
 deployment='ops/ansible/tasks/05_deployment.yml'
+backup='ops/ansible/tasks/backup_sqlite.yml'
 ansible_readme='ops/ansible/README.md'
 env_template='ops/ansible/env.j2'
 env_example='.env.example'
@@ -19,7 +20,7 @@ compose='ops/docker/compose/docker-compose.yml'
 assert_contains() {
   local file_name="$1"
   local expected="$2"
-  rg -q --fixed-strings -- "$expected" "$file_name" || {
+  grep -Fq -- "$expected" "$file_name" || {
     echo "FAIL: $file_name is missing: $expected" >&2
     exit 1
   }
@@ -28,7 +29,7 @@ assert_contains() {
 assert_not_contains() {
   local file_name="$1"
   local forbidden="$2"
-  if rg -q --fixed-strings -- "$forbidden" "$file_name"; then
+  if grep -Fq -- "$forbidden" "$file_name"; then
     echo "FAIL: $file_name contains forbidden text: $forbidden" >&2
     exit 1
   fi
@@ -45,9 +46,9 @@ assert_contains "$rollback" 'ROLLBACK_SHA: ${{ inputs.commit_sha }}'
 assert_contains "$rollback" '[[ "$ROLLBACK_SHA" =~ ^[0-9a-f]{40}$ ]]'
 assert_contains "$rollback" '--extra-vars "rollback_mode=true"'
 assert_contains "$deployment" 'pull --quiet'
-assert_contains "$playbook" 'better-sqlite3'
-assert_contains "$playbook" 'database.backup(process.env.BACKUP_PATH)'
-assert_contains "$playbook" 'docker run --rm --user node --volumes-from vcard-api'
+assert_contains "$backup" 'require("better-sqlite3")'
+assert_contains "$backup" 'source.backup(process.env.BACKUP_PATH)'
+assert_contains "$backup" '--workdir /app/apps/api'
 assert_not_contains "$playbook" 'docker exec --user node'
 assert_contains "$playbook" 'rollback_mode'
 assert_contains "$ansible_readme" 'older image is supported only when its migrations remain readable'
@@ -72,17 +73,69 @@ assert_not_contains "$turnstile" "formData.append('remoteip'"
 assert_not_contains "$rollback" 'IMAGE_TAG:-latest'
 assert_not_contains "$rollback" 'image_tag=latest'
 
-pull_line=$(rg -n -m 1 'pull --quiet' "$deployment" | cut -d: -f1)
-up_line=$(rg -n -m 1 'up -d --force-recreate --remove-orphans' "$deployment" | cut -d: -f1)
+assert_contains "$playbook" 'include_tasks: tasks/backup_sqlite.yml'
+assert_not_contains "$playbook" 'Create SQLite backup before rollback mutation'
+assert_contains "$playbook" 'releases/current.json'
+assert_contains "$backup" 'current_release_manifest'
+assert_contains "$backup" 'docker'
+assert_contains "$backup" 'label=com.docker.compose.volume=api_data'
+assert_contains "$playbook" "compose_project_name: 'compose'"
+assert_contains "$backup" 'label=com.docker.compose.project={{ compose_project_name }}'
+assert_contains "$deployment" '--project-name "{{ compose_project_name }}"'
+assert_contains "$backup" '--workdir /app/apps/api'
+assert_contains "$backup" 'source.backup(process.env.BACKUP_PATH)'
+assert_contains "$backup" '"integrity_check"'
+assert_contains "$backup" 'chmod 700'
+assert_contains "$backup" 'chmod 600'
+assert_contains "$playbook" 'reconciliation-required.json'
+assert_contains "$playbook" 'lab_mode: false'
+assert_contains "$playbook" "project_dir is match('^/opt/clinic-cd-lab(/|$)')"
+assert_contains "$deployment" 'Create reconciliation marker before service recreation'
+assert_contains "$deployment" 'if [[ "$LAB_MODE" != '\''1'\'' ]]; then'
+assert_contains "$backup" 'if [[ "$LAB_MODE" != '\''1'\'' ]]; then'
+assert_contains "$deployment" 'up -d --remove-orphans'
+assert_not_contains "$deployment" '--force-recreate'
+assert_contains "$deployment" 'up -d --remove-orphans'
+assert_not_contains "$deployment" '--force-recreate'
+assert_contains "$deployment" 'releases/reconciliation-required.json'
+assert_contains "$deployment" 'Verify candidate API schema compatibility against the SQLite snapshot'
+assert_contains "$deployment" 'check-database-schema.js /app/data/leads.db'
+assert_not_contains "$deployment" '--env-file "$ENV_FILE"'
+assert_contains "$deployment" '--env "NODE_ENV=$NODE_ENV"'
+assert_contains "$deployment" '--env "ENABLED_PROVIDERS=$ENABLED_PROVIDERS"'
+assert_contains apps/api/package.json 'check-database-schema.ts'
+assert_contains apps/api/src/utils/check-database-schema.ts 'findMissingSchemaRequirements'
+assert_contains "$rollback" 'git merge-base --is-ancestor'
+assert_contains "$rollback" 'gh api'
+assert_contains "$rollback" 'docker pull "$API_IMAGE_REF"'
+assert_contains "$rollback" 'API_IMAGE_REF: ${{ steps.validate_release.outputs.api_image_ref }}'
+assert_contains "$rollback" 'CLINIC_WEB_IMAGE_REF: ${{ steps.validate_release.outputs.clinic_web_image_ref }}'
+assert_contains "$rollback" 'current.json'
+assert_contains "$deploy" 'releases/current.json'
+assert_contains "$deploy" 'reconciliation-required.json'
+assert_not_contains "$playbook" 'docker system prune -f --volumes'
+
+system_tasks_line=$(grep -n -m 1 -F 'include_tasks: tasks/01_preflight_system.yml' "$playbook" | cut -d: -f1)
+backup_tasks_line=$(grep -n -m 1 -F 'include_tasks: tasks/backup_sqlite.yml' "$playbook" | cut -d: -f1)
+project_tasks_line=$(grep -n -m 1 -F 'include_tasks: tasks/03_project.yml' "$playbook" | cut -d: -f1)
+if (( backup_tasks_line <= system_tasks_line || backup_tasks_line >= project_tasks_line )); then
+  echo 'FAIL: SQLite backup must run after Docker bootstrap and before repository checkout' >&2
+  exit 1
+fi
+
+pull_line=$(grep -n -m 1 -F 'pull --quiet' "$deployment" | cut -d: -f1)
+up_line=$(grep -n -m 1 -F 'up -d --remove-orphans' "$deployment" | cut -d: -f1)
 if (( pull_line >= up_line )); then
   echo "FAIL: image pull must precede service recreation" >&2
   exit 1
 fi
 
-backup_line=$(rg -n -m 1 'Create SQLite backup before rollback mutation' "$playbook" | cut -d: -f1)
-deployment_tasks_line=$(rg -n -m 1 'include_tasks: tasks/01_preflight_system.yml' "$playbook" | cut -d: -f1)
-if (( backup_line >= deployment_tasks_line )); then
-  echo "FAIL: rollback backup must precede main deployment tasks" >&2
+backup_line=$(grep -n -m 1 -F 'Create consistent SQLite snapshot' "$backup" | cut -d: -f1)
+up_line=$(grep -n -m 1 -F 'up -d --remove-orphans' "$deployment" | cut -d: -f1)
+marker_line=$(grep -n -m 1 -F 'Create reconciliation marker before service recreation' "$deployment" | cut -d: -f1)
+schema_probe_line=$(grep -n -m 1 -F 'Verify candidate API schema compatibility against the SQLite snapshot' "$deployment" | cut -d: -f1)
+if (( backup_line < 1 || schema_probe_line >= marker_line || marker_line >= up_line )); then
+  echo 'FAIL: snapshot and candidate schema probe must precede the marker and service recreation' >&2
   exit 1
 fi
 

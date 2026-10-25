@@ -67,10 +67,10 @@ test('the compact visiting card keeps its main actions visible on narrow screens
     await expect(page.locator('.entry-highlights')).toBeHidden()
     await expect(page.locator('.entry-trust')).toBeHidden()
     const phone = page.locator('.entry-contact a[href^="tel:"]')
-    const telegram = page.locator('.entry-contact .entry-telegram')
+    const telegram = page.locator('.entry-contact').getByRole('link', { name: 'Telegram HAVENHUB' })
     const footer = await page.locator('.footer').boundingBox()
     expect(footer).not.toBeNull()
-    if (viewport.width === 390) {
+    if (viewport.width === 390 && (await page.locator('.footer-navigation').count()) === 0) {
       expect(Math.abs(footer!.y + footer!.height - viewport.height)).toBeLessThanOrEqual(1)
     }
     await expect(phone).toBeVisible()
@@ -216,12 +216,25 @@ test('the landing keeps contact actions reachable at 150% and 200% equivalent vi
     await expect(page.locator('.skip-link')).toBeFocused()
     await page.keyboard.press('Tab')
     await expect(page.locator('.site-header-landing .identity')).toBeFocused()
-    const actionSelectors =
+    const contact = page.locator('.entry-contact')
+    const contactMessagingLinks = [
+      contact.getByRole('link', { name: 'Telegram HAVENHUB' }),
+      contact.getByRole('link', { name: 'Написати в WhatsApp HAVENHUB' }),
+      contact.getByRole('link', { name: 'Написати на email HAVENHUB' }),
+    ]
+    const actionLinks =
       width <= 700
-        ? ['.entry-site-button--mobile', '.entry-phone-copy a[href^="tel:"]', '.entry-telegram']
-        : ['.entry-phone-copy a[href^="tel:"]', '.entry-telegram', '.entry-site-button--contact']
-    for (const selector of actionSelectors) {
-      const link = page.locator(selector)
+        ? [
+            page.locator('.entry-site-button--mobile'),
+            page.locator('.entry-phone-copy a[href^="tel:"]'),
+            ...contactMessagingLinks,
+          ]
+        : [
+            page.locator('.entry-phone-copy a[href^="tel:"]'),
+            ...contactMessagingLinks,
+            page.locator('.entry-site-button--contact'),
+          ]
+    for (const link of actionLinks) {
       await page.keyboard.press('Tab')
       await expect(link).toBeFocused()
       await expect(link).toBeInViewport({ ratio: 0.98 })

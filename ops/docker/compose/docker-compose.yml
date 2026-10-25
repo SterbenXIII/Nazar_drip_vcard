@@ -1,6 +1,6 @@
 services:
   clinic-web:
-    image: ${IMAGE_REGISTRY:-}vcard-clinic-web:${IMAGE_TAG:-latest}
+    image: ${CLINIC_WEB_IMAGE_REF:-${IMAGE_REGISTRY:-}vcard-clinic-web:${IMAGE_TAG:-latest}}
     build:
       context: ../../../
       dockerfile: apps/clinic-web/Dockerfile
@@ -27,7 +27,7 @@ services:
 
   # Backend API (Hono + SQLite)
   api:
-    image: ${IMAGE_REGISTRY:-}vcard-api:${IMAGE_TAG:-latest}
+    image: ${API_IMAGE_REF:-${IMAGE_REGISTRY:-}vcard-api:${IMAGE_TAG:-latest}}
     build:
       context: ../../../
       dockerfile: ops/docker/api/Dockerfile

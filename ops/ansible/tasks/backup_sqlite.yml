@@ -1,0 +1,225 @@
+---
+- name: Ensure protected SQLite backup directory exists
+  ansible.builtin.file:
+    path: '{{ backup_dir }}'
+    state: directory
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0700'
+  tags: [backup, deploy, rollback]
+
+- name: Check current successful release manifest
+  ansible.builtin.stat:
+    path: '{{ current_release_manifest }}'
+  register: current_release_stat
+  tags: [backup, deploy, rollback]
+
+- name: Read current successful release manifest
+  ansible.builtin.slurp:
+    src: '{{ current_release_manifest }}'
+  register: current_release_content
+  when: current_release_stat.stat.exists
+  tags: [backup, deploy, rollback]
+
+- name: Parse current successful release manifest
+  ansible.builtin.set_fact:
+    previous_release_manifest: '{{ current_release_content.content | b64decode | from_json }}'
+  when: current_release_stat.stat.exists
+  tags: [backup, deploy, rollback]
+
+- name: Validate current successful release manifest
+  ansible.builtin.assert:
+    that:
+      - previous_release_manifest.keys() | sort == ['api_image_ref', 'ci_run_id', 'clinic_web_image_ref', 'deploy_run_id', 'release_sha']
+      - previous_release_manifest.release_sha is match('^[0-9a-f]{40}$')
+      - >-
+        previous_release_manifest.api_image_ref is match('^ghcr\.io/[a-z0-9._/-]+/vcard-api@sha256:[0-9a-f]{64}$') or
+        ((lab_mode | bool) and previous_release_manifest.api_image_ref == ('local/vcard-api:' ~ previous_release_manifest.release_sha))
+      - >-
+        previous_release_manifest.clinic_web_image_ref is match('^ghcr\.io/[a-z0-9._/-]+/vcard-clinic-web@sha256:[0-9a-f]{64}$') or
+        ((lab_mode | bool) and previous_release_manifest.clinic_web_image_ref == ('local/vcard-clinic-web:' ~ previous_release_manifest.release_sha))
+      - previous_release_manifest.ci_run_id | string is match('^[0-9]+$')
+      - previous_release_manifest.deploy_run_id | string is match('^[0-9]+$')
+  when: current_release_stat.stat.exists
+  no_log: true
+  tags: [backup, deploy, rollback]
+
+- name: Find the Compose API data volume without relying on a running container
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.command:
+    argv:
+      - docker
+      - volume
+      - ls
+      - --quiet
+      - --filter
+      - 'label=com.docker.compose.project={{ compose_project_name }}'
+      - --filter
+      - 'label=com.docker.compose.volume=api_data'
+  register: api_data_volume_lookup
+  changed_when: false
+  tags: [backup, deploy, rollback]
+
+- name: Set prior release and SQLite volume facts
+  ansible.builtin.set_fact:
+    previous_release_sha: "{{ previous_release_manifest.release_sha if current_release_stat.stat.exists else '' }}"
+    api_data_volumes: '{{ api_data_volume_lookup.stdout_lines | reject("equalto", "") | list }}'
+  tags: [backup, deploy, rollback]
+
+- name: Require the previous release manifest and SQLite volume to agree
+  ansible.builtin.assert:
+    that:
+      - >-
+        (current_release_stat.stat.exists and api_data_volumes | length == 1) or
+        (not current_release_stat.stat.exists and api_data_volumes | length == 0)
+      - not (rollback_mode | bool) or current_release_stat.stat.exists
+      - not (rollback_mode | bool) or previous_release_sha != release_sha
+    fail_msg: >-
+      Existing SQLite data requires exactly one api_data volume and a valid current release
+      manifest; rollback also requires a different current release. Refusing mutation.
+  no_log: true
+  tags: [backup, deploy, rollback]
+
+- name: Pull the previous API image using temporary GHCR credentials
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if [[ "$LAB_MODE" != '1' ]]; then
+      docker_config=$(mktemp -d)
+      chmod 700 "$docker_config"
+      trap 'rm -rf "$docker_config"' EXIT
+      export DOCKER_CONFIG="$docker_config"
+      printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+      docker pull "$API_IMAGE_REF"
+    fi
+  args:
+    executable: /bin/bash
+  environment:
+    GITHUB_TOKEN: '{{ github_token }}'
+    GITHUB_ACTOR: "{{ lookup('env', 'GITHUB_ACTOR') }}"
+    API_IMAGE_REF: '{{ previous_release_manifest.api_image_ref }}'
+    LAB_MODE: '{{ 1 if (lab_mode | bool) else 0 }}'
+  register: previous_image_pull
+  changed_when: true
+  when:
+    - current_release_stat.stat.exists
+    - not (lab_mode | bool)
+  no_log: true
+  tags: [backup, deploy, rollback]
+
+- name: Verify the previous API image matches the current release manifest
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    set -euo pipefail
+    image_id=$(docker image inspect --format '{% raw %}{{.Id}}{% endraw %}' "$API_IMAGE_REF")
+    revision=$(docker image inspect --format '{% raw %}{{index .Config.Labels "org.opencontainers.image.revision"}}{% endraw %}' "$image_id")
+    test "$revision" = "$PREVIOUS_RELEASE_SHA"
+  args:
+    executable: /bin/bash
+  environment:
+    API_IMAGE_REF: '{{ previous_release_manifest.api_image_ref }}'
+    PREVIOUS_RELEASE_SHA: '{{ previous_release_sha }}'
+  changed_when: false
+  when: current_release_stat.stat.exists
+  no_log: true
+  tags: [backup, deploy, rollback]
+
+- name: Check for an existing SQLite database in the named volume
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    docker run --rm --network none --user 0:0 \
+      --mount "type=volume,src=$API_DATA_VOLUME,dst=/app/data,readonly" \
+      --entrypoint node "$API_IMAGE_REF" -e '
+        const fs = require("node:fs")
+        console.log(fs.existsSync("/app/data/leads.db") ? "yes" : "no")
+      '
+  args:
+    executable: /bin/bash
+  environment:
+    API_DATA_VOLUME: '{{ api_data_volumes[0] }}'
+    API_IMAGE_REF: '{{ previous_release_manifest.api_image_ref }}'
+  register: sqlite_database_presence
+  changed_when: false
+  when: current_release_stat.stat.exists
+  tags: [backup, deploy, rollback]
+
+- name: Report an existing volume with no SQLite database
+  ansible.builtin.debug:
+    msg: 'The existing api_data volume has no leads.db; no snapshot is required.'
+  when:
+    - current_release_stat.stat.exists
+    - sqlite_database_presence.stdout | trim == 'no'
+  tags: [backup, deploy, rollback]
+
+- name: Create consistent SQLite snapshot from the previous API image
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    set -euo pipefail
+    backup_path="$BACKUP_DIR/leads-$PREVIOUS_RELEASE_SHA-$(date -u +%Y%m%dT%H%M%S)-$$.db"
+    trap 'rm -f -- "$backup_path"' ERR
+    docker run --rm --network none --user 0:0 --workdir /app/apps/api \
+      --mount "type=volume,src=$API_DATA_VOLUME,dst=/app/data" \
+      --mount "type=bind,src=$BACKUP_DIR,dst=/backup" \
+      --env "BACKUP_PATH=/backup/${backup_path##*/}" \
+      --entrypoint node "$API_IMAGE_REF" -e '
+        const fs = require("node:fs")
+        const Database = require("better-sqlite3")
+        const source = new Database("/app/data/leads.db", { readonly: true, fileMustExist: true })
+        source.backup(process.env.BACKUP_PATH).then(() => {
+          source.close()
+          const snapshot = new Database(process.env.BACKUP_PATH, { readonly: true, fileMustExist: true })
+          const integrity = snapshot.pragma("integrity_check", { simple: true })
+          snapshot.close()
+          const size = fs.statSync(process.env.BACKUP_PATH).size
+          if (integrity !== "ok" || size < 1) process.exit(1)
+          console.log(`SQLite snapshot integrity=${integrity} bytes=${size}`)
+        }).catch((error) => {
+          source.close()
+          console.error(`SQLite backup failed: ${error.message}`)
+          process.exit(1)
+        })
+      '
+    chmod 600 "$backup_path"
+    test -s "$backup_path"
+    printf '%s\n' "${backup_path##*/}"
+    trap - ERR
+  args:
+    executable: /bin/bash
+  environment:
+    BACKUP_DIR: '{{ backup_dir }}'
+    PREVIOUS_RELEASE_SHA: '{{ previous_release_sha }}'
+    API_DATA_VOLUME: '{{ api_data_volumes[0] }}'
+    API_IMAGE_REF: '{{ previous_release_manifest.api_image_ref }}'
+  register: sqlite_backup_result
+  changed_when: true
+  when:
+    - current_release_stat.stat.exists
+    - sqlite_database_presence.stdout | trim == 'yes'
+  tags: [backup, deploy, rollback]
+
+- name: Record verified SQLite snapshot path
+  ansible.builtin.set_fact:
+    sqlite_backup_path: '{{ backup_dir }}/{{ sqlite_backup_result.stdout_lines | last }}'
+  when:
+    - sqlite_backup_result is defined
+    - sqlite_backup_result is not skipped
+  tags: [backup, deploy, rollback]
+
+- name: Report verified SQLite snapshot
+  ansible.builtin.debug:
+    msg: 'SQLite snapshot passed integrity_check and is stored at {{ sqlite_backup_path }}.'
+  when: sqlite_backup_path is defined
+  tags: [backup, deploy, rollback]
+
+- name: Report first deployment without existing SQLite data
+  ansible.builtin.debug:
+    msg: 'No prior successful release or api_data volume exists; the first deployment needs no snapshot.'
+  when:
+    - not current_release_stat.stat.exists
+    - api_data_volumes | length == 0
+  tags: [backup, deploy, rollback]

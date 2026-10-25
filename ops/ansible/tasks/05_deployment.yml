@@ -1,36 +1,47 @@
 ---
-- name: Free Docker disk space and memory
+- name: Remove stale Docker build cache and dangling images
   become: true
   become_user: '{{ ansible_user }}'
   ansible.builtin.shell: |
-    docker builder prune -af 2>/dev/null || true
+    docker builder prune -f --filter "until=24h" 2>/dev/null || true
     docker image prune -f 2>/dev/null || true
   changed_when: true
   tags: [docker, deploy]
 
-- name: Log in to GHCR
-  become: true
-  ansible.builtin.shell: |
-    set -o pipefail
-    echo "{{ github_token }}" | docker login ghcr.io -u oauth2 --password-stdin
-  args:
-    executable: /bin/bash
-  changed_when: false
-  no_log: true
+- name: Resolve the exact Compose image references
+  ansible.builtin.set_fact:
+    effective_api_image_ref: "{{ api_image_ref | default((image_registry ~ 'vcard-api:' ~ (image_tag | default('latest', true))), true) }}"
+    effective_clinic_web_image_ref: "{{ clinic_web_image_ref | default((image_registry ~ 'vcard-clinic-web:' ~ (image_tag | default('latest', true))), true) }}"
   tags: [docker, deploy]
 
-- name: Validate and pull immutable images before service mutation
+- name: Pull candidate images using temporary GHCR credentials
   become: true
   become_user: '{{ ansible_user }}'
   ansible.builtin.shell: |
+    set -euo pipefail
+    docker_config=$(mktemp -d)
+    chmod 700 "$docker_config"
+    trap 'rm -rf "$docker_config"' EXIT
+    export DOCKER_CONFIG="$docker_config"
+    if [[ "$LAB_MODE" != '1' ]]; then
+      printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+    fi
     cd "{{ project_dir }}"
-    docker compose \
+    docker compose --project-name "{{ compose_project_name }}" \
       -f ops/docker/compose/docker-compose.yml \
       -f ops/docker/compose/docker-compose.proxy.yml config >/dev/null
-    docker compose \
-      -f ops/docker/compose/docker-compose.yml \
-      -f ops/docker/compose/docker-compose.proxy.yml pull --quiet
+    if [[ "$LAB_MODE" != '1' ]]; then
+      docker compose --project-name "{{ compose_project_name }}" \
+        -f ops/docker/compose/docker-compose.yml \
+        -f ops/docker/compose/docker-compose.proxy.yml pull --quiet
+    fi
+  args:
+    executable: /bin/bash
   environment:
+    CADDY_IMAGE_REF: '{{ caddy_image_ref }}'
+    LAB_MODE: '{{ 1 if (lab_mode | bool) else 0 }}'
+    GITHUB_TOKEN: '{{ github_token }}'
+    GITHUB_ACTOR: "{{ lookup('env', 'GITHUB_ACTOR') }}"
     VPS_IP: '{{ vps_ip }}'
     DOMAIN_NAME: '{{ domain_name }}'
     STAGE_BASIC_AUTH_HASH: '{{ stage_basic_auth_hash }}'
@@ -39,21 +50,233 @@
     TELEGRAM_NOTIFY_IDS: '{{ telegram_notify_ids }}'
     IMAGE_REGISTRY: '{{ image_registry }}'
     IMAGE_TAG: '{{ image_tag }}'
-  register: image_pull_result
+    API_IMAGE_REF: '{{ effective_api_image_ref }}'
+    CLINIC_WEB_IMAGE_REF: '{{ effective_clinic_web_image_ref }}'
   no_log: true
   changed_when: true
   tags: [docker, deploy, verify]
 
-- name: Recreate services from validated images
+- name: Verify VPS and candidate image architectures
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    set -euo pipefail
+    vps_arch=$(docker info --format '{% raw %}{{.Architecture}}{% endraw %}')
+    case "$vps_arch" in
+      x86_64) vps_arch=amd64 ;;
+      aarch64) vps_arch=arm64 ;;
+    esac
+    for image_ref in "$API_IMAGE_REF" "$CLINIC_WEB_IMAGE_REF"; do
+      image_arch=$(docker image inspect --format '{% raw %}{{.Architecture}}{% endraw %}' "$image_ref")
+      test "$image_arch" = "$vps_arch" || {
+        echo "Image architecture mismatch: VPS=$vps_arch image=$image_arch"
+        exit 1
+      }
+    done
+  args:
+    executable: /bin/bash
+  environment:
+    API_IMAGE_REF: '{{ effective_api_image_ref }}'
+    CLINIC_WEB_IMAGE_REF: '{{ effective_clinic_web_image_ref }}'
+  changed_when: false
+  tags: [docker, deploy, verify]
+
+- name: Read numeric API runtime UID and GID from the candidate image
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    docker run --rm --network none --entrypoint sh "$API_IMAGE_REF" -c 'id -u; id -g'
+  args:
+    executable: /bin/bash
+  environment:
+    API_IMAGE_REF: '{{ effective_api_image_ref }}'
+  register: api_runtime_identity
+  changed_when: false
+  tags: [docker, deploy, verify]
+
+- name: Set numeric API runtime UID and GID
+  ansible.builtin.set_fact:
+    api_runtime_uid: '{{ api_runtime_identity.stdout_lines[0] }}'
+    api_runtime_gid: '{{ api_runtime_identity.stdout_lines[1] }}'
+    expected_allowlist_count: "{{ (telegram_allowed_chat_ids | trim).split(',') | map('trim') | list | length }}"
+  tags: [docker, deploy]
+
+- name: Write protected Telegram allowlist for the runtime UID and GID
+  ansible.builtin.copy:
+    content: >-
+      {{
+        (
+          (telegram_allowed_chat_ids | trim).split(',')
+          | map('trim')
+          | map('int')
+          | list
+          | to_json
+        ) if (telegram_allowed_chat_ids | default('', true) | trim | length > 0) else '[]'
+      }}
+    dest: '{{ project_dir }}/apps/api/allowed_chats.json'
+    owner: '{{ api_runtime_uid }}'
+    group: '{{ api_runtime_gid }}'
+    mode: '0600'
+    force: true
+  no_log: true
+  tags: [project, permissions, security]
+
+- name: Verify API runtime can read the protected allowlist before recreation
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    set -euo pipefail
+    docker run --rm --network none \
+      --user "$API_RUNTIME_UID:$API_RUNTIME_GID" \
+      --mount "type=bind,src={{ project_dir }}/apps/api/allowed_chats.json,dst=/app/allowed_chats.json,readonly" \
+      --env EXPECTED_ALLOWLIST_COUNT="$EXPECTED_ALLOWLIST_COUNT" \
+      --entrypoint node "$API_IMAGE_REF" -e '
+        const fs = require("node:fs")
+        const ids = JSON.parse(fs.readFileSync("/app/allowed_chats.json", "utf8"))
+        if (!Array.isArray(ids) || ids.length !== Number(process.env.EXPECTED_ALLOWLIST_COUNT)) process.exit(1)
+        if (ids.some((id) => !Number.isSafeInteger(id))) process.exit(1)
+        console.log(`Validated ${ids.length} Telegram allowlist entries`)
+      '
+  args:
+    executable: /bin/bash
+  environment:
+    API_IMAGE_REF: '{{ effective_api_image_ref }}'
+    API_RUNTIME_UID: '{{ api_runtime_uid }}'
+    API_RUNTIME_GID: '{{ api_runtime_gid }}'
+    EXPECTED_ALLOWLIST_COUNT: '{{ expected_allowlist_count }}'
+  changed_when: false
+  no_log: true
+  tags: [permissions, verify]
+
+- name: Verify candidate API schema compatibility against the SQLite snapshot
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    set -euo pipefail
+    probe_id="${RELEASE_SHA:0:12}-$$-$RANDOM"
+    probe_volume="vcard-schema-probe-$probe_id"
+    probe_container="vcard-schema-probe-$probe_id"
+    probe_volume_created=0
+    cleanup_probe() {
+      docker rm -f "$probe_container" >/dev/null 2>&1 || true
+      if [ "$probe_volume_created" -eq 1 ]; then
+        docker volume rm -- "$probe_volume" >/dev/null 2>&1 || true
+      fi
+    }
+    trap cleanup_probe EXIT
+    if docker volume inspect "$probe_volume" >/dev/null 2>&1; then
+      echo 'Refusing to reuse an existing schema-probe volume.'
+      exit 1
+    fi
+    docker volume create --label "vcard.schema-probe=$RELEASE_SHA" "$probe_volume" >/dev/null
+    probe_volume_created=1
+
+    docker run --rm --network none --user 0:0 --workdir /app/apps/api \
+      --mount "type=volume,src=$probe_volume,dst=/app/data" \
+      --mount "type=bind,src=$BACKUP_DIR,dst=/backup,readonly" \
+      --env "SNAPSHOT_NAME=$SNAPSHOT_NAME" \
+      --env "API_RUNTIME_UID=$API_RUNTIME_UID" \
+      --env "API_RUNTIME_GID=$API_RUNTIME_GID" \
+      --entrypoint node "$API_IMAGE_REF" -e '
+        const fs = require("node:fs")
+        const source = `/backup/${process.env.SNAPSHOT_NAME}`
+        const destination = "/app/data/leads.db"
+        fs.copyFileSync(source, destination)
+        fs.chownSync(destination, Number(process.env.API_RUNTIME_UID), Number(process.env.API_RUNTIME_GID))
+        fs.chmodSync(destination, 0o600)
+      '
+
+    docker run -d --name "$probe_container" --network none --read-only --tmpfs /tmp \
+      --user "$API_RUNTIME_UID:$API_RUNTIME_GID" \
+      --mount "type=volume,src=$probe_volume,dst=/app/data" \
+      --mount "type=bind,src=$ALLOWLIST_PATH,dst=/app/allowed_chats.json,readonly" \
+      --env "DOMAIN_NAME=$DOMAIN_NAME" \
+      --env "NODE_ENV=$NODE_ENV" \
+      --env "BACKEND_PORT=$BACKEND_PORT" \
+      --env "ENABLED_PROVIDERS=$ENABLED_PROVIDERS" \
+      --env "TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN" \
+      --env "TELEGRAM_MASTER_ID=$TELEGRAM_MASTER_ID" \
+      --env "TELEGRAM_NOTIFY_IDS=$TELEGRAM_NOTIFY_IDS" \
+      --env "WEBHOOK_SECRET=$WEBHOOK_SECRET" \
+      "$API_IMAGE_REF" >/dev/null
+
+    ready=0
+    for attempt in $(seq 1 30); do
+      if docker exec "$probe_container" curl --fail --silent http://localhost:5678/api/health >/dev/null 2>&1; then
+        ready=1
+        break
+      fi
+      sleep 2
+    done
+    if [ "$ready" -ne 1 ]; then
+      echo 'Candidate API did not start against the SQLite snapshot.'
+      exit 1
+    fi
+    docker exec "$probe_container" node \
+      /app/apps/api/dist/check-database-schema.js /app/data/leads.db >/dev/null
+    echo 'Candidate API and schema are compatible with the SQLite snapshot.'
+  args:
+    executable: /bin/bash
+  environment:
+    RELEASE_SHA: '{{ release_sha }}'
+    API_IMAGE_REF: '{{ effective_api_image_ref }}'
+    API_RUNTIME_UID: '{{ api_runtime_uid }}'
+    API_RUNTIME_GID: '{{ api_runtime_gid }}'
+    ALLOWLIST_PATH: '{{ project_dir }}/apps/api/allowed_chats.json'
+    DOMAIN_NAME: '{{ domain_name }}'
+    NODE_ENV: '{{ node_env }}'
+    BACKEND_PORT: '{{ backend_port }}'
+    ENABLED_PROVIDERS: '{{ enabled_providers }}'
+    TELEGRAM_BOT_TOKEN: '{{ telegram_bot_token }}'
+    TELEGRAM_MASTER_ID: '{{ telegram_master_id }}'
+    TELEGRAM_NOTIFY_IDS: '{{ telegram_notify_ids }}'
+    WEBHOOK_SECRET: '{{ webhook_secret }}'
+    BACKUP_DIR: '{{ backup_dir }}'
+    SNAPSHOT_NAME: '{{ (sqlite_backup_path | default("")).split("/") | last }}'
+  changed_when: false
+  when: sqlite_backup_path is defined
+  no_log: true
+  tags: [deploy, rollback, verify]
+
+- name: Stage reconciliation marker for the candidate release
+  ansible.builtin.copy:
+    content: >-
+      {{
+        {
+          'candidate_sha': release_sha,
+          'api_image_ref': effective_api_image_ref,
+          'clinic_web_image_ref': effective_clinic_web_image_ref,
+          'previous_release_sha': (previous_release_sha if previous_release_sha else none),
+          'backup_path': (sqlite_backup_path | default(none))
+        } | to_nice_json
+      }}
+    dest: '{{ project_dir }}/releases/reconciliation-required.json.pending'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0600'
+  tags: [deploy, rollback, release]
+
+- name: Create reconciliation marker before service recreation
+  ansible.builtin.command:
+    argv:
+      - mv
+      - --
+      - '{{ project_dir }}/releases/reconciliation-required.json.pending'
+      - '{{ project_dir }}/releases/reconciliation-required.json'
+  changed_when: true
+  tags: [deploy, rollback, release]
+
+- name: Recreate services from the validated images
   become: true
   become_user: '{{ ansible_user }}'
   ansible.builtin.shell: |
     cd "{{ project_dir }}"
-    docker compose \
+    docker compose --project-name "{{ compose_project_name }}" \
       -f ops/docker/compose/docker-compose.yml \
       -f ops/docker/compose/docker-compose.proxy.yml \
-      up -d --force-recreate --remove-orphans
+      up -d --remove-orphans
   environment:
+    CADDY_IMAGE_REF: '{{ caddy_image_ref }}'
     VPS_IP: '{{ vps_ip }}'
     DOMAIN_NAME: '{{ domain_name }}'
     STAGE_BASIC_AUTH_HASH: '{{ stage_basic_auth_hash }}'
@@ -62,10 +285,49 @@
     TELEGRAM_NOTIFY_IDS: '{{ telegram_notify_ids }}'
     IMAGE_REGISTRY: '{{ image_registry }}'
     IMAGE_TAG: '{{ image_tag }}'
+    API_IMAGE_REF: '{{ effective_api_image_ref }}'
+    CLINIC_WEB_IMAGE_REF: '{{ effective_clinic_web_image_ref }}'
   register: compose_result
   no_log: true
   changed_when: true
   tags: [docker, deploy]
+
+- name: Verify running API can read the protected allowlist
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.command:
+    cmd: >-
+      docker exec --env EXPECTED_ALLOWLIST_COUNT={{ expected_allowlist_count }}
+      vcard-api node -e 'const fs = require("node:fs"); const ids = JSON.parse(fs.readFileSync("/app/allowed_chats.json", "utf8")); if (!Array.isArray(ids) || ids.length !== Number(process.env.EXPECTED_ALLOWLIST_COUNT) || ids.some((id) => !Number.isSafeInteger(id))) process.exit(1); console.log(`Validated ${ids.length} Telegram allowlist entries`)'
+  changed_when: false
+  no_log: true
+  tags: [permissions, verify]
+
+- name: Verify deployed immutable image digests and source revision
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    set -euo pipefail
+    verify_image() {
+      container="$1"
+      expected_ref="$2"
+      actual_ref=$(docker inspect --format '{% raw %}{{.Config.Image}}{% endraw %}' "$container")
+      test "$actual_ref" = "$expected_ref"
+      image_id=$(docker inspect --format '{% raw %}{{.Image}}{% endraw %}' "$container")
+      revision=$(docker image inspect --format '{% raw %}{{index .Config.Labels "org.opencontainers.image.revision"}}{% endraw %}' "$image_id")
+      test "$revision" = "$RELEASE_SHA"
+    }
+    verify_image vcard-api "$API_IMAGE_REF"
+    verify_image vcard-clinic-web "$CLINIC_WEB_IMAGE_REF"
+  args:
+    executable: /bin/bash
+  environment:
+    RELEASE_SHA: '{{ release_sha }}'
+    API_IMAGE_REF: '{{ api_image_ref }}'
+    CLINIC_WEB_IMAGE_REF: '{{ clinic_web_image_ref }}'
+  register: deployed_images
+  changed_when: false
+  tags: [docker, deploy, verify]
 
 - name: 🔍 Verify deployed containers share the gateway network
   ansible.builtin.shell: |

@@ -1,4 +1,4 @@
-FROM node:24.20.0-bookworm-slim AS builder
+FROM node:24.20.0-bookworm-slim@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e AS builder
 
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
@@ -25,6 +25,10 @@ RUN pnpm --filter @vcard/shared build && \
     pnpm --filter @vcard/clinic-web check:metadata
 
 FROM nginx:1.25.4-alpine@sha256:31bad00311cb5eeb8a6648beadcf67277a175da89989f14727420a80e2e76742 AS runtime
+
+ARG VCS_REF=unknown
+LABEL org.opencontainers.image.source="https://github.com/SterbenXIII/Nazar_drip_vcard" \
+    org.opencontainers.image.revision="$VCS_REF"
 
 RUN touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/run/nginx.pid /var/cache/nginx /var/log/nginx

@@ -285,10 +285,22 @@ The playbook is designed to be called from GitHub Actions. See `.github/workflow
 
 ### Rollback safety
 
-The rollback workflow accepts only a full lowercase commit SHA, verifies that the exact images are pullable before service recreation, and uses the same `DEPLOY_PATH`, protected HTTPS hostnames, and staging access checks. Before rollback mutation, Ansible starts an ephemeral container from the API image with the persistent `api_data` volume attached, so it can use SQLite's backup API even when `vcard-api` is stopped. It does not blindly copy `leads.db` or its WAL sidecars, and it **does not delete Docker volumes or the SQLite database**. Do not add `docker compose down --volumes`, `docker volume rm`, or prune commands with `--volumes` to rollback steps.
+Every successful deploy records both `releases/<sha>.json` and the atomically updated `releases/current.json`. Before either a deploy or rollback changes the checkout or containers, Ansible validates the current manifest and snapshots an existing SQLite database from its recorded API image into `backups/`. The snapshot directory is mode `0700`; verified snapshots are mode `0600` and must pass SQLite `integrity_check`. A first launch with no existing data skips the snapshot. Existing volumes without a valid current manifest, missing prior images, or failed backups block recreation.
+
+Manual rollback accepts only a full lowercase SHA whose release manifest is on the VPS, whose commit is an ancestor of `main`, and whose CI and deploy workflow runs succeeded. It verifies the manifest's digest images are pullable and their OCI revisions match the SHA before Ansible runs. The current release SHA cannot be selected. After service recreation, the HTTPS/auth/health/403 checks must pass before `current.json` changes.
+
+Ansible atomically writes `releases/reconciliation-required.json` immediately before Compose recreation. The marker includes the candidate SHA and image digests, previous successful SHA, and snapshot path. The workflow removes it only after the release manifest/current pointer has been recorded following successful smoke checks. A remaining marker blocks all later deploys and rollbacks until an operator reconciles the running containers, checkout, backup and SQLite schema. On failure, the workflow reports the previous successful SHA and available snapshot path. No automatic rollback runs because forward-only migrations may make the old API incompatible with the current database.
+
+The backup uses SQLite's backup API rather than copying `leads.db` or its WAL sidecars. It **does not delete Docker volumes or the SQLite database**. Do not add `docker compose down --volumes`, `docker volume rm`, or prune commands with `--volumes` to deployment or rollback steps.
 
 The application rollback contract is limited: an older image is supported only when its migrations remain readable with the existing database schema. The repository has forward-only startup migrations and no general backward-compatibility guarantee. If an older image cannot read the schema, restore from the pre-rollback SQLite backup instead of assuming that image replacement alone is safe.
 The VPS provider currently backs up weekly. Before enabling lead collection for a public release, add a separate daily SQLite backup and verify a restore; the rollback snapshot is not a scheduled backup.
+
+### Ubuntu 26.04 deployment rehearsal
+
+Run `bash tests/deployment/ubuntu2604_lab.sh` from the repository root on a machine with Multipass, Docker-compatible network access, and at least 4 CPUs, 6 GB RAM, and 32 GB free disk. The script creates a uniquely named disposable Ubuntu 26.04 VM, confirms Docker is absent, bootstraps Docker with the production Ansible task, then uses synthetic Telegram/auth values and a local bare Git remote to test first deploy, same-SHA idempotency, stale-SHA rejection, missing-image/backup refusal, update, reconciliation blocking, SQLite backup integrity, and rollback. It deletes the VM on exit and keeps the run log under `/tmp/clinic-cd-ubuntu2604-*.log`. The lab-only Ansible path is accepted only for `localhost`, `/opt/clinic-cd-lab/`, and local image names tagged with the full release SHA. It does not verify public DNS, public TLS, GitHub Actions credentials, or a live VPS.
+
+If a real deployment leaves `releases/reconciliation-required.json`, do not start another deploy or rollback and do not delete the marker. Compare the marker's candidate SHA and backup path with `git -C "$DEPLOY_PATH" rev-parse HEAD`, the running `vcard-api`/`vcard-clinic-web` image references and OCI revision labels, the current manifest, the named `api_data` volume, and a read-only SQLite `integrity_check`/schema check against the recorded backup. Run the authenticated staging smoke checks before deciding which release is actually serving traffic. Only after the running image pair, checkout, database schema, and backup agree may an operator atomically record the verified release manifest/current pointer and remove the marker; if they do not agree, preserve the volume and backup and restore from the verified snapshot using the documented SQLite recovery procedure. Never infer that the previous image is safe just because it is available: migrations are forward-only.
 
 ### Notification provider contract
 
@@ -298,25 +310,31 @@ The VPS sets `ENABLED_PROVIDERS=TELEGRAM`; `TELEGRAM_BOT_TOKEN` is required. Ema
 
 Set these in repository settings before running deployment:
 
-| Name | Type | Requirement | Purpose |
-| --- | --- | --- | --- |
-| `VPS_IP` | Variable | Required | Public VPS IPv4 for SSH |
-| `DEPLOY_PATH` | Variable | Optional | VPS checkout path; defaults to `/home/emerald-recovery` |
-| `HOSTINGER_SSH_KEY` | Secret | Required | Private deployment key |
-| `HOSTINGER_SSH_USER` | Secret | Required | VPS SSH account |
-| `HOSTINGER_SSH_KNOWN_HOSTS` | Secret | Required | Pinned SSH host key entry for the VPS |
-| `STAGE_BASIC_AUTH_PASSWORD` | Secret | Required | Stage password, at least 16 characters; user name is `stage` |
-| `TELEGRAM_BOT_TOKEN` | Secret | Required | Bot credential for API and workflow notifications |
-| `TELEGRAM_MASTER_ID` | Secret | Required | Primary notification recipient |
-| `TELEGRAM_ALLOWED_CHAT_IDS` | Secret | Required | Comma-separated numeric production allowlist |
-| `TELEGRAM_NOTIFY_IDS` | Secret | Optional | Additional notification recipients |
-| `WEBHOOK_SECRET` | Secret | Optional | Shared secret for authenticated Telegram webhook requests |
+| Name                        | Type     | Requirement | Purpose                                                      |
+| --------------------------- | -------- | ----------- | ------------------------------------------------------------ |
+| `VPS_IP`                    | Variable | Required    | Public VPS IPv4 for SSH                                      |
+| `DEPLOY_PATH`               | Variable | Optional    | VPS checkout path; defaults to `/home/emerald-recovery`      |
+| `HOSTINGER_SSH_KEY`         | Secret   | Required    | Private deployment key                                       |
+| `HOSTINGER_SSH_USER`        | Secret   | Required    | VPS SSH account                                              |
+| `HOSTINGER_SSH_KNOWN_HOSTS` | Secret   | Required    | Pinned SSH host key entry for the VPS                        |
+| `STAGE_BASIC_AUTH_PASSWORD` | Secret   | Required    | Stage password, at least 16 characters; user name is `stage` |
+| `TELEGRAM_BOT_TOKEN`        | Secret   | Required    | Bot credential for API and workflow notifications            |
+| `TELEGRAM_MASTER_ID`        | Secret   | Required    | Primary notification recipient                               |
+| `TELEGRAM_ALLOWED_CHAT_IDS` | Secret   | Required    | Comma-separated numeric production allowlist                 |
+| `TELEGRAM_NOTIFY_IDS`       | Secret   | Optional    | Additional notification recipients                           |
+| `WEBHOOK_SECRET`            | Secret   | Optional    | Shared secret for authenticated Telegram webhook requests    |
 
 The stage hostname is fixed to `havenhub.tech`; no `DOMAIN_NAME` variable is required. Actions provides `GITHUB_TOKEN`; the workflow grants `packages: write` to publish GHCR images and Ansible uses it to pull private images. Do not create a separate `GITHUB_TOKEN` secret.
 Actions derives the Caddy password hash from `STAGE_BASIC_AUTH_PASSWORD`; only the hash is passed to Caddy. The plaintext is used for authenticated smoke checks and is not written to the VPS.
-The provided VPS account is `root`, but a dedicated SSH user with sudo is recommended for GitHub Actions.
+The provided VPS account is `root`; current workflows use that same privileged SSH identity for Docker login, pulls, Compose, verification and cleanup.
 Manual `make up` and `make rebuild` runs require `STAGE_BASIC_AUTH_HASH`; they stop before modifying the stack when it is absent. `make verify-deploy` requires `STAGE_BASIC_AUTH_PASSWORD` for its authenticated checks.
-Generate a manual Caddy hash interactively with `docker run --rm -it caddy:2-alpine caddy hash-password`; keep the plaintext password out of `.env` and Git.
+Generate a manual Caddy hash interactively with the pinned runtime image:
+
+```sh
+docker run --rm -it docker.io/library/caddy:2-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f caddy hash-password
+```
+
+Keep the plaintext password out of `.env` and Git.
 
 ## 🔒 Security Notes
 

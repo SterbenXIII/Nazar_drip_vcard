@@ -7,7 +7,7 @@
       - 'Project: {{ project_dir }}'
       - 'Domain: {{ domain_name }}'
       - 'Environment: {{ node_env }}'
-      - "Git auth: {{ 'PAT token' if (github_token | default('', true) | length > 0) else 'anonymous (public repo)' }}"
+      - 'Git source: public GitHub repository'
   tags: [always]
 
 - name: 🔍 Check if Docker is installed
@@ -91,44 +91,25 @@
         state: present
         update_cache: true
 
-    - name: Start and enable Docker
-      become: true
-      ansible.builtin.systemd:
-        name: docker
-        state: started
-        enabled: true
+- name: Start and enable Docker for the deployment SSH identity
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
+  tags: [docker, install]
 
-    - name: Add user to docker group
-      become: true
-      ansible.builtin.user:
-        name: '{{ ansible_user }}'
-        groups: docker
-        append: true
-
-- name: 🐍 Install Python Docker SDK (required for docker_compose_v2)
-  tags: [docker, pip]
-  block:
-    - name: Install python3-pip
-      become: true
-      ansible.builtin.apt:
-        name:
-          - python3-pip
-          - python3-setuptools
-        state: present
-        update_cache: true
-        cache_valid_time: 3600
-
-    - name: Install Docker Python SDK
-      become: true
-      ansible.builtin.pip:
-        name:
-          - docker>=6.0.0
-        state: present
-        extra_args: --break-system-packages
-
-- name: 🔍 Verify Docker Compose plugin
-  ansible.builtin.command: docker compose version
-  register: compose_check
+- name: 🔍 Verify Docker daemon for the deployment SSH identity
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.command: docker info
   changed_when: false
-  failed_when: compose_check.rc != 0
+  tags: [docker, check]
+
+- name: 🔍 Verify Docker Compose plugin for the deployment SSH identity
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.command: docker compose version
+  changed_when: false
   tags: [docker, check]

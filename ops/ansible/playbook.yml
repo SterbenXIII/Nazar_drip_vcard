@@ -18,14 +18,20 @@
     node_env: "{{ lookup('env', 'NODE_ENV') | default('production', true) }}"
     deploy_path: "{{ lookup('env', 'DEPLOY_PATH') | default('/home/emerald-recovery', true) }}"
     docker_network: "{{ lookup('env', 'DOCKER_NETWORK') | default('web-gateway', true) }}"
+    compose_project_name: 'compose'
+    caddy_image_ref: "{{ lookup('env', 'CADDY_IMAGE_REF') | default('docker.io/library/caddy:2-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f', true) }}"
     timezone: "{{ lookup('env', 'TIMEZONE') | default('Europe/Kyiv', true) }}"
     image_registry: ''
     image_tag: ''
+    release_sha: "{{ lookup('env', 'RELEASE_SHA') | default(image_tag, true) }}"
+    api_image_ref: ''
+    clinic_web_image_ref: ''
     rollback_mode: false
+    lab_mode: false
 
-    # Git authentication — github_token is passed via environment variable from CI
+    # github_token is used only for GHCR pulls; the repository itself is public.
     github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"
-    github_repository_path: 'SterbenXIII/Lubomyr_drip_vcard.git'
+    github_repository_path: 'SterbenXIII/Nazar_drip_vcard.git'
     github_repository_url: ''
     github_repository_source: "{{ github_repository_path if (github_repository_path | default('', true) | length > 0) else github_repository_url }}"
     github_repository_path_normalized: >-
@@ -34,12 +40,7 @@
         | regex_replace('^(https?://github\\.com/)+', '')
         | regex_replace('^git@github\\.com:', '')        | regex_replace('\.git$', '')        | regex_replace('/+$', '')
       }}
-    repository_url: >-
-      {{
-        ('https://x-access-token:' ~ github_token ~ '@github.com/' ~ github_repository_path_normalized)
-        if (github_token | default('', true) | length > 0)
-        else ('https://github.com/' ~ github_repository_path_normalized)
-      }}
+    repository_url: 'https://github.com/{{ github_repository_path_normalized }}.git'
 
     # Override these via --extra-vars in GitHub Actions
     telegram_bot_token: "{{ lookup('env', 'TELEGRAM_BOT_TOKEN') }}"
@@ -54,8 +55,9 @@
 
     # Paths and project config (from inventory)
     project_dir: '{{ deploy_path }}'
-    data_dir: '{{ deploy_path }}/apps/api/data'
     backup_dir: '{{ deploy_path }}/backups'
+    current_release_manifest: '{{ project_dir }}/releases/current.json'
+    reconciliation_marker: '{{ project_dir }}/releases/reconciliation-required.json'
 
   tasks:
     - name: Validate required deployment variables
@@ -81,14 +83,92 @@
       no_log: true
       tags: [always, deploy]
 
-    - name: Validate immutable production image tag
+    - name: Restrict disposable lab deployments to localhost and local image tags
       ansible.builtin.assert:
         that:
-          - image_tag is match('^[0-9a-f]{40}$')
-        fail_msg: 'FATAL: production image_tag must be a full lowercase 40-character commit SHA.'
-        success_msg: 'Immutable production image tag is configured.'
+          - domain_name == 'localhost'
+          - project_dir is match('^/opt/clinic-cd-lab(/|$)')
+          - release_sha is match('^[0-9a-f]{40}$')
+          - api_image_ref == ('local/vcard-api:' ~ release_sha)
+          - clinic_web_image_ref == ('local/vcard-clinic-web:' ~ release_sha)
+        fail_msg: 'Lab mode is restricted to localhost, the disposable lab path, and SHA-tagged local images.'
+      when: lab_mode | bool
+      tags: [always]
+
+    - name: Check for unresolved release reconciliation state
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      loop:
+        - '{{ reconciliation_marker }}'
+        - '{{ reconciliation_marker }}.pending'
+      register: reconciliation_state
+      tags: [always, deploy, rollback]
+
+    - name: Block deployment until the previous release is reconciled
+      ansible.builtin.assert:
+        that:
+          - reconciliation_state.results | selectattr('stat.exists') | list | length == 0
+        fail_msg: >-
+          A release reconciliation marker exists. Compare the running containers, checkout,
+          backup and SQLite schema with the operator report before another deploy or rollback.
+      tags: [always, deploy, rollback]
+
+    - name: Validate immutable production release
+      ansible.builtin.assert:
+        that:
+          - release_sha is match('^[0-9a-f]{40}$')
+          - >-
+            api_image_ref is match('^ghcr\.io/[a-z0-9._/-]+/vcard-api@sha256:[0-9a-f]{64}$') or
+            ((lab_mode | bool) and api_image_ref == ('local/vcard-api:' ~ release_sha))
+          - >-
+            clinic_web_image_ref is match('^ghcr\.io/[a-z0-9._/-]+/vcard-clinic-web@sha256:[0-9a-f]{64}$') or
+            ((lab_mode | bool) and clinic_web_image_ref == ('local/vcard-clinic-web:' ~ release_sha))
+        fail_msg: 'FATAL: production requires a full release SHA and immutable GHCR image digests.'
+        success_msg: 'Immutable production release and image references are configured.'
       when: node_env == 'production'
       tags: [always, deploy]
+
+    - name: Check requested rollback release manifest
+      ansible.builtin.stat:
+        path: '{{ project_dir }}/releases/{{ release_sha }}.json'
+      register: rollback_manifest_stat
+      when: rollback_mode | bool
+      tags: [always, rollback]
+
+    - name: Require a previously successful release manifest for rollback
+      ansible.builtin.assert:
+        that:
+          - rollback_manifest_stat.stat.exists
+        fail_msg: 'Rollback target has no successful release manifest on the VPS.'
+      when: rollback_mode | bool
+      tags: [always, rollback]
+
+    - name: Read requested rollback release manifest
+      ansible.builtin.slurp:
+        src: '{{ project_dir }}/releases/{{ release_sha }}.json'
+      register: rollback_manifest_content
+      when: rollback_mode | bool
+      tags: [always, rollback]
+
+    - name: Parse requested rollback release manifest
+      ansible.builtin.set_fact:
+        rollback_manifest: '{{ rollback_manifest_content.content | b64decode | from_json }}'
+      when: rollback_mode | bool
+      tags: [always, rollback]
+
+    - name: Validate requested rollback manifest and image digests
+      ansible.builtin.assert:
+        that:
+          - rollback_manifest.keys() | sort == ['api_image_ref', 'ci_run_id', 'clinic_web_image_ref', 'deploy_run_id', 'release_sha']
+          - rollback_manifest.release_sha == release_sha
+          - rollback_manifest.api_image_ref == api_image_ref
+          - rollback_manifest.clinic_web_image_ref == clinic_web_image_ref
+          - rollback_manifest.ci_run_id | string is match('^[0-9]+$')
+          - rollback_manifest.deploy_run_id | string is match('^[0-9]+$')
+        fail_msg: 'Rollback target manifest does not match the requested SHA and image digests.'
+      when: rollback_mode | bool
+      no_log: true
+      tags: [always, rollback]
 
     - name: Validate Telegram allowlist input
       ansible.builtin.assert:
@@ -102,41 +182,13 @@
       no_log: true
       tags: [always, env]
 
-    - name: Create SQLite backup before rollback mutation
-      become: true
-      become_user: '{{ ansible_user }}'
-      ansible.builtin.shell: |
-        set -euo pipefail
-        backup_path="/app/data/.rollback-backup-$(date -u +%Y%m%dT%H%M%SZ).db"
-        api_image=$(docker inspect -f '{% raw %}{{.Config.Image}}{% endraw %}' vcard-api)
-        docker run --rm --user node --volumes-from vcard-api --env "BACKUP_PATH=${backup_path}" "$api_image" node -e '
-          const Database = require("better-sqlite3")
-          const database = new Database("/app/data/leads.db", { readonly: true })
-          database.backup(process.env.BACKUP_PATH)
-            .then(() => database.close())
-            .catch(() => {
-              database.close()
-              process.exit(1)
-            })
-        '
-        docker run --rm --user node --volumes-from vcard-api "$api_image" test -s "${backup_path}"
-      args:
-        executable: /bin/bash
-      changed_when: true
-      when: rollback_mode | bool
-      tags: [rollback, backup]
-
-    - name: Pre-deploy Cleanup
-      ansible.builtin.shell: |
-        docker builder prune -f --filter "until=2h"
-        docker image prune -f
-      changed_when: true
-      tags: [cleanup]
-
     - name: Main Deployment Block
       block:
         - name: 01 - Preflight & System Check
           ansible.builtin.include_tasks: tasks/01_preflight_system.yml
+
+        - name: Snapshot existing SQLite data before checkout or recreation
+          ansible.builtin.include_tasks: tasks/backup_sqlite.yml
 
         - name: 02 - Network & Firewall
           ansible.builtin.include_tasks: tasks/02_network.yml
@@ -165,32 +217,33 @@
             cd "{{ project_dir }}"
             {
               echo '=== compose ps ==='
-              docker compose \
+              docker compose --project-name "{{ compose_project_name }}" \
                 -f ops/docker/compose/docker-compose.yml \
                 -f ops/docker/compose/docker-compose.proxy.yml ps -a 2>&1 || true
+              echo '=== release ==='
+              printf 'candidate_sha=%s\n' '{{ release_sha }}'
               for container in vcard-api vcard-clinic-web vcard-proxy; do
-                echo "=== ${container} logs (tail 30) ==="
                 if docker container inspect "${container}" >/dev/null 2>&1; then
-                  echo "--- ${container} state/health/restarts ---"
                   docker container inspect --format '{% raw %}{{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} exit={{.State.ExitCode}} restarts={{.RestartCount}}{% endraw %}' "${container}" 2>&1 || true
-                  echo "--- ${container} networks/ports ---"
-                  docker container inspect --format '{% raw %}{{range $name, $network := .NetworkSettings.Networks}}network={{$name}} {{end}}ports={{json .NetworkSettings.Ports}}{% endraw %}' "${container}" 2>&1 || true
-                  docker logs --tail 30 "${container}" 2>&1 || true
                 else
-                  echo "Container ${container} does not exist."
+                  printf '%s status=missing\n' "$container"
                 fi
               done
-              echo '=== internal API health ==='
               if docker container inspect vcard-api >/dev/null 2>&1; then
-                docker exec vcard-api curl --fail --silent --show-error http://localhost:5678/api/health 2>&1 || true
+                if docker exec vcard-api curl --fail --silent --output /dev/null --max-time 5 http://localhost:5678/api/health >/dev/null 2>&1; then
+                  echo 'api_http_health=passed'
+                else
+                  echo 'api_http_health=failed'
+                fi
               else
-                echo 'vcard-api does not exist.'
+                echo 'api_http_health=unavailable'
               fi
-              echo '=== protected stage health URL ==='
-              echo 'https://{{ domain_name }}/api/health (HTTP Basic Auth required)'
+              echo 'Public smoke checks: inspect workflow step status; response bodies and credentials are not recorded.'
             }
           args:
             executable: /bin/bash
+          environment:
+            CADDY_IMAGE_REF: '{{ caddy_image_ref }}'
           register: deployment_diagnostics
           changed_when: false
 
@@ -202,20 +255,14 @@
               chat_id: '{{ telegram_master_id }}'
               parse_mode: 'HTML'
               text: |
-                <b>❌ Deployment failed</b>
-                <pre>{{ deployment_diagnostics.stdout | default(deployment_diagnostics.stderr | default('No diagnostics captured.'), true) | regex_replace('\x1b\\[[0-9;]*m', '') | regex_replace('&', '&amp;') | regex_replace('<', '&lt;') | regex_replace('>', '&gt;') | truncate(3500, true, '...') }}</pre>
+                Deployment failed for release {{ release_sha }}.
+                Check the GitHub Actions run for service states and the SQLite snapshot path.
           failed_when: false
           no_log: true
 
         - name: Fail deployment after diagnostics
           ansible.builtin.fail:
             msg: 'Deployment failed; diagnostics were captured and the failure notification was attempted.'
-
-    - name: Final System Cleanup
-      ansible.builtin.command: "docker system prune -f --filter 'until=24h'"
-      # NOTE: --volumes intentionally omitted — would wipe api_data SQLite volume
-      changed_when: true
-      tags: [cleanup]
 
     - name: 📋 Deployment Summary
       ansible.builtin.debug:
@@ -232,7 +279,7 @@
           - 'Next steps:'
           - '1. Stage: https://{{ domain_name }}/ (HTTP Basic Auth required)'
           - '2. API health: https://{{ domain_name }}/api/health (HTTP Basic Auth required)'
-          - '3. Check logs: docker logs vcard-api'
+          - '3. Check current service health: {{ project_dir }}/scripts/monitor.sh'
           - '========================================'
       tags: [always]
 
@@ -242,9 +289,11 @@
       become_user: '{{ ansible_user }}'
       ansible.builtin.shell: |
         cd "{{ project_dir }}"
-        docker compose -f ops/docker/compose/docker-compose.yml restart api clinic-web
+        docker compose --project-name "{{ compose_project_name }}" \
+          -f ops/docker/compose/docker-compose.yml restart api clinic-web
       environment:
         VPS_IP: '{{ vps_ip }}'
         NODE_ENV: '{{ node_env }}'
         BACKEND_PORT: '{{ backend_port }}'
+        CADDY_IMAGE_REF: '{{ caddy_image_ref }}'
       changed_when: true

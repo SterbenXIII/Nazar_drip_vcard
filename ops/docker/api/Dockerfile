@@ -1,8 +1,8 @@
 # Dockerfile for @vcard/api (Node.js runtime)
 
 # --- Stage 1: Base (Clean Node.js + System Updates) ---
-FROM node:24-bookworm-slim@sha256:e8e2e91b1378f83c5b2dd15f0247f34110e2fe895f6ca7719dbb780f929368eb AS base
-LABEL org.opencontainers.image.source="https://github.com/SterbenXIII/Lubomyr_drip_vcard"
+FROM node:24.20.0-bookworm-slim@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e AS base
+LABEL org.opencontainers.image.source="https://github.com/SterbenXIII/Nazar_drip_vcard"
 LABEL org.opencontainers.image.description="API Runtime for vcard monorepo"
 
 WORKDIR /app
@@ -54,7 +54,9 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 
 # --- Stage 6: API Runtime (Clean and Minimal) ---
 FROM base AS runtime
-LABEL org.opencontainers.image.description="Backend API runtime"
+ARG VCS_REF=unknown
+LABEL org.opencontainers.image.description="Backend API runtime" \
+    org.opencontainers.image.revision="$VCS_REF"
 
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \

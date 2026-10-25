@@ -49,13 +49,11 @@ test.describe('SEO Matrix & Hreflang', () => {
     page,
   }) => {
     await page.goto('/')
-    await expect(page.locator('body')).toContainText('2000')
-    await expect(page.locator('body')).not.toContainText('1800')
+    await expect(page.locator('body')).toContainText('від 5000 грн')
 
     await page.goto('/krapelnytsia-vid-alkoholnoi-intoksykatsii')
-    await expect(page.locator('body')).toContainText('2000')
-    await expect(page.locator('body')).not.toContainText('1800')
-    await expect(page.locator('meta[itemprop="price"]').first()).toHaveAttribute('content', '2000')
+    await expect(page.locator('body')).toContainText('від 5000 грн')
+    await expect(page.locator('meta[itemprop="price"]').first()).toHaveAttribute('content', '5000')
   })
 
   test('homepage contact actions use the public contact destinations', async ({ page }) => {

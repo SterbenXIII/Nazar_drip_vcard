@@ -32,9 +32,9 @@ const t = {
 ---
 
 <nav aria-label={uiT('coverage.label')} class="coverage-area">
-  <h3>
+  <h2>
     {t.districtsHeading}
-  </h3>
+  </h2>
   <ul class="coverage-list mb-6">
     {
       lvivCity.districts.map((district) => (
@@ -50,9 +50,9 @@ const t = {
     }
   </ul>
 
-  <h3>
+  <h2>
     {t.citiesHeading}
-  </h3>
+  </h2>
   <ul class="coverage-list">
     {
       oblastCities.map((city) => (
@@ -73,7 +73,7 @@ const t = {
     border-top: 1px solid var(--md-border);
   }
 
-  .coverage-area h3 {
+  .coverage-area h2 {
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--md-text);

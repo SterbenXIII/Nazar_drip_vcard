@@ -21,8 +21,8 @@
     cd "{{ project_dir }}"
     git init
     git remote add origin "{{ repository_url }}" 2>/dev/null || git remote set-url origin "{{ repository_url }}"
-    git fetch origin main
-    git checkout -B main origin/main
+    git fetch origin "{{ release_sha }}"
+    git checkout --detach FETCH_HEAD
   args:
     creates: '{{ project_dir }}/.git/HEAD'
   when: not git_repo.stat.exists
@@ -35,7 +35,7 @@
   ansible.builtin.git:
     repo: '{{ repository_url }}'
     dest: '{{ project_dir }}'
-    version: main
+    version: '{{ release_sha }}'
     force: true
     update: true
   when: git_repo.stat.exists
@@ -50,26 +50,6 @@
     group: '{{ ansible_user }}'
     mode: '0755'
   loop:
-    - '{{ data_dir }}'
     - '{{ backup_dir }}'
-  tags: [project]
-
-- name: 📋 Write protected Telegram allowlist
-  ansible.builtin.copy:
-    content: >-
-      {{
-        (
-          (telegram_allowed_chat_ids | trim).split(',')
-          | map('trim')
-          | map('int')
-          | list
-          | to_json
-        ) if (telegram_allowed_chat_ids | default('', true) | trim | length > 0) else '[]'
-      }}
-    dest: '{{ project_dir }}/apps/api/allowed_chats.json'
-    owner: '{{ ansible_user }}'
-    group: '{{ ansible_user }}'
-    mode: '0600'
-    force: true
-  no_log: true
+    - '{{ project_dir }}/releases'
   tags: [project]
