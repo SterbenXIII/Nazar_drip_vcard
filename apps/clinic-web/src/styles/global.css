@@ -386,6 +386,17 @@ a {
   margin-top: 1.625rem;
 }
 
+.hero-actions .button {
+  gap: 0.5rem;
+}
+
+.contact-method-icon {
+  width: 1.1em;
+  height: 1.1em;
+  flex: none;
+  vertical-align: -0.15em;
+}
+
 .hero-action-group {
   display: grid;
   justify-items: start;
