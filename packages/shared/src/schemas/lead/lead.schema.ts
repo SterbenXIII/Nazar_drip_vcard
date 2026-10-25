@@ -24,16 +24,24 @@ export const leadSchema = z.object({
     .pipe(z.string().regex(REGEX.PHONE_UA, VALIDATION_MESSAGES.PHONE_INVALID_FORMAT)),
 
   district: z
-    .enum(DISTRICTS, {
-      message: VALIDATION_MESSAGES.DISTRICT_INVALID,
-    })
-    .optional()
+    .preprocess(
+      (district) => (district === '' ? undefined : district),
+      z
+        .enum(DISTRICTS, {
+          message: VALIDATION_MESSAGES.DISTRICT_INVALID,
+        })
+        .optional(),
+    )
     .transform((district) => district ?? ''),
 
   services: z
-    .array(z.string())
-    .min(VALIDATION_LIMITS.MIN_SERVICES, VALIDATION_MESSAGES.SERVICES_MIN_ONE)
-    .optional()
+    .preprocess(
+      (services) => (Array.isArray(services) && services.length === 0 ? undefined : services),
+      z
+        .array(z.string())
+        .min(VALIDATION_LIMITS.MIN_SERVICES, VALIDATION_MESSAGES.SERVICES_MIN_ONE)
+        .optional(),
+    )
     .transform((services) => services ?? []),
 
   source: z.string().optional(),
