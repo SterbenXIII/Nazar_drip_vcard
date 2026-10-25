@@ -1,31 +1,38 @@
 ---
 import StagingIllustration from './StagingIllustration.astro'
+import { resolveStagingIllustration } from '../content/staging-media.mjs'
 
 const siteMode = process.env.CLINIC_SITE_MODE ?? 'normal'
 const detailRoutesAvailable = siteMode !== 'normal'
+const hasConditionsVisual =
+  siteMode !== 'staging' || resolveStagingIllustration('IMG_0905', siteMode) !== null
 ---
 
 <section class="landing-section conditions" id="conditions" aria-labelledby="conditions-title">
-  <div class="wrap conditions-layout">
-    <div class="conditions-visual">
-      {
-        siteMode === 'staging' ? (
-          <StagingIllustration slot="IMG_0905" />
-        ) : (
-          <figure class="conditions-photo">
-            <img
-              src="/havenhub-lounge-v2.jpg"
-              alt="Ілюстративне зображення світлої вітальні з панорамними вікнами та рослинами"
-              loading="lazy"
-              decoding="async"
-              width="1536"
-              height="1024"
-            />
-            <figcaption>Візуалізація інтер’єру, не фото приміщення HAVENHUB</figcaption>
-          </figure>
-        )
-      }
-    </div>
+  <div
+    class:list={['wrap conditions-layout', !hasConditionsVisual && 'conditions-layout-text-only']}
+  >
+    {
+      hasConditionsVisual && (
+        <div class="conditions-visual">
+          {siteMode === 'staging' ? (
+            <StagingIllustration slot="IMG_0905" />
+          ) : (
+            <figure class="conditions-photo">
+              <img
+                src="/havenhub-lounge-v2.jpg"
+                alt="Ілюстративне зображення світлої вітальні з панорамними вікнами та рослинами"
+                loading="lazy"
+                decoding="async"
+                width="1536"
+                height="1024"
+              />
+              <figcaption>Візуалізація інтер’єру, не фото приміщення HAVENHUB</figcaption>
+            </figure>
+          )}
+        </div>
+      )
+    }
 
     <div class="section-intro conditions-intro">
       <p class="eyebrow">Про центр</p>
