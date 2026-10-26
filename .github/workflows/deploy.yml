@@ -114,6 +114,19 @@ jobs:
 
           docker run -d --name candidate-clinic-web --network candidate-network \
             "local/vcard-clinic-web:$COMMIT_SHA"
+
+          for attempt in $(seq 1 20); do
+            if docker exec candidate-clinic-web wget --quiet --spider http://127.0.0.1:8080/; then
+              break
+            fi
+            if [ "$attempt" -eq 20 ]; then
+              docker logs candidate-clinic-web
+              echo 'Candidate clinic-web failed its health check.'
+              exit 1
+            fi
+            sleep 2
+          done
+
           docker exec candidate-clinic-web wget -qO- http://127.0.0.1:8080/ | grep -qi 'noindex'
           missing_response=$(docker exec candidate-clinic-web sh -c \
             'wget -S -O /dev/null http://127.0.0.1:8080/contract-not-found 2>&1 || true')
