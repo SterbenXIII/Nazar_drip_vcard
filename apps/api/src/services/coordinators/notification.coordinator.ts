@@ -29,16 +29,18 @@ export class NotificationCoordinator {
 
     for (const provider of providers) {
       const targets = await this.getRecipientsFor(provider.providerName)
-      for (const target of targets) {
-        try {
-          await this.sendWithRetry(provider, message, target)
-        } catch (error) {
-          logger.error({
-            msg: `${LOG_MESSAGES.CRITICAL_FAILURE} ${provider.providerName} exception after lead persistence`,
-            error,
-          })
-        }
-      }
+      await Promise.all(
+        targets.map(async (target) => {
+          try {
+            await this.sendWithRetry(provider, message, target)
+          } catch (error) {
+            logger.error({
+              msg: `${LOG_MESSAGES.CRITICAL_FAILURE} ${provider.providerName} exception after lead persistence`,
+              error,
+            })
+          }
+        }),
+      )
     }
   }
 
