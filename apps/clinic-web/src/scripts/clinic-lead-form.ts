@@ -1,7 +1,7 @@
 import { API_ENDPOINTS, leadSchema, VALIDATION_LIMITS } from '@vcard/shared'
 
 const CLINIC_SOURCE = 'clinic-web'
-const REQUEST_TIMEOUT_MS = 10_000
+const REQUEST_TIMEOUT_MS = 60_000
 
 const form = document.querySelector<HTMLFormElement>('#clinic-lead-form')
 const submitButton = document.querySelector<HTMLButtonElement>('#clinic-submit')
