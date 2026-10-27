@@ -1,0 +1,308 @@
+---
+import { Picture } from 'astro:assets'
+
+import { hotline, telegram } from '../content/customer-materials'
+import { teamMembers } from '../content/team'
+
+interface Props {
+  h1: string
+  description: string
+}
+
+const { h1, description } = Astro.props
+---
+
+<main id="content" tabindex="-1" class="team-page">
+  <div class="wrap">
+    <header class="team-intro">
+      <p class="team-eyebrow">Фахівці центру</p>
+      <h1>{h1}</h1>
+      <p class="team-intro-copy">{description}</p>
+    </header>
+
+    <section class="team-roster" aria-label="Команда HAVENHUB">
+      <div class="team-grid">
+        {
+          teamMembers.map((member) => (
+            <article class="team-card" aria-labelledby={`team-member-${member.id}`}>
+              <figure
+                class="team-photo"
+                style={{
+                  '--team-photo-position': member.photoPosition,
+                  '--team-photo-scale': member.photoScale,
+                }}
+              >
+                <Picture
+                  src={member.photo}
+                  alt={member.photoAlt}
+                  widths={[320, 480, 640]}
+                  sizes="(min-width: 1200px) 10rem, (min-width: 761px) 13vw, 29vw"
+                  formats={['webp']}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <div class="team-copy">
+                <h2 id={`team-member-${member.id}`} class="team-name">
+                  {member.name}
+                </h2>
+                <p class="team-role">{member.role}</p>
+                <p class="team-experience">{member.experience}</p>
+                <p class="team-description">{member.description}</p>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="team-contact" aria-labelledby="team-contact-title">
+      <div class="team-contact-copy">
+        <p class="team-eyebrow">На зв’язку</p>
+        <h2 id="team-contact-title">Залишилися запитання?</h2>
+        <p>Зателефонуйте або напишіть у Telegram, щоб обговорити наступний крок.</p>
+      </div>
+      <div class="team-contact-actions">
+        <a class="team-call" href={hotline.href}>Зателефонувати</a>
+        <a class="team-telegram" href={telegram.href}>Написати в Telegram</a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<style>
+  .team-page {
+    padding-block: clamp(2.5rem, 6vw, 5rem);
+  }
+
+  .team-intro {
+    max-width: 54rem;
+    margin: 0 auto clamp(2rem, 5vw, 3.75rem);
+    padding: clamp(1.75rem, 5vw, 3.5rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, var(--surface-muted), var(--surface));
+    text-align: center;
+  }
+
+  .team-eyebrow {
+    margin: 0 0 0.75rem;
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  .team-intro h1 {
+    max-width: 18ch;
+    margin: 0 auto;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3.75rem);
+    letter-spacing: -0.025em;
+    line-height: 1.12;
+  }
+
+  .team-intro-copy {
+    max-width: 42rem;
+    margin: 1rem auto 0;
+    color: var(--text-muted);
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    line-height: 1.7;
+  }
+
+  .team-roster {
+    max-width: 72rem;
+    margin-inline: auto;
+  }
+
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .team-card {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(7rem, 10rem) minmax(0, 1fr);
+    align-items: stretch;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+  }
+
+  .team-photo {
+    position: relative;
+    min-width: 0;
+    min-height: 14rem;
+    margin: 0;
+    overflow: hidden;
+    background: var(--surface-muted);
+  }
+
+  :global(.team-photo picture) {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  :global(.team-photo img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--team-photo-position, center 32%);
+    transform: scale(var(--team-photo-scale, 1));
+    transform-origin: center 28%;
+  }
+
+  .team-copy {
+    min-width: 0;
+    padding: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .team-name {
+    margin: 0;
+    color: var(--primary);
+    font-family: var(--font-display);
+    font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+    line-height: 1.28;
+    overflow-wrap: anywhere;
+  }
+
+  .team-role {
+    margin: 0.55rem 0 0;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .team-experience {
+    display: inline-flex;
+    margin: 0.8rem 0 0;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    background: var(--surface-muted);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .team-description {
+    margin: 0.8rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    line-height: 1.65;
+  }
+
+  .team-contact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1.5rem;
+    max-width: 72rem;
+    margin: clamp(2rem, 5vw, 3.5rem) auto 0;
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-muted);
+  }
+
+  .team-contact-copy h2 {
+    margin: 0 0 0.5rem;
+    color: var(--text);
+    font-size: clamp(1.15rem, 2.2vw, 1.5rem);
+    line-height: 1.3;
+  }
+
+  .team-contact-copy > p:last-child {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .team-contact-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .team-contact-actions a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.7rem 1rem;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .team-call {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .team-telegram {
+    border: 1px solid var(--primary);
+    color: var(--primary);
+  }
+
+  .team-contact-actions a:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  @media (width <= 900px) {
+    .team-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (width <= 700px) {
+    .team-card {
+      grid-template-columns: minmax(6rem, 8rem) minmax(0, 1fr);
+    }
+
+    .team-contact {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .team-contact-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .team-contact-actions a {
+      white-space: normal;
+    }
+  }
+
+  @media (width <= 420px) {
+    .team-grid {
+      gap: 1rem;
+    }
+
+    .team-card {
+      grid-template-columns: minmax(5.5rem, 6.5rem) minmax(0, 1fr);
+    }
+
+    .team-copy {
+      padding: 0.875rem;
+    }
+
+    .team-contact-actions {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

@@ -12,7 +12,7 @@ const production = {
   CLINIC_ALLOW_PRODUCTION_BUILD: 'true',
   CLINIC_CANONICAL_ORIGIN: 'https://havenhub.example',
 }
-const supportingPages = ['programa', 'umovy', 'rodyni', 'napriamy'].map(
+const supportingPages = ['programa', 'umovy', 'rodyni', 'napriamy', 'komanda'].map(
   (slug) => `${slug}/index.html`,
 )
 const mainSitePage = 'site/index.html'
@@ -124,7 +124,27 @@ test('publication modes preserve explicit release gates and correct SEO inventor
     )
     const directions = await readFile(resolve(appDir, 'dist/napriamy/index.html'), 'utf8')
     expect(directions).toContain('Допомога при алкогольній залежності')
-    for (const page of [program, directions]) {
+    const team = await readFile(resolve(appDir, 'dist/komanda/index.html'), 'utf8')
+    for (const name of [
+      'Лисович Іван Васильович',
+      'Федорчук Мар’яна Сергіївна',
+      'Садовський Олексій Володимирович',
+      'Антошків Станіслав Михайлович',
+      'Мацеха Анастасія Вадимівна',
+      'Якимець Назар Андрійович',
+    ]) {
+      expect(team).toContain(name)
+    }
+    const teamCards = [...team.matchAll(/<article class="team-card"[\s\S]*?<\/article>/g)].map(
+      ([card]) => card,
+    )
+    expect(teamCards).toHaveLength(6)
+    expect(teamCards[4]).toContain('alt="Портрет: Мацеха Анастасія Вадимівна"')
+    expect(teamCards[5]).toContain('alt="Портрет: Якимець Назар Андрійович"')
+    expect(team.match(/Досвід — уточнюється/g)).toHaveLength(6)
+    expect(team).toContain('<meta name="robots" content="noindex,follow">')
+    expect(team).not.toContain('rel="canonical"')
+    for (const page of [program, directions, team]) {
       expect(page).toContain('<meta name="robots" content="noindex,follow">')
     }
     expect(await artifactExists('sitemap.xml')).toBe(true)
