@@ -132,16 +132,18 @@ test('publication modes preserve explicit release gates and correct SEO inventor
       'Антошків Станіслав Михайлович',
       'Мацеха Анастасія Вадимівна',
       'Якимець Назар Андрійович',
+      'Пунейко Вікторія Миколаївна',
     ]) {
       expect(team).toContain(name)
     }
     const teamCards = [...team.matchAll(/<article class="team-card"[\s\S]*?<\/article>/g)].map(
       ([card]) => card,
     )
-    expect(teamCards).toHaveLength(6)
+    expect(teamCards).toHaveLength(7)
     expect(teamCards[4]).toContain('alt="Портрет: Мацеха Анастасія Вадимівна"')
     expect(teamCards[5]).toContain('alt="Портрет: Якимець Назар Андрійович"')
-    expect(team.match(/Досвід — уточнюється/g)).toHaveLength(6)
+    expect(teamCards[6]).toContain('alt="Портрет: Пунейко Вікторія Миколаївна"')
+    expect(team.match(/Досвід — уточнюється/g)).toHaveLength(7)
     expect(team).toContain('<meta name="robots" content="noindex,follow">')
     expect(team).not.toContain('rel="canonical"')
     for (const page of [program, directions, team]) {
