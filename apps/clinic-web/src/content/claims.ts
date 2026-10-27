@@ -313,4 +313,25 @@ export const claimRegister: ClaimRecord[] = [
     productionApproval: 'PENDING',
     recheckDate: null,
   },
+  {
+    id: 'team-profiles',
+    subject: 'Склад і ролі команди HAVENHUB',
+    exactClaim:
+      'Наданий макет містить шість профілів із іменами, ролями та описами; досвід фахівців ще уточнюється.',
+    sources: ['index.html, наданий користувачем; скриншот із профілями, отриманий 2026-10-27'],
+    status: 'PENDING_VERIFICATION',
+    evidenceReceived: true,
+    currentness: 'UNVERIFIED',
+    priorOwnerConfirmation:
+      'Користувач попросив використати тексти з макета й залишити досвід заглушкою.',
+    contradictions: [],
+    verificationNeeded: [
+      'Підтвердити актуальний склад і професійні ролі, зокрема зазначені кваліфікації, перед production.',
+    ],
+    publicDraft: null,
+    routes: ['/komanda/'],
+    productionApproval: 'PENDING',
+    publicationAuthorization: 'CUSTOMER_AUTHORIZED',
+    recheckDate: null,
+  },
 ]

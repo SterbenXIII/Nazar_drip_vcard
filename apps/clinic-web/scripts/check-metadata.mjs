@@ -23,6 +23,7 @@ if (mode !== 'normal') {
     'umovy/index.html',
     'rodyni/index.html',
     'napriamy/index.html',
+    'komanda/index.html',
   )
 }
 if (servicePreview) expectedPages.push('preview/services/template-demo/index.html')

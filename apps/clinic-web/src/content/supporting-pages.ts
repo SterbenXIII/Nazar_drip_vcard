@@ -1,7 +1,7 @@
 import { careFormats, geography } from './customer-materials'
 
 export type SupportingPage = {
-  slug: 'programa' | 'umovy' | 'rodyni' | 'napriamy'
+  slug: 'programa' | 'umovy' | 'rodyni' | 'napriamy' | 'komanda'
   title: string
   h1: string
   description: string
@@ -172,6 +172,13 @@ export const supportingPages: SupportingPage[] = [
         ],
       },
     ],
+  },
+  {
+    slug: 'komanda',
+    title: 'Команда HAVENHUB — фахівці центру',
+    h1: 'Команда HAVENHUB',
+    description: 'Познайомтеся з фахівцями HAVENHUB: їхніми ролями та напрямами роботи.',
+    sections: [],
   },
   {
     slug: 'rodyni',

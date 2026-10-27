@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro'
 import Header from '../components/Header.astro'
 import Footer from '../components/Footer.astro'
+import TeamPage from '../components/TeamPage.astro'
 import PhotoGallery from '../components/PhotoGallery.astro'
 import StagingIllustration from '../components/StagingIllustration.astro'
 import { email, hotline, telegram, whatsapp } from '../content/customer-materials'
@@ -26,421 +27,418 @@ const isDirectionsPage = page.slug === 'napriamy'
 const isProgramPage = page.slug === 'programa'
 const isFamilyPage = page.slug === 'rodyni'
 const isConditionsPage = page.slug === 'umovy'
+const isTeamPage = page.slug === 'komanda'
 ---
 
 <Layout title={page.title} description={page.description} routePolicy="supporting">
   <Header
     hrefPrefix="/"
     directionsPage={isDirectionsPage}
-    supportingPage={isFamilyPage || isConditionsPage}
+    supportingPage={isFamilyPage || isConditionsPage || isTeamPage}
   />
-  <main
-    id="content"
-    tabindex="-1"
-    class:list={[
-      'support-page',
-      isFamilyPage && 'support-page-family',
-      isConditionsPage && 'support-page-conditions',
-      isDirectionsPage && 'support-page-directions',
-      isProgramPage && 'support-page-program',
-    ]}
-  >
-    <div class="wrap">
-      <header class="support-intro">
-        {isFamilyPage && <p class="support-family-kicker">Для рідних і близьких</p>}
-        {isConditionsPage && <p class="support-intro-kicker">HAVENHUB · Про центр</p>}
-        {isDirectionsPage && <p class="support-intro-kicker">Напрями та формати допомоги</p>}
-        {isProgramPage && <p class="support-intro-kicker">Підтримка починається з розмови</p>}
-        <h1>{page.h1}</h1>
-        <p class="support-description">{page.description}</p>
-        {
-          isConditionsPage && (
-            <>
-              <div class="support-conditions-hero-actions">
-                <a class="support-primary-action" href="#conditions">
-                  Дізнатися про умови
-                </a>
-                <a class="support-secondary-action" href="#contact">
-                  Поставити запитання
-                </a>
-              </div>
-              <figure class="support-conditions-hero-art">
-                <img src="/havenhub-umovy-hero-leaves.svg" alt="" aria-hidden="true" />
-                <figcaption>Індивідуальні обставини обговорюємо під час звернення</figcaption>
-              </figure>
-            </>
-          )
-        }
-        {
-          isFamilyPage && (
-            <>
-              <div class="support-family-hero-actions">
-                <a class="support-primary-action" href={hotline.href}>
-                  Поговорити з нами
-                </a>
-                <span>Перша первинна консультація безкоштовна</span>
-              </div>
-              <img
-                class="support-family-hero-art"
-                src="/havenhub-rodyni-hero-leaves.svg"
-                alt=""
+  {
+    isTeamPage ? (
+      <TeamPage h1={page.h1} description={page.description} />
+    ) : (
+      <main
+        id="content"
+        tabindex="-1"
+        class:list={[
+          'support-page',
+          isFamilyPage && 'support-page-family',
+          isConditionsPage && 'support-page-conditions',
+          isDirectionsPage && 'support-page-directions',
+          isProgramPage && 'support-page-program',
+        ]}
+      >
+        <div class="wrap">
+          <header class="support-intro">
+            {isFamilyPage && <p class="support-family-kicker">Для рідних і близьких</p>}
+            {isConditionsPage && <p class="support-intro-kicker">HAVENHUB · Про центр</p>}
+            {isDirectionsPage && <p class="support-intro-kicker">Напрями та формати допомоги</p>}
+            {isProgramPage && <p class="support-intro-kicker">Підтримка починається з розмови</p>}
+            <h1>{page.h1}</h1>
+            <p class="support-description">{page.description}</p>
+            {isConditionsPage && (
+              <>
+                <div class="support-conditions-hero-actions">
+                  <a class="support-primary-action" href="#conditions">
+                    Дізнатися про умови
+                  </a>
+                  <a class="support-secondary-action" href="#contact">
+                    Поставити запитання
+                  </a>
+                </div>
+                <figure class="support-conditions-hero-art">
+                  <img src="/havenhub-umovy-hero-leaves.svg" alt="" aria-hidden="true" />
+                  <figcaption>Індивідуальні обставини обговорюємо під час звернення</figcaption>
+                </figure>
+              </>
+            )}
+            {isFamilyPage && (
+              <>
+                <div class="support-family-hero-actions">
+                  <a class="support-primary-action" href={hotline.href}>
+                    Поговорити з нами
+                  </a>
+                  <span>Перша первинна консультація безкоштовна</span>
+                </div>
+                <img
+                  class="support-family-hero-art"
+                  src="/havenhub-rodyni-hero-leaves.svg"
+                  alt=""
+                  aria-hidden="true"
+                />
+              </>
+            )}
+            {isDirectionsPage && (
+              <svg
+                class="support-intro-branch"
+                viewBox="0 0 560 320"
+                fill="none"
                 aria-hidden="true"
-              />
-            </>
-          )
-        }
-        {
-          isDirectionsPage && (
-            <svg
-              class="support-intro-branch"
-              viewBox="0 0 560 320"
-              fill="none"
-              aria-hidden="true"
-              focusable="false"
-            >
-              <path d="M16 286C151 237 282 151 548 166" stroke="#bdc9bc" stroke-width="2" />
-              <g fill="#e7ebe4" stroke="#cbd5ca" stroke-width="1.5">
-                <path d="M152 239C91 206 53 151 41 85c60 31 107 87 111 154Z" />
-                <path d="M261 194C207 150 183 94 189 39c55 32 88 81 72 155Z" />
-                <path d="M349 174C321 112 326 49 359 7c41 52 53 108 18 165Z" />
-                <path d="M411 166C415 98 448 39 491 17c16 65-1 120-80 149Z" />
-                <path d="M449 169C488 126 522 108 557 111c-15 43-48 66-108 58Z" />
-              </g>
-              <g fill="none" stroke="#cbd5ca" stroke-width="1.5">
-                <path d="M152 239C119 177 75 122 41 85" />
-                <path d="M261 194C242 134 213 78 189 39" />
-                <path d="M349 174C352 106 356 49 359 7" />
-                <path d="M411 166C447 106 472 55 491 17" />
-                <path d="M449 169C490 143 524 123 557 111" />
-              </g>
-            </svg>
-          )
-        }
-      </header>
-
-      {
-        isProgramPage && (
-          <header class="support-program-heading">
-            <h2>Від першого звернення — до наступного кроку</h2>
-            <p>
-              Починати можна з короткої розмови. Формат підтримки визначається після уточнення
-              вашого запиту та обставин.
-            </p>
+                focusable="false"
+              >
+                <path d="M16 286C151 237 282 151 548 166" stroke="#bdc9bc" stroke-width="2" />
+                <g fill="#e7ebe4" stroke="#cbd5ca" stroke-width="1.5">
+                  <path d="M152 239C91 206 53 151 41 85c60 31 107 87 111 154Z" />
+                  <path d="M261 194C207 150 183 94 189 39c55 32 88 81 72 155Z" />
+                  <path d="M349 174C321 112 326 49 359 7c41 52 53 108 18 165Z" />
+                  <path d="M411 166C415 98 448 39 491 17c16 65-1 120-80 149Z" />
+                  <path d="M449 169C488 126 522 108 557 111c-15 43-48 66-108 58Z" />
+                </g>
+                <g fill="none" stroke="#cbd5ca" stroke-width="1.5">
+                  <path d="M152 239C119 177 75 122 41 85" />
+                  <path d="M261 194C242 134 213 78 189 39" />
+                  <path d="M349 174C352 106 356 49 359 7" />
+                  <path d="M411 166C447 106 472 55 491 17" />
+                  <path d="M449 169C490 143 524 123 557 111" />
+                </g>
+              </svg>
+            )}
           </header>
-        )
-      }
 
-      <div class:list={['support-sections', isProgramPage && 'support-program-cards']}>
-        {
-          page.sections.map((section, index) => (
-            <section
-              class:list={[
-                'support-section',
-                index % 2 === 1 && 'support-section-muted',
-                isFamilyPage && index === 0 && 'support-family-first-contact',
-                isFamilyPage && index === 1 && 'support-family-steps-section',
-                isFamilyPage && index === 2 && 'support-family-support-section',
-                isFamilyPage && index === 3 && 'support-family-questions-section',
-                isConditionsPage && index === 0 && 'support-conditions-approach',
-                isConditionsPage && index === 1 && 'support-conditions-list-section',
-                isConditionsPage && index === 2 && 'support-conditions-location',
-                isConditionsPage && index === 3 && 'support-conditions-before',
-                isDirectionsPage && index === 0 && 'support-section-dependency-types',
-                isDirectionsPage && index === 1 && 'support-section-care-formats',
-                isProgramPage && index < 4 && 'support-program-card',
-                isProgramPage && index === 4 && 'support-program-stages',
-                isProgramPage && index === 5 && 'support-program-customer-copy',
-              ]}
-              id={
-                isConditionsPage
-                  ? ['approach', 'conditions', 'location', 'before'][index]
-                  : undefined
-              }
-              aria-labelledby={`section-${page.slug}-${index}`}
-            >
-              <div class="support-section-content">
-                {isFamilyPage && index === 2 && (
-                  <img
-                    class="support-family-illustration"
-                    src="/havenhub-rodyni-family-branches.svg"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                )}
-                {isProgramPage && index < 4 ? (
-                  <h3 id={`section-${page.slug}-${index}`}>{section.heading}</h3>
-                ) : (
-                  <h2 id={`section-${page.slug}-${index}`}>{section.heading}</h2>
-                )}
-                {section.paragraphs
-                  .slice(0, isProgramPage && index === 4 ? 1 : undefined)
-                  .map((paragraph, paragraphIndex) => (
-                    <p
+          {isProgramPage && (
+            <header class="support-program-heading">
+              <h2>Від першого звернення — до наступного кроку</h2>
+              <p>
+                Починати можна з короткої розмови. Формат підтримки визначається після уточнення
+                вашого запиту та обставин.
+              </p>
+            </header>
+          )}
+
+          <div class:list={['support-sections', isProgramPage && 'support-program-cards']}>
+            {page.sections.map((section, index) => (
+              <section
+                class:list={[
+                  'support-section',
+                  index % 2 === 1 && 'support-section-muted',
+                  isFamilyPage && index === 0 && 'support-family-first-contact',
+                  isFamilyPage && index === 1 && 'support-family-steps-section',
+                  isFamilyPage && index === 2 && 'support-family-support-section',
+                  isFamilyPage && index === 3 && 'support-family-questions-section',
+                  isConditionsPage && index === 0 && 'support-conditions-approach',
+                  isConditionsPage && index === 1 && 'support-conditions-list-section',
+                  isConditionsPage && index === 2 && 'support-conditions-location',
+                  isConditionsPage && index === 3 && 'support-conditions-before',
+                  isDirectionsPage && index === 0 && 'support-section-dependency-types',
+                  isDirectionsPage && index === 1 && 'support-section-care-formats',
+                  isProgramPage && index < 4 && 'support-program-card',
+                  isProgramPage && index === 4 && 'support-program-stages',
+                  isProgramPage && index === 5 && 'support-program-customer-copy',
+                ]}
+                id={
+                  isConditionsPage
+                    ? ['approach', 'conditions', 'location', 'before'][index]
+                    : undefined
+                }
+                aria-labelledby={`section-${page.slug}-${index}`}
+              >
+                <div class="support-section-content">
+                  {isFamilyPage && index === 2 && (
+                    <img
+                      class="support-family-illustration"
+                      src="/havenhub-rodyni-family-branches.svg"
+                      alt=""
+                      aria-hidden="true"
+                    />
+                  )}
+                  {isProgramPage && index < 4 ? (
+                    <h3 id={`section-${page.slug}-${index}`}>{section.heading}</h3>
+                  ) : (
+                    <h2 id={`section-${page.slug}-${index}`}>{section.heading}</h2>
+                  )}
+                  {section.paragraphs
+                    .slice(0, isProgramPage && index === 4 ? 1 : undefined)
+                    .map((paragraph, paragraphIndex) => (
+                      <p
+                        class:list={[
+                          isFamilyPage &&
+                            index === 2 &&
+                            paragraphIndex === 1 &&
+                            'support-family-note',
+                        ]}
+                      >
+                        {paragraph}
+                      </p>
+                    ))}
+                  {section.callout && (
+                    <div
                       class:list={[
-                        isFamilyPage &&
-                          index === 2 &&
-                          paragraphIndex === 1 &&
-                          'support-family-note',
+                        'support-family-callout',
+                        isFamilyPage && index === 3 && 'support-family-privacy',
                       ]}
                     >
-                      {paragraph}
-                    </p>
-                  ))}
-                {section.callout && (
-                  <div
-                    class:list={[
-                      'support-family-callout',
-                      isFamilyPage && index === 3 && 'support-family-privacy',
-                    ]}
-                  >
-                    <strong>{section.callout.heading}</strong>
-                    <p>{section.callout.paragraph}</p>
-                  </div>
-                )}
-                {section.illustrationSlot && (
-                  <StagingIllustration slot={section.illustrationSlot} />
-                )}
-                {section.items && (
-                  <ul
-                    class:list={[
-                      'support-items',
-                      isFamilyPage && index === 1 && 'support-family-steps',
-                      isFamilyPage && index === 3 && 'support-family-questions',
-                      isDirectionsPage && index === 0 && 'support-items-dependency-types',
-                      isDirectionsPage && index === 1 && 'support-items-care-formats',
-                      isConditionsPage && index === 1 && 'conditions-list',
-                      isConditionsPage && index === 0 && 'support-conditions-principles',
-                    ]}
-                  >
-                    {section.items.map((item, itemIndex) => (
-                      <li
-                        id={
-                          isDirectionsPage && index === 1
-                            ? [
-                                'care-format-residential',
-                                'care-format-outpatient',
-                                'care-format-home-visit',
-                              ][itemIndex]
-                            : undefined
-                        }
-                      >
-                        {isConditionsPage && index === 1 && (
-                          <span class="support-conditions-number" aria-hidden="true">
-                            {String(itemIndex + 1).padStart(2, '0')}
-                          </span>
-                        )}
-                        {isFamilyPage && index === 1 && (
-                          <span class="support-family-step-number" aria-hidden="true">
-                            {itemIndex + 1}
-                          </span>
-                        )}
-                        {isFamilyPage && index === 3 ? (
-                          <>
-                            <span class="support-family-question-number" aria-hidden="true">
+                      <strong>{section.callout.heading}</strong>
+                      <p>{section.callout.paragraph}</p>
+                    </div>
+                  )}
+                  {section.illustrationSlot && (
+                    <StagingIllustration slot={section.illustrationSlot} />
+                  )}
+                  {section.items && (
+                    <ul
+                      class:list={[
+                        'support-items',
+                        isFamilyPage && index === 1 && 'support-family-steps',
+                        isFamilyPage && index === 3 && 'support-family-questions',
+                        isDirectionsPage && index === 0 && 'support-items-dependency-types',
+                        isDirectionsPage && index === 1 && 'support-items-care-formats',
+                        isConditionsPage && index === 1 && 'conditions-list',
+                        isConditionsPage && index === 0 && 'support-conditions-principles',
+                      ]}
+                    >
+                      {section.items.map((item, itemIndex) => (
+                        <li
+                          id={
+                            isDirectionsPage && index === 1
+                              ? [
+                                  'care-format-residential',
+                                  'care-format-outpatient',
+                                  'care-format-home-visit',
+                                ][itemIndex]
+                              : undefined
+                          }
+                        >
+                          {isConditionsPage && index === 1 && (
+                            <span class="support-conditions-number" aria-hidden="true">
                               {String(itemIndex + 1).padStart(2, '0')}
                             </span>
-                            <span>{item.title}</span>
-                          </>
-                        ) : (
-                          <>
-                            <h3>{item.title}</h3>
-                            <p>{item.description}</p>
-                            {item.details?.length && (
-                              <ul class="support-item-details">
-                                {item.details.map((detail) => (
-                                  <li>{detail}</li>
-                                ))}
-                              </ul>
-                            )}
-                          </>
-                        )}
-                        {isProgramPage && index === 4 && (
-                          <span class="support-program-step-number" aria-hidden="true">
-                            {itemIndex + 1}
-                          </span>
-                        )}
-                        {isDirectionsPage && index === 0 && (
-                          <span class="support-item-icon" aria-hidden="true">
-                            {itemIndex === 0 ? (
-                              <svg viewBox="0 0 32 32" fill="none">
-                                <path
-                                  d="M13 3h6v4l-1.5 2v3.5l3.5 2.5v11a3 3 0 0 1-3 3h-5a3 3 0 0 1-3-3V15l3.5-2.5V9L13 7V3Z"
-                                  stroke="currentColor"
-                                  stroke-width="1.8"
-                                  stroke-linejoin="round"
-                                />
-                                <path d="M11 18h10" stroke="currentColor" stroke-width="1.8" />
-                              </svg>
-                            ) : itemIndex === 1 ? (
-                              <svg viewBox="0 0 32 32" fill="none">
-                                <rect
-                                  x="4.9"
-                                  y="13.2"
-                                  width="13"
-                                  height="13"
-                                  rx="2"
-                                  transform="rotate(-13 4.9 13.2)"
-                                  stroke="currentColor"
-                                  stroke-width="1.8"
-                                />
-                                <rect
-                                  x="15"
-                                  y="5"
-                                  width="13"
-                                  height="13"
-                                  rx="2"
-                                  stroke="currentColor"
-                                  stroke-width="1.8"
-                                />
-                                <circle cx="19" cy="9" r="1" fill="currentColor" />
-                                <circle cx="24" cy="14" r="1" fill="currentColor" />
-                                <circle cx="9" cy="17" r="1" fill="currentColor" />
-                                <circle cx="14" cy="22" r="1" fill="currentColor" />
-                              </svg>
-                            ) : (
-                              <svg viewBox="0 0 32 32" fill="none">
-                                <path
-                                  d="M27 4C15.2 4.2 7 8.1 7 16c0 6.2 6.2 9.2 11.4 5.1C23.4 17.3 26 10.4 27 4Z"
-                                  stroke="currentColor"
-                                  stroke-width="1.8"
-                                  stroke-linejoin="round"
-                                />
-                                <path
-                                  d="M5 28c3.2-5.1 8.3-10 16.1-15.4M5.5 19c-2.3-1.5-3.2-4-3.2-7 4.4 0 7.8 1.1 9.5 3.7"
-                                  stroke="currentColor"
-                                  stroke-width="1.8"
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                />
-                              </svg>
-                            )}
-                          </span>
-                        )}
-                        {isDirectionsPage && index === 1 && (
-                          <span class="support-item-icon" aria-hidden="true">
-                            {itemIndex === 0 ? (
-                              <svg viewBox="0 0 32 32" fill="none">
-                                <path
-                                  d="m4 14 12-10 12 10M7 12v16h18V12M13 28v-9h6v9"
-                                  stroke="currentColor"
-                                  stroke-width="1.8"
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                />
-                              </svg>
-                            ) : itemIndex === 1 ? (
-                              <svg viewBox="0 0 32 32" fill="none">
-                                <circle
-                                  cx="16"
-                                  cy="9"
-                                  r="3"
-                                  stroke="currentColor"
-                                  stroke-width="1.8"
-                                />
-                                <circle
-                                  cx="6.5"
-                                  cy="13"
-                                  r="2.5"
-                                  stroke="currentColor"
-                                  stroke-width="1.8"
-                                />
-                                <circle
-                                  cx="25.5"
-                                  cy="13"
-                                  r="2.5"
-                                  stroke="currentColor"
-                                  stroke-width="1.8"
-                                />
-                                <path
-                                  d="M10.5 27v-4a5.5 5.5 0 0 1 11 0v4h-11ZM2 25v-3a4.5 4.5 0 0 1 8-2.8M30 25v-3a4.5 4.5 0 0 0-8-2.8"
-                                  stroke="currentColor"
-                                  stroke-width="1.8"
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                />
-                              </svg>
-                            ) : (
-                              <svg viewBox="0 0 32 32" fill="none">
-                                <path
-                                  d="M5 19.5 7.2 12a3 3 0 0 1 2.9-2.2h11.8a3 3 0 0 1 2.9 2.2l2.2 7.5M4 19.5h24V25a2 2 0 0 1-2 2h-2M4 19.5V25a2 2 0 0 0 2 2h2"
-                                  stroke="currentColor"
-                                  stroke-width="1.8"
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                />
-                                <path
-                                  d="m8 19.5 1.8-5.7h12.4l1.8 5.7M8 23h.01M24 23h.01"
-                                  stroke="currentColor"
-                                  stroke-width="1.8"
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                />
-                              </svg>
-                            )}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {isProgramPage && index === 4 && (
-                  <p class="support-program-note">{section.paragraphs[1]}</p>
-                )}
-              </div>
-            </section>
-          ))
-        }
-      </div>
+                          )}
+                          {isFamilyPage && index === 1 && (
+                            <span class="support-family-step-number" aria-hidden="true">
+                              {itemIndex + 1}
+                            </span>
+                          )}
+                          {isFamilyPage && index === 3 ? (
+                            <>
+                              <span class="support-family-question-number" aria-hidden="true">
+                                {String(itemIndex + 1).padStart(2, '0')}
+                              </span>
+                              <span>{item.title}</span>
+                            </>
+                          ) : (
+                            <>
+                              <h3>{item.title}</h3>
+                              <p>{item.description}</p>
+                              {item.details?.length && (
+                                <ul class="support-item-details">
+                                  {item.details.map((detail) => (
+                                    <li>{detail}</li>
+                                  ))}
+                                </ul>
+                              )}
+                            </>
+                          )}
+                          {isProgramPage && index === 4 && (
+                            <span class="support-program-step-number" aria-hidden="true">
+                              {itemIndex + 1}
+                            </span>
+                          )}
+                          {isDirectionsPage && index === 0 && (
+                            <span class="support-item-icon" aria-hidden="true">
+                              {itemIndex === 0 ? (
+                                <svg viewBox="0 0 32 32" fill="none">
+                                  <path
+                                    d="M13 3h6v4l-1.5 2v3.5l3.5 2.5v11a3 3 0 0 1-3 3h-5a3 3 0 0 1-3-3V15l3.5-2.5V9L13 7V3Z"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linejoin="round"
+                                  />
+                                  <path d="M11 18h10" stroke="currentColor" stroke-width="1.8" />
+                                </svg>
+                              ) : itemIndex === 1 ? (
+                                <svg viewBox="0 0 32 32" fill="none">
+                                  <rect
+                                    x="4.9"
+                                    y="13.2"
+                                    width="13"
+                                    height="13"
+                                    rx="2"
+                                    transform="rotate(-13 4.9 13.2)"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                  />
+                                  <rect
+                                    x="15"
+                                    y="5"
+                                    width="13"
+                                    height="13"
+                                    rx="2"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                  />
+                                  <circle cx="19" cy="9" r="1" fill="currentColor" />
+                                  <circle cx="24" cy="14" r="1" fill="currentColor" />
+                                  <circle cx="9" cy="17" r="1" fill="currentColor" />
+                                  <circle cx="14" cy="22" r="1" fill="currentColor" />
+                                </svg>
+                              ) : (
+                                <svg viewBox="0 0 32 32" fill="none">
+                                  <path
+                                    d="M27 4C15.2 4.2 7 8.1 7 16c0 6.2 6.2 9.2 11.4 5.1C23.4 17.3 26 10.4 27 4Z"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linejoin="round"
+                                  />
+                                  <path
+                                    d="M5 28c3.2-5.1 8.3-10 16.1-15.4M5.5 19c-2.3-1.5-3.2-4-3.2-7 4.4 0 7.8 1.1 9.5 3.7"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                  />
+                                </svg>
+                              )}
+                            </span>
+                          )}
+                          {isDirectionsPage && index === 1 && (
+                            <span class="support-item-icon" aria-hidden="true">
+                              {itemIndex === 0 ? (
+                                <svg viewBox="0 0 32 32" fill="none">
+                                  <path
+                                    d="m4 14 12-10 12 10M7 12v16h18V12M13 28v-9h6v9"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                  />
+                                </svg>
+                              ) : itemIndex === 1 ? (
+                                <svg viewBox="0 0 32 32" fill="none">
+                                  <circle
+                                    cx="16"
+                                    cy="9"
+                                    r="3"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                  />
+                                  <circle
+                                    cx="6.5"
+                                    cy="13"
+                                    r="2.5"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                  />
+                                  <circle
+                                    cx="25.5"
+                                    cy="13"
+                                    r="2.5"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                  />
+                                  <path
+                                    d="M10.5 27v-4a5.5 5.5 0 0 1 11 0v4h-11ZM2 25v-3a4.5 4.5 0 0 1 8-2.8M30 25v-3a4.5 4.5 0 0 0-8-2.8"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                  />
+                                </svg>
+                              ) : (
+                                <svg viewBox="0 0 32 32" fill="none">
+                                  <path
+                                    d="M5 19.5 7.2 12a3 3 0 0 1 2.9-2.2h11.8a3 3 0 0 1 2.9 2.2l2.2 7.5M4 19.5h24V25a2 2 0 0 1-2 2h-2M4 19.5V25a2 2 0 0 0 2 2h2"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                  />
+                                  <path
+                                    d="m8 19.5 1.8-5.7h12.4l1.8 5.7M8 23h.01M24 23h.01"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                  />
+                                </svg>
+                              )}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {isProgramPage && index === 4 && (
+                    <p class="support-program-note">{section.paragraphs[1]}</p>
+                  )}
+                </div>
+              </section>
+            ))}
+          </div>
 
-      {isConditionsPage && <PhotoGallery />}
+          {isConditionsPage && <PhotoGallery />}
 
-      {
-        isProgramPage && (
-          <p class="support-program-price">
-            <strong>Що з вартістю?</strong> Формат допомоги та вартість узгоджують після розмови з
-            урахуванням конкретної ситуації.
-          </p>
-        )
-      }
+          {isProgramPage && (
+            <p class="support-program-price">
+              <strong>Що з вартістю?</strong> Формат допомоги та вартість узгоджують після розмови з
+              урахуванням конкретної ситуації.
+            </p>
+          )}
 
-      <section
-        id={isConditionsPage ? 'contact' : undefined}
-        class:list={[
-          'support-contact',
-          isFamilyPage && 'support-family-contact',
-          isConditionsPage && 'support-conditions-contact',
-        ]}
-        aria-labelledby="support-contact-title"
-      >
-        <div>
-          <h2 id="support-contact-title">Обговорімо наступний крок</h2>
-          <p>
-            {
-              isFamilyPage
-                ? 'Перша консультація безкоштовна. Формат допомоги та вартість визначають після розмови з урахуванням ситуації.'
-                : 'Перша консультація безкоштовна. Вартість визначають після консультації.'
-            }
-          </p>
-        </div>
-        <div
-          class:list={[
-            'support-contact-actions',
-            isFamilyPage && 'support-family-contact-actions',
-            isConditionsPage && 'support-conditions-contact-actions',
-          ]}
-        >
-          <a class="support-primary-action" href={hotline.href}><PhoneIcon /> Зателефонувати</a>
-          <a class="support-secondary-action" href={telegram.href}
-            ><TelegramIcon /> Написати в Telegram</a
+          <section
+            id={isConditionsPage ? 'contact' : undefined}
+            class:list={[
+              'support-contact',
+              isFamilyPage && 'support-family-contact',
+              isConditionsPage && 'support-conditions-contact',
+            ]}
+            aria-labelledby="support-contact-title"
           >
-          <a class="support-secondary-action" href={whatsapp.href}>
-            <WhatsAppIcon /> Написати в WhatsApp
-          </a>
-          <a class="support-secondary-action" href={email.href}><EmailIcon /> Написати на email</a>
+            <div>
+              <h2 id="support-contact-title">Обговорімо наступний крок</h2>
+              <p>
+                {isFamilyPage
+                  ? 'Перша консультація безкоштовна. Формат допомоги та вартість визначають після розмови з урахуванням ситуації.'
+                  : 'Перша консультація безкоштовна. Вартість визначають після консультації.'}
+              </p>
+            </div>
+            <div
+              class:list={[
+                'support-contact-actions',
+                isFamilyPage && 'support-family-contact-actions',
+                isConditionsPage && 'support-conditions-contact-actions',
+              ]}
+            >
+              <a class="support-primary-action" href={hotline.href}>
+                <PhoneIcon /> Зателефонувати
+              </a>
+              <a class="support-secondary-action" href={telegram.href}>
+                <TelegramIcon /> Написати в Telegram
+              </a>
+              <a class="support-secondary-action" href={whatsapp.href}>
+                <WhatsAppIcon /> Написати в WhatsApp
+              </a>
+              <a class="support-secondary-action" href={email.href}>
+                <EmailIcon /> Написати на email
+              </a>
+            </div>
+          </section>
         </div>
-      </section>
-    </div>
-  </main>
+      </main>
+    )
+  }
   <Footer site={isDirectionsPage} />
 </Layout>
 
