@@ -6,6 +6,7 @@ import oleksiiPhoto from '../assets/team/team-3.jpg'
 import stanislavPhoto from '../assets/team/team-4.jpg'
 import nazarPhoto from '../assets/team/team-5.jpg'
 import anastasiiaPhoto from '../assets/team/team-6.jpg'
+import victoriaPhoto from '../assets/team/team-7.png'
 
 export type TeamMember = {
   id: string
@@ -91,5 +92,16 @@ export const teamMembers: TeamMember[] = [
     photoAlt: 'Портрет: Якимець Назар Андрійович',
     photoPosition: '50% 29%',
     photoScale: 1.16,
+  },
+  {
+    id: 'victoria',
+    name: 'Пунейко Вікторія Миколаївна',
+    role: 'Психологиня',
+    experience: 'Досвід — уточнюється',
+    description: 'Короткий опис профілю буде додано після уточнення.',
+    photo: victoriaPhoto,
+    photoAlt: 'Портрет: Пунейко Вікторія Миколаївна',
+    photoPosition: '50% 32%',
+    photoScale: 1,
   },
 ]

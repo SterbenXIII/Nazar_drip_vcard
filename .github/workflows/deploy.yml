@@ -202,7 +202,15 @@ jobs:
       - name: 📦 Install Ansible and dependencies
         run: |
           pip install ansible-core==2.21.5
-          ansible-galaxy collection install -r ops/ansible/requirements.yml
+          for attempt in 1 2 3; do
+            if ansible-galaxy collection install -r ops/ansible/requirements.yml; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            sleep "$((attempt * 10))"
+          done
           ansible --version
 
       - name: 🛡️ Validate deploy VPS IP
