@@ -1,4 +1,4 @@
-name: 🚀 Deploy to Hostinger VPS
+name: Deploy staging
 
 on:
   workflow_run:
@@ -7,20 +7,20 @@ on:
     branches: [main]
 
 concurrency:
-  group: deploy-production
+  group: deploy-staging
   cancel-in-progress: false
 
 env:
   DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/emerald-recovery' }}
   VPS_IP: ${{ vars.VPS_IP || 'localhost' }}
-  DOMAIN_NAME: havenhub.tech
+  STAGING_DOMAIN_NAME: staging.havenhub.com.ua
   CADDY_IMAGE_REF: docker.io/library/caddy:2-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f
   COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
   SSH_KNOWN_HOSTS: ${{ secrets.HOSTINGER_SSH_KNOWN_HOSTS }}
 
 jobs:
-  build-and-push:
-    name: Build, smoke, and publish release images
+  build-and-publish:
+    name: Build and validate immutable staging and production images
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_repository.id == github.event.workflow_run.repository.id &&
@@ -33,20 +33,21 @@ jobs:
       packages: write
     outputs:
       api_image_ref: ${{ steps.publish.outputs.api_image_ref }}
-      clinic_web_image_ref: ${{ steps.publish.outputs.clinic_web_image_ref }}
+      staging_clinic_web_image_ref: ${{ steps.publish.outputs.staging_clinic_web_image_ref }}
+      production_clinic_web_image_ref: ${{ steps.publish.outputs.production_clinic_web_image_ref }}
     steps:
-      - name: 🚚 Checkout code
+      - name: Check out the exact CI revision
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: 🔍 Verify release checkout
+      - name: Verify release checkout
         run: test "$(git rev-parse HEAD)" = "$COMMIT_SHA"
 
-      - name: 🏗️ Set up Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
 
-      - name: 📦 Build API candidate for VPS architecture
+      - name: Build API candidate
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: .
@@ -59,23 +60,39 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: 📦 Build clinic-web candidate for VPS architecture
+      - name: Build protected staging web image
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: .
           file: apps/clinic-web/Dockerfile
           platforms: linux/amd64
           load: true
-          tags: local/vcard-clinic-web:${{ env.COMMIT_SHA }}
+          tags: local/vcard-clinic-web:staging-${{ env.COMMIT_SHA }}
           build-args: VCS_REF=${{ env.COMMIT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: 🧪 Smoke test candidate images without external network access
+      - name: Build guarded production web image for the same revision
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          context: .
+          file: apps/clinic-web/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: local/vcard-clinic-web:production-${{ env.COMMIT_SHA }}
+          build-args: |
+            VCS_REF=${{ env.COMMIT_SHA }}
+            CLINIC_SITE_MODE=production
+            CLINIC_CANONICAL_ORIGIN=https://havenhub.com.ua
+            CLINIC_ALLOW_PRODUCTION_BUILD=true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test candidates without production credentials
         run: |
           set -euo pipefail
           docker network create --internal candidate-network
-          trap 'docker rm -f candidate-api candidate-clinic-web >/dev/null 2>&1 || true; docker network rm candidate-network >/dev/null 2>&1 || true' EXIT
+          trap 'docker rm -f candidate-api candidate-staging-web candidate-production-web >/dev/null 2>&1 || true; docker network rm candidate-network >/dev/null 2>&1 || true' EXIT
           printf '[123456789]\n' > "$RUNNER_TEMP/allowed_chats.json"
           cat > "$RUNNER_TEMP/mock-telegram.mjs" <<'EOF'
           globalThis.fetch = async () => new Response(JSON.stringify({ ok: true, result: { message_id: 1 } }), {
@@ -84,94 +101,86 @@ jobs:
           })
           EOF
 
-          docker run -d --name candidate-api --network candidate-network --network-alias api \
+          docker run -d --name candidate-api --network candidate-network \
             --mount "type=bind,src=$RUNNER_TEMP/allowed_chats.json,dst=/app/allowed_chats.json,readonly" \
             --mount "type=bind,src=$RUNNER_TEMP/mock-telegram.mjs,dst=/tmp/mock-telegram.mjs,readonly" \
-            -e NODE_ENV=production \
-            -e ENABLED_PROVIDERS=TELEGRAM \
-            -e TELEGRAM_BOT_TOKEN=synthetic-token \
-            -e TELEGRAM_MASTER_ID=123456789 \
-            -e BACKEND_PORT=5678 \
-            --entrypoint node "local/vcard-api:$COMMIT_SHA" \
+            -e NODE_ENV=production -e ENABLED_PROVIDERS=TELEGRAM \
+            -e TELEGRAM_BOT_TOKEN=synthetic-token -e TELEGRAM_MASTER_ID=123456789 \
+            -e BACKEND_PORT=5678 --entrypoint node "local/vcard-api:$COMMIT_SHA" \
             --import /tmp/mock-telegram.mjs apps/api/dist/index.js
 
           for attempt in $(seq 1 20); do
-            if docker exec candidate-api curl --fail --silent http://localhost:5678/api/health; then
-              break
-            fi
-            if [ "$attempt" -eq 20 ]; then
-              echo 'Candidate API failed its health check.'
-              exit 1
-            fi
+            if docker exec candidate-api curl --fail --silent http://localhost:5678/api/health; then break; fi
+            if [ "$attempt" -eq 20 ]; then echo 'Candidate API health check failed.'; exit 1; fi
             sleep 2
           done
 
-          lead_response=$(docker exec candidate-api curl --fail --silent --show-error \
+          response=$(docker exec candidate-api curl --fail --silent --show-error \
             --header 'Content-Type: application/json' \
-            --data '{"name":"test","phone":"+380000000000","district":"","services":[],"source":"clinic-web"}' \
+            --data '{"name":"Test User","phone":"+380671234567","district":"","services":["verification"],"source":"ci-smoke"}' \
             http://127.0.0.1:5678/api/leads/submit)
-          printf '%s\n' "$lead_response" | grep -q '"success":true'
+          printf '%s\n' "$response" | grep -q '"success":true'
 
-          docker run -d --name candidate-clinic-web --network candidate-network \
-            "local/vcard-clinic-web:$COMMIT_SHA"
+          docker run -d --name candidate-staging-web --network candidate-network \
+            "local/vcard-clinic-web:staging-$COMMIT_SHA"
+          docker run -d --name candidate-production-web --network candidate-network \
+            "local/vcard-clinic-web:production-$COMMIT_SHA"
 
-          for attempt in $(seq 1 20); do
-            if docker exec candidate-clinic-web wget --quiet --spider http://127.0.0.1:8080/; then
-              break
-            fi
-            if [ "$attempt" -eq 20 ]; then
-              docker logs candidate-clinic-web
-              echo 'Candidate clinic-web failed its health check.'
-              exit 1
-            fi
-            sleep 2
+          for container in candidate-staging-web candidate-production-web; do
+            for attempt in $(seq 1 20); do
+              if docker exec "$container" wget --quiet --spider http://127.0.0.1:8080/; then break; fi
+              if [ "$attempt" -eq 20 ]; then docker logs "$container"; exit 1; fi
+              sleep 2
+            done
+            missing=$(docker exec "$container" sh -c 'wget -S -O /dev/null http://127.0.0.1:8080/not-found 2>&1 || true')
+            printf '%s\n' "$missing" | grep -q 'HTTP/1.1 404'
           done
 
-          docker exec candidate-clinic-web wget -qO- http://127.0.0.1:8080/ | grep -qi 'noindex'
-          missing_response=$(docker exec candidate-clinic-web sh -c \
-            'wget -S -O /dev/null http://127.0.0.1:8080/contract-not-found 2>&1 || true')
-          printf '%s\n' "$missing_response" | grep -q 'HTTP/1.1 404'
+          docker exec candidate-staging-web wget -qO- http://127.0.0.1:8080/ | grep -qi 'noindex'
+          production_html=$(docker exec candidate-production-web wget -qO- http://127.0.0.1:8080/)
+          printf '%s\n' "$production_html" | grep -q 'https://havenhub.com.ua/'
+          if printf '%s\n' "$production_html" | grep -qi 'noindex'; then
+            echo 'Production image contains noindex metadata.'
+            exit 1
+          fi
 
-          for image in "local/vcard-api:$COMMIT_SHA" "local/vcard-clinic-web:$COMMIT_SHA"; do
-            test "$(docker image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "$COMMIT_SHA"
-          done
-
-      - name: 🐳 Log in to GitHub Container Registry
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📤 Publish tested image IDs and record registry digests
+      - name: Publish tested image digests
         id: publish
         run: |
           set -euo pipefail
-          REPO_LC=${GITHUB_REPOSITORY,,}
-          API_LOCAL="local/vcard-api:$COMMIT_SHA"
-          CLINIC_LOCAL="local/vcard-clinic-web:$COMMIT_SHA"
-          API_TAG="ghcr.io/$REPO_LC/vcard-api:$COMMIT_SHA"
-          CLINIC_TAG="ghcr.io/$REPO_LC/vcard-clinic-web:$COMMIT_SHA"
-          API_ID=$(docker image inspect "$API_LOCAL" --format '{{.Id}}')
-          CLINIC_ID=$(docker image inspect "$CLINIC_LOCAL" --format '{{.Id}}')
+          repo=${GITHUB_REPOSITORY,,}
+          api_local="local/vcard-api:$COMMIT_SHA"
+          staging_local="local/vcard-clinic-web:staging-$COMMIT_SHA"
+          production_local="local/vcard-clinic-web:production-$COMMIT_SHA"
+          api_tag="ghcr.io/$repo/vcard-api:$COMMIT_SHA"
+          staging_tag="ghcr.io/$repo/vcard-clinic-web:staging-$COMMIT_SHA"
+          production_tag="ghcr.io/$repo/vcard-clinic-web:production-$COMMIT_SHA"
+          for pair in "$api_local:$api_tag" "$staging_local:$staging_tag" "$production_local:$production_tag"; do
+            local_ref=${pair%%:*}
+            tag_ref=${pair#*:}
+            docker tag "$local_ref" "$tag_ref"
+          done
+          docker push "$api_tag" 2>&1 | tee "$RUNNER_TEMP/api-push.log"
+          docker push "$staging_tag" 2>&1 | tee "$RUNNER_TEMP/staging-push.log"
+          docker push "$production_tag" 2>&1 | tee "$RUNNER_TEMP/production-push.log"
+          api_digest=$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/api-push.log" | tail -n 1)
+          staging_digest=$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/staging-push.log" | tail -n 1)
+          production_digest=$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/production-push.log" | tail -n 1)
+          test -n "$api_digest" && test -n "$staging_digest" && test -n "$production_digest"
+          echo "api_image_ref=ghcr.io/$repo/vcard-api@$api_digest" >> "$GITHUB_OUTPUT"
+          echo "staging_clinic_web_image_ref=ghcr.io/$repo/vcard-clinic-web@$staging_digest" >> "$GITHUB_OUTPUT"
+          echo "production_clinic_web_image_ref=ghcr.io/$repo/vcard-clinic-web@$production_digest" >> "$GITHUB_OUTPUT"
 
-          docker tag "$API_LOCAL" "$API_TAG"
-          docker tag "$CLINIC_LOCAL" "$CLINIC_TAG"
-          docker push "$API_TAG" 2>&1 | tee "$RUNNER_TEMP/api-push.log"
-          docker push "$CLINIC_TAG" 2>&1 | tee "$RUNNER_TEMP/clinic-push.log"
-
-          API_DIGEST=$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/api-push.log" | tail -n 1)
-          CLINIC_DIGEST=$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/clinic-push.log" | tail -n 1)
-          test -n "$API_DIGEST"
-          test -n "$CLINIC_DIGEST"
-          test "$(docker image inspect "$API_LOCAL" --format '{{.Id}}')" = "$API_ID"
-          test "$(docker image inspect "$CLINIC_LOCAL" --format '{{.Id}}')" = "$CLINIC_ID"
-          echo "api_image_ref=ghcr.io/$REPO_LC/vcard-api@$API_DIGEST" >> "$GITHUB_OUTPUT"
-          echo "clinic_web_image_ref=ghcr.io/$REPO_LC/vcard-clinic-web@$CLINIC_DIGEST" >> "$GITHUB_OUTPUT"
-
-  deploy-to-vps:
-    name: Deploy with Ansible
-    needs: build-and-push
+  deploy-staging:
+    name: Deploy and verify isolated staging
+    needs: build-and-publish
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_repository.id == github.event.workflow_run.repository.id &&
@@ -183,214 +192,130 @@ jobs:
       contents: read
       packages: read
     environment:
-      name: production
-      url: https://${{ env.DOMAIN_NAME }}
+      name: staging
+      url: https://${{ env.STAGING_DOMAIN_NAME }}
     steps:
-      - name: 🚚 Checkout code (for Ansible playbook)
+      - name: Check out the exact CI revision
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: 🔍 Verify deployment checkout
+      - name: Verify release checkout
         run: test "$(git rev-parse HEAD)" = "$COMMIT_SHA"
 
-      - name: 🔧 Set up Python
-        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
-        with:
-          python-version: '3.12'
-
-      - name: 📦 Install Ansible and dependencies
-        run: |
-          pip install ansible-core==2.21.5
-          for attempt in 1 2 3; do
-            if ansible-galaxy collection install -r ops/ansible/requirements.yml; then
-              break
-            fi
-            if [ "$attempt" -eq 3 ]; then
-              exit 1
-            fi
-            sleep "$((attempt * 10))"
-          done
-          ansible --version
-
-      - name: 🛡️ Validate deploy VPS IP
+      - name: Validate deploy target
         env:
           VPS_IP: ${{ env.VPS_IP }}
         run: |
-          if [ -z "$VPS_IP" ] || [ "$VPS_IP" = "localhost" ]; then
-            echo '❌ Set the repository variable VPS_IP to the public VPS IPv4 address.'
-            exit 1
-          fi
+          python3 -c 'import ipaddress, os; ipaddress.IPv4Address(os.environ["VPS_IP"])'
+          [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9/_-]+$ ]]
 
-          if ! python3 -c 'import ipaddress, os; ipaddress.IPv4Address(os.environ["VPS_IP"])'; then
-            echo '❌ VPS_IP must be a valid IPv4 address.'
-            exit 1
-          fi
-
-          if ! [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9/_-]+$ ]]; then
-            echo '❌ DEPLOY_PATH must be an absolute path with letters, digits, slash, underscore, or hyphen.'
-            exit 1
-          fi
-
-      - name: 🔐 Prepare staging authentication
+      - name: Prepare staging authentication hash
         env:
           STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
         run: |
-          if [ "${#STAGE_BASIC_AUTH_PASSWORD}" -lt 16 ]; then
-            echo '❌ STAGE_BASIC_AUTH_PASSWORD must contain at least 16 characters.'
-            exit 1
-          fi
-
-          STAGE_BASIC_AUTH_HASH=$(docker run --rm --entrypoint sh \
-            -e STAGE_BASIC_AUTH_PASSWORD "$CADDY_IMAGE_REF" \
+          test "${#STAGE_BASIC_AUTH_PASSWORD}" -ge 16
+          hash=$(docker run --rm --entrypoint sh -e STAGE_BASIC_AUTH_PASSWORD "$CADDY_IMAGE_REF" \
             -c 'caddy hash-password --plaintext "$STAGE_BASIC_AUTH_PASSWORD"')
-          if [ -z "$STAGE_BASIC_AUTH_HASH" ]; then
-            echo '❌ Failed to prepare the staging authentication hash.'
-            exit 1
-          fi
-          echo "::add-mask::$STAGE_BASIC_AUTH_HASH"
-          printf 'STAGE_BASIC_AUTH_HASH=%s\n' "$STAGE_BASIC_AUTH_HASH" >> "$GITHUB_ENV"
+          test -n "$hash"
+          echo "::add-mask::$hash"
+          printf 'STAGE_BASIC_AUTH_HASH=%s\n' "$hash" >> "$GITHUB_ENV"
 
-      - name: 🔐 Configure SSH key
+      - name: Configure SSH key
         env:
           SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
           SSH_HOST: ${{ env.VPS_IP }}
         run: |
           mkdir -p ~/.ssh
-          printf "%s" "$SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s' "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          test -n "$SSH_KNOWN_HOSTS"
-          mkdir -p ~/.ssh
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
           ssh-keygen -F "$SSH_HOST" -f ~/.ssh/known_hosts >/dev/null
-          echo "✓ SSH key configured"
-          echo 'SSH key configured.'
 
-      - name: 🛠️ Test SSH connectivity
+      - name: Test SSH connectivity
+        env:
+          SSH_HOST: ${{ env.VPS_IP }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+        run: ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" 'echo SSH_OK'
+
+      - name: Verify staging DNS against the VPS addresses
         env:
           SSH_HOST: ${{ env.VPS_IP }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
         run: |
-          MAX_RETRIES=5
-          RETRY_DELAY=15
-          SUCCESS=0
+          ipv6_json=$(ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'ip -j -6 address show scope global')
+          ipv6=$(printf '%s' "$ipv6_json" | python3 scripts/ci/extract_vps_ipv6.py)
+          python3 scripts/ci/check_stage_dns.py --host "$STAGING_DOMAIN_NAME" --vps-ip "$VPS_IP" --vps-ipv6 "$ipv6"
 
-          for i in $(seq 1 "$MAX_RETRIES"); do
-            echo "Testing SSH to ${SSH_USER}@${SSH_HOST} (Attempt $i/$MAX_RETRIES)..."
-            if ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes \
-              -i ~/.ssh/deploy_key "${SSH_USER}@${SSH_HOST}" "echo SSH_OK"; then
-              echo "✅ SSH connection successful"
-              SUCCESS=1
-              break
-            else
-              echo "⚠️ SSH connection failed on attempt $i."
-              if [ "$i" -lt "$MAX_RETRIES" ]; then
-                echo "Sleeping $RETRY_DELAY seconds before retrying..."
-                sleep $RETRY_DELAY
-              fi
-            fi
-          done
-
-          if [ "$SUCCESS" -eq 0 ]; then
-            echo 'SSH connectivity check failed; no verbose SSH trace was recorded.'
-            exit 1
-          fi
-
-      - name: 🌐 Verify staging DNS against the VPS addresses
-        env:
-          SSH_HOST: ${{ env.VPS_IP }}
-          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          EXPECTED_VPS_IPV4: ${{ env.VPS_IP }}
-          DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
-        run: |
-          set -euo pipefail
-          VPS_IPV6_JSON=$(ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
-            'ip -j -6 address show scope global')
-          VPS_IPV6_ADDRESSES=$(printf '%s' "$VPS_IPV6_JSON" | python3 scripts/ci/extract_vps_ipv6.py)
-          python3 scripts/ci/check_stage_dns.py \
-            --host "$DOMAIN_NAME" \
-            --host "www.$DOMAIN_NAME" \
-            --vps-ip "$EXPECTED_VPS_IPV4" \
-            --vps-ipv6 "$VPS_IPV6_ADDRESSES"
-
-      - name: 🔍 VPS Pre-flight Check
+      - name: Check VPS disk and memory
         env:
           SSH_HOST: ${{ env.VPS_IP }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
-          echo '--- Disk Space ---'
-          df -h /
-          echo '--- Memory ---'
-          free -m
-          disk_available_kb=$(df -Pk / | awk 'NR == 2 {print $4}')
-          memory_available_mb=$(free -m | awk '/^Mem:/ {print $7}')
-          test "$disk_available_kb" -ge 1048576
-          test "$memory_available_mb" -ge 200
-          echo '✅ Pre-flight resource checks passed.'
+          test "$(df -Pk / | awk 'NR == 2 {print $4}')" -ge 1048576
+          test "$(free -m | awk '/^Mem:/ {print $7}')" -ge 200
           REMOTE
 
-      - name: 🧭 Skip superseded release before VPS mutation
+      - name: Skip a release already superseded on main
         id: release_gate
         env:
           RELEASE_SHA: ${{ env.COMMIT_SHA }}
           MAIN_REPOSITORY_URL: https://github.com/${{ github.repository }}.git
         run: bash scripts/ci/check_release_head.sh
 
-      - name: 🚀 Deploy with Ansible
+      - name: Install Ansible
+        if: steps.release_gate.outputs.deployment_result == 'deployed'
+        run: |
+          pip install ansible-core==2.21.5
+          ansible-galaxy collection install -r ops/ansible/requirements.yml
+
+      - name: Deploy isolated staging with Ansible
         if: steps.release_gate.outputs.deployment_result == 'deployed'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
           ANSIBLE_HOST_KEY_CHECKING: 'True'
           HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          VPS_IP: ${{ env.VPS_IP }}
-          DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
-          DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
-          STAGE_BASIC_AUTH_HASH: ${{ env.STAGE_BASIC_AUTH_HASH }}
           STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
-          NODE_ENV: 'production'
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_MASTER_ID: ${{ secrets.TELEGRAM_MASTER_ID }}
-          TELEGRAM_ALLOWED_CHAT_IDS: ${{ secrets.TELEGRAM_ALLOWED_CHAT_IDS }}
-          TELEGRAM_NOTIFY_IDS: ${{ secrets.TELEGRAM_NOTIFY_IDS }}
-          ENABLED_PROVIDERS: 'TELEGRAM'
-          BACKEND_PORT: '5678'
-          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          STAGE_BASIC_AUTH_HASH: ${{ env.STAGE_BASIC_AUTH_HASH }}
           RELEASE_SHA: ${{ env.COMMIT_SHA }}
-          API_IMAGE_REF: ${{ needs.build-and-push.outputs.api_image_ref }}
-          CLINIC_WEB_IMAGE_REF: ${{ needs.build-and-push.outputs.clinic_web_image_ref }}
+          API_IMAGE_REF: ${{ needs.build-and-publish.outputs.api_image_ref }}
+          STAGING_CLINIC_WEB_IMAGE_REF: ${{ needs.build-and-publish.outputs.staging_clinic_web_image_ref }}
+          PRODUCTION_CLINIC_WEB_IMAGE_REF: ${{ needs.build-and-publish.outputs.production_clinic_web_image_ref }}
+          CI_RUN_ID: ${{ github.event.workflow_run.id }}
+          DEPLOY_RUN_ID: ${{ github.run_id }}
         run: |
           cd ops/ansible
-          ansible-playbook playbook.yml \
-            -vv \
-            -i inventory.ini \
+          ansible-playbook staging-playbook.yml -i inventory.ini \
             --private-key "$HOME/.ssh/deploy_key" \
-            --extra-vars "target_host=${{ env.VPS_IP }}" \
-            --extra-vars "ansible_user=${HOSTINGER_SSH_USER}" \
+            --extra-vars "target_host=$VPS_IP" \
+            --extra-vars "ansible_user=$HOSTINGER_SSH_USER" \
             --extra-vars "ansible_ssh_private_key_file=$HOME/.ssh/deploy_key" \
-            --extra-vars "deploy_path=${DEPLOY_PATH}" \
-            --extra-vars "vps_ip=${VPS_IP}" \
-            --extra-vars "github_repository_path=${{ github.repository }}.git" \
-            --extra-vars "release_sha=${RELEASE_SHA}" \
-            --extra-vars "api_image_ref=${API_IMAGE_REF}" \
-            --extra-vars "clinic_web_image_ref=${CLINIC_WEB_IMAGE_REF}"
+            --extra-vars "deploy_path=$DEPLOY_PATH" \
+            --extra-vars "vps_ip=$VPS_IP" \
+            --extra-vars "release_sha=$RELEASE_SHA" \
+            --extra-vars "api_image_ref=$API_IMAGE_REF" \
+            --extra-vars "staging_clinic_web_image_ref=$STAGING_CLINIC_WEB_IMAGE_REF" \
+            --extra-vars "production_clinic_web_image_ref=$PRODUCTION_CLINIC_WEB_IMAGE_REF"
 
-      - name: 🔍 Verify deployment (smoke tests)
+      - name: Verify staging from the public network
         if: steps.release_gate.outputs.deployment_result == 'deployed'
         env:
-          DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
+          DOMAIN_NAME: ${{ env.STAGING_DOMAIN_NAME }}
           VPS_IP: ${{ env.VPS_IP }}
           STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
         run: bash scripts/ci/check_clinic_stage.sh
 
-      - name: 📋 Create and atomically record release manifest
+      - name: Create and atomically record the verified staging manifest
         if: steps.release_gate.outputs.deployment_result == 'deployed'
         env:
           RELEASE_SHA: ${{ env.COMMIT_SHA }}
-          API_IMAGE_REF: ${{ needs.build-and-push.outputs.api_image_ref }}
-          CLINIC_WEB_IMAGE_REF: ${{ needs.build-and-push.outputs.clinic_web_image_ref }}
+          API_IMAGE_REF: ${{ needs.build-and-publish.outputs.api_image_ref }}
+          STAGING_CLINIC_WEB_IMAGE_REF: ${{ needs.build-and-publish.outputs.staging_clinic_web_image_ref }}
+          PRODUCTION_CLINIC_WEB_IMAGE_REF: ${{ needs.build-and-publish.outputs.production_clinic_web_image_ref }}
           CI_RUN_ID: ${{ github.event.workflow_run.id }}
           DEPLOY_RUN_ID: ${{ github.run_id }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -404,107 +329,59 @@ jobs:
           manifest = {
               'release_sha': os.environ['RELEASE_SHA'],
               'api_image_ref': os.environ['API_IMAGE_REF'],
-              'clinic_web_image_ref': os.environ['CLINIC_WEB_IMAGE_REF'],
+              'staging_clinic_web_image_ref': os.environ['STAGING_CLINIC_WEB_IMAGE_REF'],
+              'production_clinic_web_image_ref': os.environ['PRODUCTION_CLINIC_WEB_IMAGE_REF'],
               'ci_run_id': os.environ['CI_RUN_ID'],
               'deploy_run_id': os.environ['DEPLOY_RUN_ID'],
           }
-          Path('release.json').write_text(
-              json.dumps(manifest, sort_keys=True, separators=(',', ':')) + '\n',
-              encoding='utf-8',
+          Path('staging-release.json').write_text(
+              json.dumps(manifest, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8'
           )
           PY
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
-            release.json "$SSH_USER@$VPS_IP:$DEPLOY_PATH/releases/.$RELEASE_SHA.json.pending"
+          python3 scripts/ci/validate_staging_release_manifest.py \
+            --manifest staging-release.json --sha "$RELEASE_SHA" --repository "$GITHUB_REPOSITORY"
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes staging-release.json \
+            "$SSH_USER@$VPS_IP:$DEPLOY_PATH/releases/staging/.$RELEASE_SHA.json.pending"
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$VPS_IP" \
             "DEPLOY_PATH='$DEPLOY_PATH' RELEASE_SHA='$RELEASE_SHA' bash -s" <<'REMOTE'
           set -euo pipefail
-          pending="$DEPLOY_PATH/releases/.$RELEASE_SHA.json.pending"
-          target="$DEPLOY_PATH/releases/$RELEASE_SHA.json"
-          current_pending="$DEPLOY_PATH/releases/.current.json.pending"
-          current="$DEPLOY_PATH/releases/current.json"
+          directory="$DEPLOY_PATH/releases/staging"
+          pending="$directory/.$RELEASE_SHA.json.pending"
+          target="$directory/$RELEASE_SHA.json"
+          current_pending="$directory/.current.json.pending"
           trap 'rm -f "$pending" "$current_pending"' EXIT
           chmod 600 "$pending"
-          mapfile -t manifest_fields < <(python3 - "$pending" <<'PY'
+          python3 - "$pending" "$RELEASE_SHA" <<'PY'
           import json
           import re
           import sys
 
           with open(sys.argv[1], encoding='utf-8') as source:
               manifest = json.load(source)
-          expected = {'release_sha', 'api_image_ref', 'clinic_web_image_ref', 'ci_run_id', 'deploy_run_id'}
-          if set(manifest) != expected:
-              raise SystemExit('Invalid release manifest keys')
+          expected = {'release_sha', 'api_image_ref', 'staging_clinic_web_image_ref', 'production_clinic_web_image_ref', 'ci_run_id', 'deploy_run_id'}
+          if set(manifest) != expected or manifest['release_sha'] != sys.argv[2]:
+              raise SystemExit('Invalid staging manifest fields or SHA')
           if not re.fullmatch(r'[0-9a-f]{40}', manifest['release_sha']):
-              raise SystemExit('Invalid release SHA')
-          if not re.fullmatch(r'ghcr\.io/[a-z0-9._/-]+/vcard-api@sha256:[0-9a-f]{64}', manifest['api_image_ref']):
-              raise SystemExit('Invalid API digest reference')
-          if not re.fullmatch(r'ghcr\.io/[a-z0-9._/-]+/vcard-clinic-web@sha256:[0-9a-f]{64}', manifest['clinic_web_image_ref']):
-              raise SystemExit('Invalid clinic digest reference')
+              raise SystemExit('Invalid staging SHA')
+          for key, name in [('api_image_ref', 'vcard-api'), ('staging_clinic_web_image_ref', 'vcard-clinic-web')]:
+              if not re.fullmatch(rf'ghcr\.io/[a-z0-9._/-]+/{name}@sha256:[0-9a-f]{{64}}', manifest[key]):
+                  raise SystemExit(f'Invalid immutable image reference: {key}')
+          if not re.fullmatch(r'ghcr\.io/[a-z0-9._/-]+/vcard-clinic-web@sha256:[0-9a-f]{64}', manifest['production_clinic_web_image_ref']):
+              raise SystemExit('Invalid production image reference')
+          if manifest['staging_clinic_web_image_ref'] == manifest['production_clinic_web_image_ref']:
+              raise SystemExit('Staging and production images must be separate builds')
           if not all(str(manifest[key]).isdigit() for key in ('ci_run_id', 'deploy_run_id')):
-              raise SystemExit('Invalid run IDs')
-          for key in ('release_sha', 'api_image_ref', 'clinic_web_image_ref'):
-              print(manifest[key])
+              raise SystemExit('Invalid workflow run IDs')
           PY
-          )
-          manifest_sha="${manifest_fields[0]}"
-          api_ref="${manifest_fields[1]}"
-          clinic_ref="${manifest_fields[2]}"
-          test "$manifest_sha" = "$RELEASE_SHA"
           test "$(git -C "$DEPLOY_PATH" rev-parse HEAD)" = "$RELEASE_SHA"
-          verify_image() {
-            container="$1"
-            expected_ref="$2"
-            test "$(docker inspect --format '{{.Config.Image}}' "$container")" = "$expected_ref"
-            container_id=$(docker inspect --format '{{.Image}}' "$container")
-            expected_id=$(docker image inspect --format '{{.Id}}' "$expected_ref")
-            test "$container_id" = "$expected_id"
-            revision=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$container_id")
-            test "$revision" = "$RELEASE_SHA"
-          }
-          verify_image vcard-api "$api_ref"
-          verify_image vcard-clinic-web "$clinic_ref"
+          for pair in "vcard-api:api_image_ref" "vcard-clinic-web-staging:staging_clinic_web_image_ref"; do
+            container=${pair%%:*}
+            key=${pair#*:}
+            expected=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$pending" "$key")
+            test "$(docker inspect --format '{{.Config.Image}}' "$container")" = "$expected"
+          done
           mv -f -- "$pending" "$target"
           install -m 0600 "$target" "$current_pending"
-          mv -f -- "$current_pending" "$current"
-          rm -f -- "$DEPLOY_PATH/releases/reconciliation-required.json"
+          mv -f -- "$current_pending" "$directory/current.json"
           trap - EXIT
           REMOTE
-
-      - name: 📦 Upload release manifest artifact
-        if: steps.release_gate.outputs.deployment_result == 'deployed'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: release-${{ env.COMMIT_SHA }}
-          path: release.json
-          if-no-files-found: error
-
-      - name: 💬 Notify Telegram (success)
-        if: success() && steps.release_gate.outputs.deployment_result == 'deployed'
-        uses: appleboy/telegram-action@214f06cfa3d3a588c1472116889437e7c6fd29b1 # v1.1.1
-        continue-on-error: true
-        with:
-          to: ${{ secrets.TELEGRAM_MASTER_ID }}
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          message: |
-            ✅ Deployment Success
-
-            Access: https://${{ env.DOMAIN_NAME }}
-            Commit: ${{ env.COMMIT_SHA }}
-            Branch: main
-
-            Frontend & API verified ✓
-
-      - name: 🚨 Notify Telegram (failure)
-        if: failure()
-        uses: appleboy/telegram-action@214f06cfa3d3a588c1472116889437e7c6fd29b1 # v1.1.1
-        continue-on-error: true
-        with:
-          to: ${{ secrets.TELEGRAM_MASTER_ID }}
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          message: |
-            ❌ Deployment Failed
-
-            Access: https://${{ env.DOMAIN_NAME }}
-            Commit: ${{ env.COMMIT_SHA }}
-
-            Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

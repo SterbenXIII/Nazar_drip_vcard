@@ -2,7 +2,7 @@
 
 **A pnpm monorepo** combining:
 
-- **Astro 7.3.1** static vCard site (production-ready, Ukrainian)
+- **Astro 7.3.3** static vCard site (production-ready, Ukrainian)
 - **Hono** HTTP API (lead submissions, Telegram/Email notifications)
 - **SQLite** database (zero DevOps)
 - **Docker** deployment to Hostinger VPS
@@ -55,7 +55,7 @@ The VPS stage target is `havenhub.tech` and `www.havenhub.tech`; it is authentic
 - ✅ GitHub Secrets for environment variables
 - ✅ Automated SSL certificates (Let's Encrypt)
 - ✅ Telegram notifications for all deployments
-- ✅ SQLite backups to Telegram
+- ✅ SQLite snapshots before production API changes
 
 ---
 
