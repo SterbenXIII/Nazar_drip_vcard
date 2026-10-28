@@ -1,0 +1,35 @@
+services:
+  clinic-web-production:
+    image: ${CLINIC_WEB_IMAGE_REF:?CLINIC_WEB_IMAGE_REF is required}
+    build:
+      context: ../../../
+      dockerfile: apps/clinic-web/Dockerfile
+      args:
+        CLINIC_SITE_MODE: production
+        CLINIC_CANONICAL_ORIGIN: https://havenhub.com.ua
+        CLINIC_ALLOW_PRODUCTION_BUILD: 'true'
+    container_name: vcard-clinic-web-production
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:uid=101,gid=101
+      - /var/run:uid=101,gid=101
+    networks:
+      - web-gateway
+    depends_on:
+      api:
+        condition: service_healthy
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+networks:
+  web-gateway:
+    name: web-gateway
+    external: true

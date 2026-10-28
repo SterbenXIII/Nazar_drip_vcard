@@ -1,0 +1,38 @@
+http://havenhub.com.ua, http://www.havenhub.com.ua {
+	redir https://havenhub.com.ua{uri} 308
+}
+
+http://havenhub.tech, http://www.havenhub.tech,
+https://havenhub.tech, https://www.havenhub.tech {
+	redir https://havenhub.com.ua{uri} 308
+}
+
+www.havenhub.com.ua {
+	redir https://havenhub.com.ua{uri} 308
+}
+
+havenhub.com.ua {
+	encode gzip zstd
+	import security_headers
+	import static_cache
+
+	route {
+		@sensitive {
+			path /.env* /.git* /.config* /package.json /pnpm-lock.yaml
+		}
+		respond @sensitive "Access Denied" 403
+
+		handle /api/* {
+			reverse_proxy api:5678 {
+				header_up X-Forwarded-For {remote_host}
+				header_up -CF-Connecting-IP
+			}
+		}
+
+		handle {
+			reverse_proxy clinic-web-production:8080 {
+				header_up Host {host}
+			}
+		}
+	}
+}

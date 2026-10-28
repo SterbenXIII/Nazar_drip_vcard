@@ -1,0 +1,70 @@
+---
+- name: Restore the pre-cutover Caddyfile after a failed production health check
+  ansible.builtin.copy:
+    src: '{{ caddy_recovery_path }}/Caddyfile'
+    dest: '{{ active_caddyfile_path }}'
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0644'
+  when: production_caddy_activated | default(false)
+
+- name: Restore pre-cutover Caddy snippets after a failed production health check
+  ansible.builtin.copy:
+    src: '{{ caddy_recovery_path }}/includes/'
+    dest: '{{ active_caddy_includes_path }}/'
+    remote_src: true
+    owner: root
+    group: root
+    mode: preserve
+  when: production_caddy_activated | default(false)
+
+- name: Recreate the proxy with the pre-cutover route after health-check failure
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.command:
+    argv:
+      [
+        docker,
+        compose,
+        --project-name,
+        compose,
+        -f,
+        ops/docker/compose/docker-compose.proxy.yml,
+        -f,
+        ops/docker/compose/docker-compose.staging-proxy.yml,
+        up,
+        -d,
+        caddy,
+      ]
+  args:
+    chdir: '{{ project_dir }}'
+  environment:
+    CADDY_IMAGE_REF: '{{ caddy_image_ref }}'
+    CADDYFILE_PATH: '{{ active_caddyfile_path }}'
+    CADDY_INCLUDES_PATH: '{{ active_caddy_includes_path }}'
+    CADDY_DOMAIN_NAME: '{{ legacy_domain_name }}'
+    STAGE_BASIC_AUTH_HASH: '{{ stage_basic_auth_hash }}'
+  when: production_caddy_activated | default(false)
+  failed_when: false
+  no_log: true
+
+- name: Reload the pre-cutover Caddy route after health-check failure
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.command:
+    argv:
+      [
+        docker,
+        exec,
+        vcard-proxy,
+        caddy,
+        reload,
+        --config,
+        /etc/caddy/Caddyfile,
+        --adapter,
+        caddyfile,
+      ]
+  when: production_caddy_activated | default(false)
+  failed_when: false
+  no_log: true

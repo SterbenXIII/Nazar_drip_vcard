@@ -13,6 +13,7 @@ REPOSITORY = 'SterbenXIII/Nazar_drip_vcard'
 
 def manifest(sha):
     return {
+        'manifest_version': 'havenhub-production-v1',
         'release_sha': sha,
         'api_image_ref': f'ghcr.io/{REPOSITORY.lower()}/vcard-api@sha256:{"1" * 64}',
         'clinic_web_image_ref': f'ghcr.io/{REPOSITORY.lower()}/vcard-clinic-web@sha256:{"2" * 64}',

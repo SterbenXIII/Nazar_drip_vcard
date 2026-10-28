@@ -72,4 +72,5 @@ networks:
 
 volumes:
   api_data:
+    name: compose_api_data
     driver: local

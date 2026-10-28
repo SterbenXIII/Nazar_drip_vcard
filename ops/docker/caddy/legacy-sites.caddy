@@ -1,0 +1,32 @@
+http://{$DOMAIN_NAME}, http://www.{$DOMAIN_NAME} {
+	redir https://{host}{uri} 308
+}
+
+{$DOMAIN_NAME}, www.{$DOMAIN_NAME} {
+	encode gzip zstd
+	import security_headers
+	import static_cache
+	basic_auth {
+		stage {$STAGE_BASIC_AUTH_HASH}
+	}
+
+	route {
+		@sensitive {
+			path /.env* /.git* /.config* /package.json /pnpm-lock.yaml
+		}
+		respond @sensitive "Access Denied" 403
+
+		handle /api/* {
+			reverse_proxy api:5678 {
+				header_up X-Forwarded-For {remote_host}
+				header_up -CF-Connecting-IP
+			}
+		}
+
+		handle {
+			reverse_proxy clinic-web:8080 {
+				header_up Host {host}
+			}
+		}
+	}
+}

@@ -1,0 +1,91 @@
+services:
+  clinic-web-staging:
+    image: ${CLINIC_WEB_IMAGE_REF:?CLINIC_WEB_IMAGE_REF is required}
+    container_name: vcard-clinic-web-staging
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:uid=101,gid=101
+      - /var/run:uid=101,gid=101
+    networks:
+      - staging-gateway
+    depends_on:
+      api-staging:
+        condition: service_healthy
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  api-staging:
+    image: ${API_IMAGE_REF:?API_IMAGE_REF is required}
+    container_name: vcard-api-staging
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    env_file:
+      - ../../../.env.staging
+    environment:
+      NODE_ENV: production
+      BACKEND_PORT: '5678'
+    volumes:
+      - staging_api_data:/app/data
+    networks:
+      - staging-gateway
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:5678/api/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  mailpit:
+    image: docker.io/axllent/mailpit:v1.31.1@sha256:98b916bd3c8d61f7633a52d3ea2f58d00620cb01ca57ab59edde68c347a95365
+    container_name: vcard-mailpit-staging
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /data
+    environment:
+      MP_DATA_FILE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: 'true'
+      MP_SMTP_AUTH_ALLOW_INSECURE: 'true'
+    networks:
+      staging-gateway:
+        aliases:
+          - mailpit
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+networks:
+  staging-gateway:
+    name: vcard-staging-gateway
+    driver: bridge
+    internal: true
+
+volumes:
+  staging_api_data:
+    name: compose-staging_api_data
+    driver: local

@@ -30,7 +30,12 @@
 - name: Validate current successful release manifest
   ansible.builtin.assert:
     that:
-      - previous_release_manifest.keys() | sort == ['api_image_ref', 'ci_run_id', 'clinic_web_image_ref', 'deploy_run_id', 'release_sha']
+      - >-
+        previous_release_manifest.keys() | sort in [
+          ['api_image_ref', 'ci_run_id', 'clinic_web_image_ref', 'deploy_run_id', 'release_sha'],
+          ['api_image_ref', 'ci_run_id', 'clinic_web_image_ref', 'deploy_run_id', 'manifest_version', 'release_sha']
+        ]
+      - previous_release_manifest.get('manifest_version', 'havenhub-production-v1') == 'havenhub-production-v1'
       - previous_release_manifest.release_sha is match('^[0-9a-f]{40}$')
       - >-
         previous_release_manifest.api_image_ref is match('^ghcr\.io/[a-z0-9._/-]+/vcard-api@sha256:[0-9a-f]{64}$') or

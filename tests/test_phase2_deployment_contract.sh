@@ -3,6 +3,7 @@
 set -euo pipefail
 
 deploy='.github/workflows/deploy.yml'
+promotion='.github/workflows/promote-production.yml'
 rollback='.github/workflows/rollback.yml'
 playbook='ops/ansible/playbook.yml'
 deployment='ops/ansible/tasks/05_deployment.yml'
@@ -36,10 +37,13 @@ assert_not_contains() {
 }
 
 assert_contains "$deploy" 'group: deploy-staging'
+assert_contains "$promotion" 'group: deploy-production'
 assert_contains "$rollback" 'group: deploy-production'
 assert_contains "$deploy" 'cancel-in-progress: false'
+assert_contains "$promotion" 'cancel-in-progress: false'
 assert_contains "$rollback" 'cancel-in-progress: false'
 assert_not_contains "$deploy" 'cancel-in-progress: true'
+assert_not_contains "$promotion" 'cancel-in-progress: true'
 assert_not_contains "$rollback" 'cancel-in-progress: true'
 
 assert_contains "$rollback" 'ROLLBACK_SHA: ${{ inputs.commit_sha }}'
@@ -51,13 +55,13 @@ assert_contains "$backup" 'source.backup(process.env.BACKUP_PATH)'
 assert_contains "$backup" '--workdir /app/apps/api'
 assert_not_contains "$playbook" 'docker exec --user node'
 assert_contains "$playbook" 'rollback_mode'
-assert_contains "$ansible_readme" 'older image is supported only when its migrations remain readable'
-assert_contains "$ansible_readme" 'stage build uses `CLINIC_SITE_MODE=staging`'
+assert_contains "$ansible_readme" 'forward-only database migrations may make an older API incompatible'
+assert_contains "$ansible_readme" 'compose-staging_api_data'
 assert_contains "$env_template" 'TELEGRAM_BOT_TOKEN='
 assert_contains "$env_example" 'TELEGRAM_BOT_TOKEN='
 assert_contains "$api_env" 'EMAIL requires SMTP_USER, SMTP_HOST, SMTP_PASS'
-assert_contains "$deploy" '-e NODE_ENV=production -e ENABLED_PROVIDERS=TELEGRAM'
-assert_contains "$deploy" '-e TELEGRAM_BOT_TOKEN=synthetic-token'
+assert_contains "$promotion" "ENABLED_PROVIDERS: TELEGRAM"
+assert_contains ops/ansible/staging.env.j2 'ENABLED_PROVIDERS="EMAIL"'
 assert_not_contains "$deploy" 'SMTP_USER: ${{ secrets.SMTP_USER }}'
 assert_not_contains "$deploy" 'GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}'
 assert_contains "$caddy" 'header_up X-Forwarded-For {remote_host}'
@@ -94,9 +98,9 @@ assert_contains "$playbook" "project_dir is match('^/opt/clinic-cd-lab(/|$)')"
 assert_contains "$deployment" 'Create reconciliation marker before service recreation'
 assert_contains "$deployment" 'if [[ "$LAB_MODE" != '\''1'\'' ]]; then'
 assert_contains "$backup" 'if [[ "$LAB_MODE" != '\''1'\'' ]]; then'
-assert_contains "$deployment" 'up -d --remove-orphans'
+assert_contains "$deployment" 'up -d --no-build api "${DEPLOY_WEB_SERVICE}"'
 assert_not_contains "$deployment" '--force-recreate'
-assert_contains "$deployment" 'up -d --remove-orphans'
+assert_not_contains "$deployment" '--remove-orphans'
 assert_not_contains "$deployment" '--force-recreate'
 assert_contains "$deployment" 'releases/reconciliation-required.json'
 assert_contains "$deployment" 'Verify candidate API schema compatibility against the SQLite snapshot'
@@ -112,8 +116,8 @@ assert_contains "$rollback" 'docker pull "$API_IMAGE_REF"'
 assert_contains "$rollback" 'API_IMAGE_REF: ${{ steps.validate_release.outputs.api_image_ref }}'
 assert_contains "$rollback" 'CLINIC_WEB_IMAGE_REF: ${{ steps.validate_release.outputs.clinic_web_image_ref }}'
 assert_contains "$rollback" 'current.json'
-assert_contains "$deploy" 'releases/staging'
-assert_contains "$deploy" 'mv -f -- "$current_pending" "$directory/current.json"'
+assert_contains "$promotion" 'releases/current.json'
+assert_contains "$promotion" 'reconciliation-required.json'
 assert_not_contains "$playbook" 'docker system prune -f --volumes'
 
 system_tasks_line=$(grep -n -m 1 -F 'include_tasks: tasks/01_preflight_system.yml' "$playbook" | cut -d: -f1)
@@ -125,14 +129,14 @@ if (( backup_tasks_line <= system_tasks_line || backup_tasks_line >= project_tas
 fi
 
 pull_line=$(grep -n -m 1 -F 'pull --quiet' "$deployment" | cut -d: -f1)
-up_line=$(grep -n -m 1 -F 'up -d --remove-orphans' "$deployment" | cut -d: -f1)
+up_line=$(grep -n -m 1 -F 'up -d --no-build api' "$deployment" | cut -d: -f1)
 if (( pull_line >= up_line )); then
   echo "FAIL: image pull must precede service recreation" >&2
   exit 1
 fi
 
 backup_line=$(grep -n -m 1 -F 'Create consistent SQLite snapshot' "$backup" | cut -d: -f1)
-up_line=$(grep -n -m 1 -F 'up -d --remove-orphans' "$deployment" | cut -d: -f1)
+up_line=$(grep -n -m 1 -F 'up -d --no-build api' "$deployment" | cut -d: -f1)
 marker_line=$(grep -n -m 1 -F 'Create reconciliation marker before service recreation' "$deployment" | cut -d: -f1)
 schema_probe_line=$(grep -n -m 1 -F 'Verify candidate API schema compatibility against the SQLite snapshot' "$deployment" | cut -d: -f1)
 if (( backup_line < 1 || schema_probe_line >= marker_line || marker_line >= up_line )); then

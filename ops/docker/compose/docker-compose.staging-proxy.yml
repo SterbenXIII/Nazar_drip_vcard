@@ -1,0 +1,9 @@
+services:
+  caddy:
+    networks:
+      - staging-gateway
+
+networks:
+  staging-gateway:
+    name: vcard-staging-gateway
+    external: true

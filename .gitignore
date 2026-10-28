@@ -24,6 +24,11 @@ pnpm-debug.log*
 .env
 .env.local
 .env.production
+.env.staging
+ops/docker/caddy/Caddyfile.active
+ops/docker/caddy/includes.active/
+ops/docker/caddy/Caddyfile.active.previous
+ops/docker/caddy/includes.active.previous/
 
 # Runtime data and private deployment material
 ops/certs/
@@ -55,6 +60,7 @@ n8n_data/
 
 # Backups (generated)
 backups/
+releases/
 
 # Linter caches
 .eslintcache

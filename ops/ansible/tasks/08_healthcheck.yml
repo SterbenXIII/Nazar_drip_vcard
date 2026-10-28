@@ -1,5 +1,5 @@
 ---
-- name: Wait for API container and Docker healthcheck
+- name: Wait for the API healthcheck
   ansible.builtin.command:
     cmd: "docker inspect -f '{% raw %}{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}{% endraw %}' vcard-api"
   register: api_health_status
@@ -7,7 +7,6 @@
   retries: 12
   delay: 10
   until: api_health_status.rc == 0 and (api_health_status.stdout | trim) == 'running|healthy'
-  tags: [health, check]
 
 - name: Check required container states
   ansible.builtin.command:
@@ -17,11 +16,10 @@
   failed_when: false
   loop:
     - vcard-api
-    - vcard-clinic-web
+    - '{{ deployment_web_container }}'
     - vcard-proxy
-  tags: [health, check]
 
-- name: Assert required containers are running and healthy when configured
+- name: Assert required containers are running
   ansible.builtin.assert:
     that:
       - item.rc == 0
@@ -29,195 +27,209 @@
       - (item.stdout | trim).split('|')[1] in ['none', 'healthy']
     fail_msg: 'Required container {{ item.item }} is stopped or unhealthy.'
   loop: '{{ container_statuses.results }}'
-  tags: [health, verify]
 
-- name: Verify API health inside the Docker network
-  ansible.builtin.shell: >-
-    docker exec vcard-api curl --fail --silent --output /dev/null --max-time 5
-    http://localhost:5678/api/health >/dev/null 2>&1
-  args:
-    executable: /bin/bash
-  register: internal_health_check
+- name: Verify API health inside its container
+  ansible.builtin.command:
+    argv:
+      [
+        docker,
+        exec,
+        vcard-api,
+        curl,
+        --fail,
+        --silent,
+        --output,
+        /dev/null,
+        http://localhost:5678/api/health,
+      ]
   changed_when: false
   retries: 3
   delay: 5
+  register: internal_health_check
   until: internal_health_check.rc == 0
-  no_log: true
-  tags: [health, verify]
 
 - name: Validate active Caddy configuration
   ansible.builtin.command:
-    cmd: docker exec vcard-proxy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+    argv:
+      [
+        docker,
+        exec,
+        vcard-proxy,
+        caddy,
+        validate,
+        --config,
+        /etc/caddy/Caddyfile,
+        --adapter,
+        caddyfile,
+      ]
   changed_when: false
   no_log: true
-  tags: [health, verify]
 
-- name: Trust the internal CA only inside the disposable localhost lab
+- name: Trust the local Caddy CA only in the disposable lab
   when: lab_mode | bool
   become: true
   block:
-    - name: Request the local HTTPS certificate
-      ansible.builtin.shell: >-
-        curl --insecure --silent --output /dev/null --max-time 10
-        https://localhost/ || true
-      args:
-        executable: /bin/bash
+    - name: Request a local HTTPS certificate
+      ansible.builtin.command:
+        argv:
+          [curl, --insecure, --silent, --output, /dev/null, --max-time, '10', https://localhost/]
+      failed_when: false
       changed_when: false
 
-    - name: Install the Caddy lab CA for URI health checks
+    - name: Install the lab Caddy CA
       ansible.builtin.command:
-        cmd: docker cp vcard-proxy:/data/caddy/pki/authorities/local/root.crt /usr/local/share/ca-certificates/clinic-caddy-lab.crt
+        argv:
+          [
+            docker,
+            cp,
+            vcard-proxy:/data/caddy/pki/authorities/local/root.crt,
+            /usr/local/share/ca-certificates/clinic-caddy-lab.crt,
+          ]
       changed_when: true
 
-    - name: Refresh trusted lab CAs
-      ansible.builtin.command: update-ca-certificates
+    - name: Refresh trusted lab certificates
+      ansible.builtin.command:
+        argv: [update-ca-certificates]
       changed_when: true
-  tags: [health, verify]
 
-- name: Verify authenticated API health on both HTTPS domains
+- name: Verify production home page and canonical origin
   ansible.builtin.uri:
-    url: '{{ item }}/api/health'
-    url_username: stage
-    url_password: '{{ stage_basic_auth_password }}'
-    force_basic_auth: true
-    method: GET
+    url: 'https://{{ domain_name }}/'
+    return_content: true
+    status_code: 200
+    timeout: 20
+  register: production_homepage
+  failed_when: >-
+    production_homepage.status != 200 or
+    'rel="canonical"' not in (production_homepage.content | lower) or
+    'https://havenhub.com.ua/' not in (production_homepage.content | lower) or
+    'noindex' in (production_homepage.content | lower)
+  retries: 6
+  delay: 10
+  until: production_homepage.status == 200
+  when: not (lab_mode | bool)
+
+- name: Verify production API health is public
+  ansible.builtin.uri:
+    url: 'https://{{ domain_name }}/api/health'
     status_code: 200
     timeout: 15
-  register: health_checks
-  no_log: true
+  register: production_api_health
   retries: 3
   delay: 10
-  until: health_checks.status == 200
-  loop:
-    - 'https://{{ domain_name }}'
-    - 'https://www.{{ domain_name }}'
-  when: node_env == 'production'
-  tags: [health, verify]
+  until: production_api_health.status == 200
+  when: not (lab_mode | bool)
 
-- name: Verify authenticated staging homepage and noindex policy on both HTTPS domains
+- name: Verify www uses the production canonical host
   ansible.builtin.uri:
-    url: '{{ item }}/'
+    url: 'https://www.{{ domain_name }}/'
+    status_code: 308
+    timeout: 15
+    follow_redirects: none
+  register: production_www_redirect
+  failed_when: >-
+    production_www_redirect.status != 308 or
+    production_www_redirect.location != 'https://havenhub.com.ua/'
+  when: not (lab_mode | bool)
+
+- name: Verify HTTP redirects to the canonical HTTPS host
+  ansible.builtin.uri:
+    url: 'http://{{ item }}/'
+    status_code: 308
+    timeout: 15
+    follow_redirects: none
+  register: production_http_redirects
+  failed_when: >-
+    production_http_redirects.status != 308 or
+    'https://havenhub.com.ua/' not in production_http_redirects.location
+  loop:
+    - '{{ domain_name }}'
+    - 'www.{{ domain_name }}'
+  when: not (lab_mode | bool)
+
+- name: Verify the old public domain redirects to production
+  ansible.builtin.uri:
+    url: 'https://{{ item }}/'
+    status_code: 308
+    timeout: 15
+    follow_redirects: none
+  register: legacy_domain_redirects
+  failed_when: >-
+    legacy_domain_redirects.status != 308 or
+    'https://havenhub.com.ua/' not in legacy_domain_redirects.location
+  loop:
+    - '{{ legacy_domain_name }}'
+    - 'www.{{ legacy_domain_name }}'
+  when: not (lab_mode | bool)
+
+- name: Verify an invalid production lead does not get stored
+  ansible.builtin.uri:
+    url: 'https://{{ domain_name }}/api/leads/submit'
+    method: POST
+    body_format: json
+    body: '{}'
+    status_code: 400
+    timeout: 15
+  register: invalid_production_lead
+  when: not (lab_mode | bool)
+
+- name: Verify staging is protected and marked noindex
+  ansible.builtin.uri:
+    url: 'https://staging.havenhub.com.ua/'
     url_username: stage
     url_password: '{{ stage_basic_auth_password }}'
     force_basic_auth: true
-    method: GET
     return_content: true
     status_code: 200
     timeout: 15
-  register: staging_homepage_checks
+  register: staging_homepage
   failed_when: >-
-    staging_homepage_checks.status != 200 or
-    'noindex' not in (staging_homepage_checks.content | lower) or
-    'nofollow' not in (staging_homepage_checks.content | lower)
+    staging_homepage.status != 200 or
+    'noindex' not in (staging_homepage.content | lower) or
+    'nofollow' not in (staging_homepage.content | lower) or
+    'noindex, nofollow' not in (staging_homepage.headers['x-robots-tag'] | default('') | lower)
   no_log: true
-  retries: 3
-  delay: 15
-  until: staging_homepage_checks.status == 200
-  loop:
-    - 'https://{{ domain_name }}'
-    - 'https://www.{{ domain_name }}'
-  when: node_env == 'production'
-  tags: [health, verify]
+  when: not (lab_mode | bool)
 
-- name: Verify unauthenticated staging requests return 401 on both HTTPS domains
+- name: Verify staging rejects unauthenticated requests
   ansible.builtin.uri:
-    url: '{{ item }}/'
-    method: GET
+    url: 'https://staging.havenhub.com.ua/'
     status_code: 401
     timeout: 15
-  register: unauthenticated_stage_checks
   no_log: true
-  retries: 3
-  delay: 10
-  until: unauthenticated_stage_checks.status == 401
-  loop:
-    - 'https://{{ domain_name }}'
-    - 'https://www.{{ domain_name }}'
-  when: node_env == 'production'
-  tags: [health, verify]
+  when: not (lab_mode | bool)
 
-- name: Verify incorrect staging credentials return 401 on both HTTPS domains
+- name: Verify the disposable lab HTTPS endpoint
   ansible.builtin.uri:
-    url: '{{ item }}/'
-    url_username: stage
-    url_password: deliberately-invalid-stage-password
-    force_basic_auth: true
-    method: GET
-    status_code: 401
-    timeout: 15
-  register: invalid_credential_checks
-  no_log: true
-  retries: 3
-  delay: 10
-  until: invalid_credential_checks.status == 401
-  loop:
-    - 'https://{{ domain_name }}'
-    - 'https://www.{{ domain_name }}'
-  when: node_env == 'production'
-  tags: [health, verify]
-
-- name: Verify HTTP redirects to HTTPS on both domains
-  ansible.builtin.uri:
-    url: 'http://{{ item }}/'
-    method: GET
-    status_code: 308
-    timeout: 15
-    follow_redirects: none
-  register: http_redirect_checks
-  no_log: true
-  retries: 3
-  delay: 10
-  until: http_redirect_checks.status == 308
-  loop:
-    - '{{ domain_name }}'
-    - 'www.{{ domain_name }}'
-  when: node_env == 'production'
-  tags: [health, verify]
-
-- name: Verify HTTP lead requests redirect to HTTPS on both domains
-  ansible.builtin.uri:
-    url: 'http://{{ item }}/api/leads/submit'
-    method: POST
-    body: '{}'
-    body_format: json
-    status_code: 308
-    timeout: 15
-    follow_redirects: none
-  register: http_stage_submission_redirect_checks
-  no_log: true
-  retries: 3
-  delay: 10
-  until: http_stage_submission_redirect_checks.status == 308
-  loop:
-    - '{{ domain_name }}'
-    - 'www.{{ domain_name }}'
-  when: node_env == 'production'
-  tags: [health, verify]
-
-- name: Verify authenticated HTTPS lead requests reach API validation on both domains
-  ansible.builtin.uri:
-    url: '{{ item }}/api/leads/submit'
-    method: POST
-    body: '{}'
-    body_format: json
-    status_code: 400
-    timeout: 15
+    url: 'https://localhost/api/health'
     url_username: stage
     url_password: '{{ stage_basic_auth_password }}'
     force_basic_auth: true
-  register: stage_submission_validation_checks
+    status_code: 200
+    timeout: 15
   no_log: true
-  retries: 3
-  delay: 10
-  until: stage_submission_validation_checks.status == 400
-  loop:
-    - 'https://{{ domain_name }}'
-    - 'https://www.{{ domain_name }}'
-  when: node_env == 'production'
-  tags: [health, verify]
+  when: lab_mode | bool
 
-- name: Display safe health check result
+- name: Verify the disposable lab still serves a noindex page
+  ansible.builtin.uri:
+    url: 'https://localhost/'
+    url_username: stage
+    url_password: '{{ stage_basic_auth_password }}'
+    force_basic_auth: true
+    return_content: true
+    status_code: 200
+    timeout: 15
+  register: lab_homepage
+  failed_when: "'noindex' not in (lab_homepage.content | lower)"
+  no_log: true
+  when: lab_mode | bool
+
+- name: Report production and staging health checks
   ansible.builtin.debug:
-    msg: 'Service state, API health, HTTPS authentication, robots policy, and API lead validation checks passed.'
-  when: node_env == 'production'
-  tags: [health]
+    msg: 'Production domain, canonical redirects, public API validation, protected staging, and container checks passed.'
+  when: not (lab_mode | bool)
+
+- name: Report disposable lab health checks
+  ansible.builtin.debug:
+    msg: 'Local deployment health checks passed.'
+  when: lab_mode | bool

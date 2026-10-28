@@ -7,10 +7,11 @@ services:
       - '80:80'
       - '443:443'
     environment:
-      - DOMAIN_NAME=${DOMAIN_NAME:-localhost}
+      - DOMAIN_NAME=${CADDY_DOMAIN_NAME:-${DOMAIN_NAME:-localhost}}
       - STAGE_BASIC_AUTH_HASH=${STAGE_BASIC_AUTH_HASH:-}
     volumes:
-      - ../../../ops/docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${CADDYFILE_PATH:-../../../ops/docker/caddy/Caddyfile}:/etc/caddy/Caddyfile:ro
+      - ${CADDY_INCLUDES_PATH:-../../../ops/docker/caddy}:/etc/caddy/includes:ro
       - caddy_data:/data
       - caddy_config:/config
       - /etc/timezone:/etc/timezone:ro

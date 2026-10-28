@@ -1,0 +1,61 @@
+---
+- name: Deploy isolated HAVENHUB staging
+  hosts: vps
+  gather_facts: false
+  become: false
+  vars:
+    staging_domain: "{{ lookup('env', 'STAGING_DOMAIN_NAME') | default('staging.havenhub.com.ua', true) }}"
+    vps_ip: "{{ lookup('env', 'VPS_IP') | default(ansible_host, true) }}"
+    deploy_path: "{{ lookup('env', 'DEPLOY_PATH') | default('/home/emerald-recovery', true) }}"
+    project_dir: '{{ deploy_path }}'
+    backup_dir: '{{ project_dir }}/backups'
+    release_sha: "{{ lookup('env', 'RELEASE_SHA') | default('', true) }}"
+    api_image_ref: "{{ lookup('env', 'API_IMAGE_REF') | default('', true) }}"
+    clinic_web_image_ref: "{{ lookup('env', 'STAGING_CLINIC_WEB_IMAGE_REF') | default('', true) }}"
+    production_clinic_web_image_ref: "{{ lookup('env', 'PRODUCTION_CLINIC_WEB_IMAGE_REF') | default('', true) }}"
+    ci_run_id: "{{ lookup('env', 'CI_RUN_ID') | default('', true) }}"
+    deploy_run_id: "{{ lookup('env', 'DEPLOY_RUN_ID') | default('', true) }}"
+    caddy_image_ref: "{{ lookup('env', 'CADDY_IMAGE_REF') | default('docker.io/library/caddy:2-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f', true) }}"
+    github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"
+    github_actor: "{{ lookup('env', 'GITHUB_ACTOR') }}"
+    repository_url: 'https://github.com/SterbenXIII/Nazar_drip_vcard.git'
+    stage_basic_auth_password: "{{ lookup('env', 'STAGE_BASIC_AUTH_PASSWORD') }}"
+    stage_basic_auth_hash: "{{ lookup('env', 'STAGE_BASIC_AUTH_HASH') }}"
+    staging_volume_name: 'compose-staging_api_data'
+    active_caddyfile_path: '{{ project_dir }}/ops/docker/caddy/Caddyfile.active'
+    active_caddy_includes_path: '{{ project_dir }}/ops/docker/caddy/includes.active'
+    domain_cutover_marker: '{{ project_dir }}/releases/domain-cutover.json'
+    timezone: 'Europe/Kyiv'
+    docker_network: 'web-gateway'
+    compose_project_name: 'compose-staging'
+
+  tasks:
+    - name: Validate staging release and target
+      ansible.builtin.assert:
+        that:
+          - ansible_host is defined
+          - ansible_host not in ['localhost', '127.0.0.1']
+          - staging_domain == 'staging.havenhub.com.ua'
+          - release_sha is match('^[0-9a-f]{40}$')
+          - api_image_ref is match('^ghcr\\.io/[a-z0-9._/-]+/vcard-api@sha256:[0-9a-f]{64}$')
+          - clinic_web_image_ref is match('^ghcr\\.io/[a-z0-9._/-]+/vcard-clinic-web@sha256:[0-9a-f]{64}$')
+          - production_clinic_web_image_ref is match('^ghcr\\.io/[a-z0-9._/-]+/vcard-clinic-web@sha256:[0-9a-f]{64}$')
+          - ci_run_id | string is match('^[0-9]+$')
+          - deploy_run_id | string is match('^[0-9]+$')
+          - stage_basic_auth_hash | default('', true) | length > 0
+          - stage_basic_auth_password | default('', true) | length >= 16
+        fail_msg: 'Staging release inputs or protected authentication are missing.'
+      no_log: true
+
+    - name: Deploy staging without touching production data
+      ansible.builtin.include_tasks: tasks/staging_deployment.yml
+
+    - name: Configure and verify the staging HTTPS route
+      ansible.builtin.include_tasks: tasks/staging_caddy.yml
+
+    - name: Report staging release
+      ansible.builtin.debug:
+        msg:
+          - 'Staging release {{ release_sha }} passed isolated API, Basic Auth, SEO, and Mailpit checks.'
+          - 'Staging URL: https://{{ staging_domain }}'
+          - 'Production SQLite volume and release pointer were not modified.'

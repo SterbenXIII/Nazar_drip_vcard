@@ -14,7 +14,8 @@
 
   vars:
     vps_ip: "{{ lookup('env', 'VPS_IP') | default('localhost', true) }}"
-    domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('havenhub.tech', true) }}"
+    domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('havenhub.com.ua', true) }}"
+    legacy_domain_name: "{{ lookup('env', 'LEGACY_DOMAIN_NAME') | default('havenhub.tech', true) }}"
     node_env: "{{ lookup('env', 'NODE_ENV') | default('production', true) }}"
     deploy_path: "{{ lookup('env', 'DEPLOY_PATH') | default('/home/emerald-recovery', true) }}"
     docker_network: "{{ lookup('env', 'DOCKER_NETWORK') | default('web-gateway', true) }}"
@@ -58,6 +59,11 @@
     backup_dir: '{{ deploy_path }}/backups'
     current_release_manifest: '{{ project_dir }}/releases/current.json'
     reconciliation_marker: '{{ project_dir }}/releases/reconciliation-required.json'
+    active_caddyfile_path: '{{ project_dir }}/ops/docker/caddy/Caddyfile.active'
+    active_caddy_includes_path: '{{ project_dir }}/ops/docker/caddy/includes.active'
+    caddy_recovery_path: '{{ project_dir }}/releases/production/caddy-before-{{ release_sha }}-{{ ansible_date_time.iso8601_basic_short }}'
+    caddyfile_path: "{{ (project_dir ~ '/ops/docker/caddy/Caddyfile') if (lab_mode | bool) else active_caddyfile_path }}"
+    caddy_includes_path: "{{ (project_dir ~ '/ops/docker/caddy') if (lab_mode | bool) else active_caddy_includes_path }}"
 
   tasks:
     - name: Validate required deployment variables
@@ -159,7 +165,8 @@
     - name: Validate requested rollback manifest and image digests
       ansible.builtin.assert:
         that:
-          - rollback_manifest.keys() | sort == ['api_image_ref', 'ci_run_id', 'clinic_web_image_ref', 'deploy_run_id', 'release_sha']
+          - rollback_manifest.keys() | sort == ['api_image_ref', 'ci_run_id', 'clinic_web_image_ref', 'deploy_run_id', 'manifest_version', 'release_sha']
+          - rollback_manifest.manifest_version == 'havenhub-production-v1'
           - rollback_manifest.release_sha == release_sha
           - rollback_manifest.api_image_ref == api_image_ref
           - rollback_manifest.clinic_web_image_ref == clinic_web_image_ref
@@ -208,10 +215,52 @@
         - name: 07 - Docker Pruning
           ansible.builtin.include_tasks: tasks/07_cleanup.yml
 
+        - name: Activate the production domain after the candidate is ready
+          ansible.builtin.include_tasks: tasks/production_caddy.yml
+          when: not (lab_mode | bool)
+
         - name: 08 - Healthchecks
           ansible.builtin.include_tasks: tasks/08_healthcheck.yml
 
+        - name: Run public production smoke checks from the deployment controller
+          ansible.builtin.command:
+            argv:
+              - bash
+              - '{{ playbook_dir }}/../../scripts/ci/check_clinic_production.sh'
+          delegate_to: localhost
+          run_once: true
+          environment:
+            DOMAIN_NAME: '{{ domain_name }}'
+            LEGACY_DOMAIN_NAME: '{{ legacy_domain_name }}'
+            VPS_IP: '{{ vps_ip }}'
+            STAGE_BASIC_AUTH_PASSWORD: '{{ stage_basic_auth_password }}'
+          register: public_production_smoke
+          changed_when: false
+          failed_when: false
+          no_log: true
+          when: not (lab_mode | bool)
+
+        - name: Require public production smoke checks to pass before recording the cutover
+          ansible.builtin.assert:
+            that:
+              - public_production_smoke.rc == 0
+            fail_msg: 'Public production smoke failed; the previous Caddy configuration will be restored.'
+          when: not (lab_mode | bool)
+
+        - name: Record the active production domain after health checks pass
+          ansible.builtin.copy:
+            content: '{{ {"release_sha": release_sha, "domain": domain_name, "activated_at": ansible_date_time.iso8601} | to_nice_json }}'
+            dest: '{{ project_dir }}/releases/domain-cutover.json'
+            owner: '{{ ansible_user }}'
+            group: '{{ ansible_user }}'
+            mode: '0600'
+          when: not (lab_mode | bool)
+
       rescue:
+        - name: Restore pre-cutover routes when production checks fail
+          ansible.builtin.include_tasks: tasks/restore_previous_caddy.yml
+          when: production_caddy_activated | default(false)
+
         - name: '🔍 Capture deployment diagnostics'
           ansible.builtin.shell: |
             cd "{{ project_dir }}"
@@ -219,10 +268,11 @@
               echo '=== compose ps ==='
               docker compose --project-name "{{ compose_project_name }}" \
                 -f ops/docker/compose/docker-compose.yml \
+                -f ops/docker/compose/docker-compose.production.yml \
                 -f ops/docker/compose/docker-compose.proxy.yml ps -a 2>&1 || true
               echo '=== release ==='
               printf 'candidate_sha=%s\n' '{{ release_sha }}'
-              for container in vcard-api vcard-clinic-web vcard-proxy; do
+              for container in vcard-api vcard-clinic-web vcard-clinic-web-production vcard-proxy; do
                 if docker container inspect "${container}" >/dev/null 2>&1; then
                   docker container inspect --format '{% raw %}{{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} exit={{.State.ExitCode}} restarts={{.RestartCount}}{% endraw %}' "${container}" 2>&1 || true
                 else
@@ -277,8 +327,8 @@
           - 'Environment: {{ node_env }}'
           - '========================================'
           - 'Next steps:'
-          - '1. Stage: https://{{ domain_name }}/ (HTTP Basic Auth required)'
-          - '2. API health: https://{{ domain_name }}/api/health (HTTP Basic Auth required)'
+          - '1. Production: https://{{ domain_name }}/'
+          - '2. Staging: https://staging.havenhub.com.ua/ (HTTP Basic Auth required)'
           - '3. Check current service health: {{ project_dir }}/scripts/monitor.sh'
           - '========================================'
       tags: [always]

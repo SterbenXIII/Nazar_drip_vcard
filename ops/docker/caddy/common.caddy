@@ -1,0 +1,22 @@
+(security_headers) {
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+		Content-Security-Policy "default-src 'self' viber: tel: mailto: https://wa.me; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://*.viber.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.telegram.org https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.viber.com https://challenges.cloudflare.com; frame-src 'self' viber: tel: mailto: https://wa.me https://challenges.cloudflare.com;"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Language "uk"
+	}
+}
+
+(static_cache) {
+	@nocache {
+		path *.html /
+		not path /_astro/*
+	}
+	header @nocache Cache-Control "no-store, no-cache, must-revalidate"
+
+	@static path *.js *.css *.png *.webp *.svg *.woff2 *.ico *.jpg *.jpeg *.avif
+	header @static Cache-Control "public, max-age=31536000, immutable"
+}

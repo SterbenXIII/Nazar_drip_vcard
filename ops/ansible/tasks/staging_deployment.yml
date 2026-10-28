@@ -1,0 +1,160 @@
+---
+- name: Preserve the currently active Caddy source before checkout
+  block:
+    - name: Check for the current Caddy source file
+      ansible.builtin.stat:
+        path: '{{ project_dir }}/ops/docker/caddy/Caddyfile'
+      register: previous_caddy_source
+
+    - name: Ensure the migration rollback directory exists
+      ansible.builtin.file:
+        path: '{{ project_dir }}/releases/pre-domain-migration'
+        state: directory
+        owner: '{{ ansible_user }}'
+        group: '{{ ansible_user }}'
+        mode: '0700'
+      when: previous_caddy_source.stat.exists
+
+    - name: Preserve the prior Caddy config for a failed staging cutover
+      ansible.builtin.copy:
+        src: '{{ project_dir }}/ops/docker/caddy/Caddyfile'
+        dest: '{{ project_dir }}/releases/pre-domain-migration/Caddyfile'
+        remote_src: true
+        owner: '{{ ansible_user }}'
+        group: '{{ ansible_user }}'
+        mode: '0600'
+        force: false
+      when: previous_caddy_source.stat.exists
+
+- name: Ensure the Docker gateway network exists
+  ansible.builtin.include_tasks: tasks/02_network.yml
+
+- name: Ensure the separate staging release directory exists
+  ansible.builtin.file:
+    path: '{{ project_dir }}/releases/staging'
+    state: directory
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0700'
+
+- name: Check out the exact staging source
+  ansible.builtin.include_tasks: tasks/03_project.yml
+
+- name: Render the isolated staging API environment
+  ansible.builtin.template:
+    src: staging.env.j2
+    dest: '{{ project_dir }}/.env.staging'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0600'
+  no_log: true
+
+- name: Validate staging Compose and pull immutable images with temporary credentials
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.shell: |
+    set -euo pipefail
+    docker_config=$(mktemp -d)
+    chmod 700 "$docker_config"
+    trap 'rm -rf "$docker_config"' EXIT
+    export DOCKER_CONFIG="$docker_config"
+    printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+    docker compose --project-name "$COMPOSE_PROJECT_NAME" --env-file .env.staging \
+      -f ops/docker/compose/docker-compose.staging.yml config --quiet
+    docker compose --project-name "$COMPOSE_PROJECT_NAME" --env-file .env.staging \
+      -f ops/docker/compose/docker-compose.staging.yml pull --quiet
+  args:
+    chdir: '{{ project_dir }}'
+    executable: /bin/bash
+  environment:
+    COMPOSE_PROJECT_NAME: '{{ compose_project_name }}'
+    GITHUB_TOKEN: '{{ github_token }}'
+    GITHUB_ACTOR: '{{ github_actor }}'
+    API_IMAGE_REF: '{{ api_image_ref }}'
+    CLINIC_WEB_IMAGE_REF: '{{ clinic_web_image_ref }}'
+  no_log: true
+  changed_when: true
+
+- name: Read the staging API runtime UID and GID
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.command:
+    argv:
+      - docker
+      - run
+      - --rm
+      - --network
+      - none
+      - --entrypoint
+      - sh
+      - '{{ api_image_ref }}'
+      - -c
+      - 'id -u; id -g'
+  register: staging_api_identity
+  changed_when: false
+  no_log: true
+
+- name: Check whether the staging SQLite volume exists
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.command:
+    argv: [docker, volume, inspect, '{{ staging_volume_name }}']
+  register: staging_volume
+  failed_when: false
+  changed_when: false
+
+- name: Create the isolated staging SQLite volume on first deployment
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.command:
+    argv: [docker, volume, create, '{{ staging_volume_name }}']
+  when: staging_volume.rc != 0
+  changed_when: true
+
+- name: Set runtime ownership on the new staging SQLite volume
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.command:
+    argv:
+      - docker
+      - run
+      - --rm
+      - --network
+      - none
+      - --user
+      - '0:0'
+      - --mount
+      - 'type=volume,src={{ staging_volume_name }},dst=/app/data'
+      - --entrypoint
+      - sh
+      - '{{ api_image_ref }}'
+      - -c
+      - 'chown -R {{ staging_api_identity.stdout_lines[0] }}:{{ staging_api_identity.stdout_lines[1] }} /app/data'
+  when: staging_volume.rc != 0
+  changed_when: true
+  no_log: true
+
+- name: Start only the isolated staging app and Mailpit services
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.command:
+    argv:
+      - docker
+      - compose
+      - --project-name
+      - '{{ compose_project_name }}'
+      - --env-file
+      - .env.staging
+      - -f
+      - ops/docker/compose/docker-compose.staging.yml
+      - up
+      - -d
+      - --no-build
+      - --remove-orphans
+  args:
+    chdir: '{{ project_dir }}'
+  environment:
+    API_IMAGE_REF: '{{ api_image_ref }}'
+    CLINIC_WEB_IMAGE_REF: '{{ clinic_web_image_ref }}'
+  register: staging_compose_result
+  changed_when: true

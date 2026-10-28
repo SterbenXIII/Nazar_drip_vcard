@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail closed unless staging DNS resolves only to the configured VPS addresses."""
+"""Fail closed unless each hostname resolves only to the configured VPS addresses."""
 
 import argparse
 import ipaddress
@@ -97,7 +97,7 @@ def check_stage_dns(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--host', action='append', required=True, help='Staging hostname; repeat per host')
+    parser.add_argument('--host', action='append', required=True, help='Hostname to validate; repeat per host')
     parser.add_argument('--vps-ip', required=True, help='Expected VPS IPv4 address')
     parser.add_argument(
         '--vps-ipv6',

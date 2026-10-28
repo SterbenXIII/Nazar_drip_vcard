@@ -12,11 +12,13 @@ set -euo pipefail
 method=GET
 credentials=''
 write_status=0
+head_request=0
 url=''
 while (($# > 0)); do
   case "$1" in
     --request) method="$2"; shift 2 ;;
     --user) credentials="$2"; shift 2 ;;
+    --head) head_request=1; shift ;;
     --write-out) write_status=1; shift 2 ;;
     http://*|https://*) url="$1"; shift ;;
     *) shift ;;
@@ -29,6 +31,8 @@ if [[ "$url" == 'http://192.0.2.1:5678/api/health' ]]; then
 elif [[ "$url" == https://* ]]; then
   if [[ "$url" == */api/leads/submit ]]; then
     if [[ -z "$credentials" ]]; then status=401; else status=${LEAD_VALIDATION_STATUS:-400}; fi
+  elif [[ "$url" == */sitemap.xml ]]; then
+    status=404
   elif [[ -z "$credentials" ]]; then
     status=401
   elif [[ "$credentials" == 'stage:deliberately-invalid-stage-password' ]]; then
@@ -43,6 +47,10 @@ fi
 if ((write_status)); then
   printf '%s' "$status"
   [[ "$status" != '000' ]] || exit 7
+elif ((head_request)); then
+  printf 'HTTP/2 200\r\nx-robots-tag: noindex, nofollow\r\n'
+elif [[ "$url" == */robots.txt ]]; then
+  printf 'User-agent: *\nDisallow: /\n'
 elif [[ -n "$url" && "$url" == https://* && "${OMIT_NOINDEX:-0}" != '1' ]]; then
   printf '<meta name="robots" content="noindex,nofollow">\n'
   if [[ "${ROBOTS_TRAILING_BODY:-0}" == '1' ]]; then

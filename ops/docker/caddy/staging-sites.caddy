@@ -1,0 +1,36 @@
+http://staging.havenhub.com.ua {
+	redir https://{host}{uri} 308
+}
+
+staging.havenhub.com.ua {
+	encode gzip zstd
+	import security_headers
+	import static_cache
+	basic_auth {
+		stage {$STAGE_BASIC_AUTH_HASH}
+	}
+	header X-Robots-Tag "noindex, nofollow"
+
+	route {
+		@sensitive {
+			path /.env* /.git* /.config* /package.json /pnpm-lock.yaml
+		}
+		respond @sensitive "Access Denied" 403
+
+		@robots path /robots.txt
+		respond @robots "User-agent: *\nDisallow: /" 200
+
+		handle /api/* {
+			reverse_proxy api-staging:5678 {
+				header_up X-Forwarded-For {remote_host}
+				header_up -CF-Connecting-IP
+			}
+		}
+
+		handle {
+			reverse_proxy clinic-web-staging:8080 {
+				header_up Host {host}
+			}
+		}
+	}
+}

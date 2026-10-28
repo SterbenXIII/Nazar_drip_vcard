@@ -1,0 +1,289 @@
+name: Promote staged release to production
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Full commit SHA already verified on staging
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/emerald-recovery' }}
+  VPS_IP: ${{ vars.VPS_IP || 'localhost' }}
+  DOMAIN_NAME: havenhub.com.ua
+  LEGACY_DOMAIN_NAME: havenhub.tech
+  STAGING_DOMAIN_NAME: staging.havenhub.com.ua
+  CADDY_IMAGE_REF: docker.io/library/caddy:2-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f
+  SSH_KNOWN_HOSTS: ${{ secrets.HOSTINGER_SSH_KNOWN_HOSTS }}
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+    environment:
+      name: production
+      url: https://${{ env.DOMAIN_NAME }}
+    steps:
+      - name: Check out main and validate requested revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+      - name: Require a full SHA on main
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git cat-file -e "$RELEASE_SHA^{commit}"
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$RELEASE_SHA" origin/main
+
+      - name: Validate target and prepare staging authentication
+        env:
+          STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
+        run: |
+          python3 -c 'import ipaddress, os; ipaddress.IPv4Address(os.environ["VPS_IP"])'
+          [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9/_-]+$ ]]
+          test "${#STAGE_BASIC_AUTH_PASSWORD}" -ge 16
+          hash=$(docker run --rm --entrypoint sh -e STAGE_BASIC_AUTH_PASSWORD "$CADDY_IMAGE_REF" \
+            -c 'caddy hash-password --plaintext "$STAGE_BASIC_AUTH_PASSWORD"')
+          test -n "$hash"
+          echo "::add-mask::$hash"
+          printf 'STAGE_BASIC_AUTH_HASH=%s\n' "$hash" >> "$GITHUB_ENV"
+
+      - name: Configure SSH and verify host key
+        env:
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ env.VPS_IP }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          ssh-keygen -F "$SSH_HOST" -f ~/.ssh/known_hosts >/dev/null
+          ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes \
+            -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" 'true'
+
+      - name: Read the selected staging release manifest
+        id: validate_stage
+        env:
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          RELEASE_SHA: ${{ inputs.release_sha }}
+        run: |
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$VPS_IP:$DEPLOY_PATH/releases/staging/$RELEASE_SHA.json" \
+            "$RUNNER_TEMP/staging-release.json"
+          python3 scripts/ci/validate_staging_release_manifest.py \
+            --manifest "$RUNNER_TEMP/staging-release.json" --sha "$RELEASE_SHA" \
+            --repository "$GITHUB_REPOSITORY" --output "$GITHUB_OUTPUT"
+
+      - name: Verify CI and staging workflow runs succeeded
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          CI_RUN_ID: ${{ steps.validate_stage.outputs.ci_run_id }}
+          DEPLOY_RUN_ID: ${{ steps.validate_stage.outputs.deploy_run_id }}
+        run: |
+          set -euo pipefail
+          ci_run=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CI_RUN_ID")
+          printf '%s' "$ci_run" | jq -e --arg sha "$RELEASE_SHA" \
+            '.name == "CI" and .head_sha == $sha and .head_branch == "main" and
+             (.event == "push" or .event == "workflow_dispatch") and
+             .status == "completed" and .conclusion == "success"' >/dev/null
+          stage_run=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$DEPLOY_RUN_ID")
+          printf '%s' "$stage_run" | jq -e --arg sha "$RELEASE_SHA" \
+            '(.path | split("@")[0]) == ".github/workflows/deploy.yml" and
+             .head_sha == $sha and .head_branch == "main" and .event == "workflow_run" and
+             .status == "completed" and .conclusion == "success"' >/dev/null
+
+      - name: Verify production DNS against this VPS
+        env:
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ env.VPS_IP }}
+        run: |
+          ipv6_json=$(ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'ip -j -6 address show scope global')
+          ipv6=$(printf '%s' "$ipv6_json" | python3 scripts/ci/extract_vps_ipv6.py)
+          python3 scripts/ci/check_stage_dns.py --host "$DOMAIN_NAME" --host "www.$DOMAIN_NAME" \
+            --vps-ip "$VPS_IP" --vps-ipv6 "$ipv6"
+
+      - name: Verify staged images match the release revision and VPS architecture
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          API_IMAGE_REF: ${{ steps.validate_stage.outputs.api_image_ref }}
+          PRODUCTION_WEB_REF: ${{ steps.validate_stage.outputs.production_clinic_web_image_ref }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ env.VPS_IP }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          api_ref=$API_IMAGE_REF
+          web_ref=$PRODUCTION_WEB_REF
+          docker_config=$(mktemp -d)
+          chmod 700 "$docker_config"
+          trap 'rm -rf "$docker_config"' EXIT
+          export DOCKER_CONFIG="$docker_config"
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker pull "$api_ref"
+          docker pull "$web_ref"
+          vps_arch=$(ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'dpkg --print-architecture')
+          for image in "$api_ref" "$web_ref"; do
+            test "$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$image")" = "$RELEASE_SHA"
+            test "$(docker image inspect --format '{{.Architecture}}' "$image")" = "$vps_arch"
+          done
+
+      - name: Check VPS resources
+        env:
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ env.VPS_IP }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          test "$(df -Pk / | awk 'NR == 2 {print $4}')" -ge 1048576
+          test "$(free -m | awk '/^Mem:/ {print $7}')" -ge 200
+          REMOTE
+      - name: Install Ansible
+        run: |
+          pip install ansible-core==2.21.5
+          ansible-galaxy collection install -r ops/ansible/requirements.yml
+
+      - name: Promote the exact staged images with Ansible
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          ANSIBLE_HOST_KEY_CHECKING: 'True'
+          HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
+          STAGE_BASIC_AUTH_HASH: ${{ env.STAGE_BASIC_AUTH_HASH }}
+          DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
+          NODE_ENV: production
+          ENABLED_PROVIDERS: TELEGRAM
+          BACKEND_PORT: '5678'
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_MASTER_ID: ${{ secrets.TELEGRAM_MASTER_ID }}
+          TELEGRAM_ALLOWED_CHAT_IDS: ${{ secrets.TELEGRAM_ALLOWED_CHAT_IDS }}
+          TELEGRAM_NOTIFY_IDS: ${{ secrets.TELEGRAM_NOTIFY_IDS }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          API_IMAGE_REF: ${{ steps.validate_stage.outputs.api_image_ref }}
+          CLINIC_WEB_IMAGE_REF: ${{ steps.validate_stage.outputs.production_clinic_web_image_ref }}
+        run: |
+          cd ops/ansible
+          ansible-playbook playbook.yml -i inventory.ini \
+            --private-key "$HOME/.ssh/deploy_key" \
+            --extra-vars "target_host=$VPS_IP" \
+            --extra-vars "ansible_user=$HOSTINGER_SSH_USER" \
+            --extra-vars "ansible_ssh_private_key_file=$HOME/.ssh/deploy_key" \
+            --extra-vars "deploy_path=$DEPLOY_PATH" \
+            --extra-vars "vps_ip=$VPS_IP" \
+            --extra-vars "github_repository_path=$GITHUB_REPOSITORY.git" \
+            --extra-vars "release_sha=$RELEASE_SHA" \
+            --extra-vars "api_image_ref=$API_IMAGE_REF" \
+            --extra-vars "clinic_web_image_ref=$CLINIC_WEB_IMAGE_REF"
+
+      - name: Atomically record the successful production release
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          API_IMAGE_REF: ${{ steps.validate_stage.outputs.api_image_ref }}
+          CLINIC_WEB_IMAGE_REF: ${{ steps.validate_stage.outputs.production_clinic_web_image_ref }}
+          CI_RUN_ID: ${{ steps.validate_stage.outputs.ci_run_id }}
+          DEPLOY_RUN_ID: ${{ steps.validate_stage.outputs.deploy_run_id }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = {
+              'manifest_version': 'havenhub-production-v1',
+              'release_sha': os.environ['RELEASE_SHA'],
+              'api_image_ref': os.environ['API_IMAGE_REF'],
+              'clinic_web_image_ref': os.environ['CLINIC_WEB_IMAGE_REF'],
+              'ci_run_id': os.environ['CI_RUN_ID'],
+              'deploy_run_id': os.environ['DEPLOY_RUN_ID'],
+          }
+          Path('release.json').write_text(
+              json.dumps(manifest, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8'
+          )
+          PY
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes release.json \
+            "$SSH_USER@$VPS_IP:$DEPLOY_PATH/releases/.$RELEASE_SHA.json.pending"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$VPS_IP" \
+            "DEPLOY_PATH='$DEPLOY_PATH' RELEASE_SHA='$RELEASE_SHA' bash -s" <<'REMOTE'
+          set -euo pipefail
+          pending="$DEPLOY_PATH/releases/.$RELEASE_SHA.json.pending"
+          target="$DEPLOY_PATH/releases/$RELEASE_SHA.json"
+          current_pending="$DEPLOY_PATH/releases/.current.json.pending"
+          current="$DEPLOY_PATH/releases/current.json"
+          trap 'rm -f "$pending" "$current_pending"' EXIT
+          chmod 600 "$pending"
+          python3 - "$pending" "$RELEASE_SHA" <<'PY'
+          import json
+          import re
+          import sys
+
+          with open(sys.argv[1], encoding='utf-8') as source:
+              manifest = json.load(source)
+          expected = {'manifest_version', 'release_sha', 'api_image_ref', 'clinic_web_image_ref', 'ci_run_id', 'deploy_run_id'}
+          if set(manifest) != expected or manifest['manifest_version'] != 'havenhub-production-v1' or manifest['release_sha'] != sys.argv[2]:
+              raise SystemExit('Invalid production release manifest')
+          if not re.fullmatch(r'[0-9a-f]{40}', manifest['release_sha']):
+              raise SystemExit('Invalid production SHA')
+          patterns = {
+              'api_image_ref': r'ghcr\.io/[a-z0-9._/-]+/vcard-api@sha256:[0-9a-f]{64}',
+              'clinic_web_image_ref': r'ghcr\.io/[a-z0-9._/-]+/vcard-clinic-web@sha256:[0-9a-f]{64}',
+          }
+          if any(not re.fullmatch(patterns[key], manifest[key]) for key in patterns):
+              raise SystemExit('Invalid immutable image reference')
+          if not all(str(manifest[key]).isdigit() for key in ('ci_run_id', 'deploy_run_id')):
+              raise SystemExit('Invalid workflow run IDs')
+          PY
+          test "$(git -C "$DEPLOY_PATH" rev-parse HEAD)" = "$RELEASE_SHA"
+          test "$(docker inspect --format '{{.Config.Image}}' vcard-api)" = "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["api_image_ref"])' "$pending")"
+          test "$(docker inspect --format '{{.Config.Image}}' vcard-clinic-web-production)" = "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["clinic_web_image_ref"])' "$pending")"
+          mv -f -- "$pending" "$target"
+          install -m 0600 "$target" "$current_pending"
+          mv -f -- "$current_pending" "$current"
+          rm -f -- "$DEPLOY_PATH/releases/reconciliation-required.json"
+          trap - EXIT
+          REMOTE
+
+      - name: Notify Telegram after production promotion
+        if: success()
+        uses: appleboy/telegram-action@214f06cfa3d3a588c1472116889437e7c6fd29b1 # v1.1.1
+        continue-on-error: true
+        with:
+          to: ${{ secrets.TELEGRAM_MASTER_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            Production promotion succeeded.
+
+            Release: ${{ inputs.release_sha }}
+            Access: https://havenhub.com.ua
+
+      - name: Notify Telegram after failed production promotion
+        if: failure()
+        uses: appleboy/telegram-action@214f06cfa3d3a588c1472116889437e7c6fd29b1 # v1.1.1
+        continue-on-error: true
+        with:
+          to: ${{ secrets.TELEGRAM_MASTER_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            Production promotion failed for ${{ inputs.release_sha }}.
+
+            Check GitHub Actions: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

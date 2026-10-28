@@ -12,6 +12,8 @@
   ansible.builtin.set_fact:
     effective_api_image_ref: "{{ api_image_ref | default((image_registry ~ 'vcard-api:' ~ (image_tag | default('latest', true))), true) }}"
     effective_clinic_web_image_ref: "{{ clinic_web_image_ref | default((image_registry ~ 'vcard-clinic-web:' ~ (image_tag | default('latest', true))), true) }}"
+    deployment_web_service: "{{ 'clinic-web' if (lab_mode | bool) else 'clinic-web-production' }}"
+    deployment_web_container: "{{ 'vcard-clinic-web' if (lab_mode | bool) else 'vcard-clinic-web-production' }}"
   tags: [docker, deploy]
 
 - name: Pull candidate images using temporary GHCR credentials
@@ -29,10 +31,12 @@
     cd "{{ project_dir }}"
     docker compose --project-name "{{ compose_project_name }}" \
       -f ops/docker/compose/docker-compose.yml \
+      -f ops/docker/compose/docker-compose.production.yml \
       -f ops/docker/compose/docker-compose.proxy.yml config >/dev/null
     if [[ "$LAB_MODE" != '1' ]]; then
       docker compose --project-name "{{ compose_project_name }}" \
         -f ops/docker/compose/docker-compose.yml \
+        -f ops/docker/compose/docker-compose.production.yml \
         -f ops/docker/compose/docker-compose.proxy.yml pull --quiet
     fi
   args:
@@ -44,6 +48,9 @@
     GITHUB_ACTOR: "{{ lookup('env', 'GITHUB_ACTOR') }}"
     VPS_IP: '{{ vps_ip }}'
     DOMAIN_NAME: '{{ domain_name }}'
+    CADDY_DOMAIN_NAME: '{{ domain_name if (lab_mode | bool) else legacy_domain_name }}'
+    CADDYFILE_PATH: '{{ caddyfile_path }}'
+    CADDY_INCLUDES_PATH: '{{ caddy_includes_path }}'
     STAGE_BASIC_AUTH_HASH: '{{ stage_basic_auth_hash }}'
     NODE_ENV: '{{ node_env }}'
     BACKEND_PORT: '{{ backend_port }}'
@@ -273,12 +280,16 @@
     cd "{{ project_dir }}"
     docker compose --project-name "{{ compose_project_name }}" \
       -f ops/docker/compose/docker-compose.yml \
+      -f ops/docker/compose/docker-compose.production.yml \
       -f ops/docker/compose/docker-compose.proxy.yml \
-      up -d --remove-orphans
+      up -d --no-build api "${DEPLOY_WEB_SERVICE}"
   environment:
     CADDY_IMAGE_REF: '{{ caddy_image_ref }}'
     VPS_IP: '{{ vps_ip }}'
     DOMAIN_NAME: '{{ domain_name }}'
+    CADDY_DOMAIN_NAME: '{{ domain_name if (lab_mode | bool) else legacy_domain_name }}'
+    CADDYFILE_PATH: '{{ caddyfile_path }}'
+    CADDY_INCLUDES_PATH: '{{ caddy_includes_path }}'
     STAGE_BASIC_AUTH_HASH: '{{ stage_basic_auth_hash }}'
     NODE_ENV: '{{ node_env }}'
     BACKEND_PORT: '{{ backend_port }}'
@@ -287,6 +298,7 @@
     IMAGE_TAG: '{{ image_tag }}'
     API_IMAGE_REF: '{{ effective_api_image_ref }}'
     CLINIC_WEB_IMAGE_REF: '{{ effective_clinic_web_image_ref }}'
+    DEPLOY_WEB_SERVICE: '{{ deployment_web_service }}'
   register: compose_result
   no_log: true
   changed_when: true
@@ -318,13 +330,14 @@
       test "$revision" = "$RELEASE_SHA"
     }
     verify_image vcard-api "$API_IMAGE_REF"
-    verify_image vcard-clinic-web "$CLINIC_WEB_IMAGE_REF"
+    verify_image "$DEPLOY_WEB_CONTAINER" "$CLINIC_WEB_IMAGE_REF"
   args:
     executable: /bin/bash
   environment:
     RELEASE_SHA: '{{ release_sha }}'
     API_IMAGE_REF: '{{ api_image_ref }}'
     CLINIC_WEB_IMAGE_REF: '{{ clinic_web_image_ref }}'
+    DEPLOY_WEB_CONTAINER: '{{ deployment_web_container }}'
   register: deployed_images
   changed_when: false
   tags: [docker, deploy, verify]
@@ -332,7 +345,7 @@
 - name: 🔍 Verify deployed containers share the gateway network
   ansible.builtin.shell: |
     set -o pipefail
-    for container in vcard-api vcard-clinic-web vcard-proxy; do
+    for container in vcard-api "{{ deployment_web_container }}"; do
       docker inspect -f '{% raw %}{{.State.Status}} {{range $name, $network := .NetworkSettings.Networks}}{{$name}} {{end}}{% endraw %}' "$container"
     done
   args:
@@ -341,7 +354,7 @@
   changed_when: false
   failed_when: >-
     deployed_networks.rc != 0 or
-    (deployed_networks.stdout_lines | select('search', '^running .*web-gateway') | list | length) != 3
+    (deployed_networks.stdout_lines | select('search', '^running .*web-gateway') | list | length) != 2
   tags: [docker, deploy, verify]
 
 - name: ⏳ Wait for Caddy to be ready

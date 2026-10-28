@@ -15,7 +15,8 @@ concurrency:
 env:
   DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/emerald-recovery' }}
   VPS_IP: ${{ vars.VPS_IP || 'localhost' }}
-  DOMAIN_NAME: havenhub.tech
+  DOMAIN_NAME: havenhub.com.ua
+  LEGACY_DOMAIN_NAME: havenhub.tech
   CADDY_IMAGE_REF: docker.io/library/caddy:2-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f
   SSH_KNOWN_HOSTS: ${{ secrets.HOSTINGER_SSH_KNOWN_HOSTS }}
 
@@ -199,8 +200,9 @@ jobs:
              .status == "completed" and .conclusion == "success"' >/dev/null
 
           deploy_run=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$DEPLOY_RUN_ID")
-          printf '%s' "$deploy_run" | jq -e \
+          printf '%s' "$deploy_run" | jq -e --arg sha "$ROLLBACK_SHA" \
             '(.path | split("@")[0]) == ".github/workflows/deploy.yml" and
+             .head_sha == $sha and .head_branch == "main" and
              .event == "workflow_run" and
              .status == "completed" and .conclusion == "success"' >/dev/null
 
@@ -262,13 +264,6 @@ jobs:
             --extra-vars "clinic_web_image_ref=${CLINIC_WEB_IMAGE_REF}" \
             --extra-vars "rollback_mode=true" \
             --extra-vars "image_tag=${RELEASE_SHA}"
-
-      - name: 🔍 Verify rollback (smoke tests)
-        env:
-          DOMAIN_NAME: ${{ env.DOMAIN_NAME }}
-          VPS_IP: ${{ env.VPS_IP }}
-          STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}
-        run: bash scripts/ci/check_clinic_stage.sh
 
       - name: 📋 Record successful rollback as the current release
         if: success()

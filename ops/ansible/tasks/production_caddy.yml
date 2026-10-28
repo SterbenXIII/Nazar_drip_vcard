@@ -1,0 +1,211 @@
+---
+- name: Require a verified staging Caddy configuration before production cutover
+  ansible.builtin.stat:
+    path: '{{ active_caddyfile_path }}'
+  register: prior_caddyfile
+
+- name: Resolve the production apex and www DNS records
+  become: true
+  become_user: '{{ ansible_user }}'
+  ansible.builtin.command:
+    argv: [getent, ahostsv4, '{{ item }}']
+  register: production_dns
+  changed_when: false
+  loop:
+    - '{{ domain_name }}'
+    - 'www.{{ domain_name }}'
+
+- name: Collect production DNS addresses
+  ansible.builtin.set_fact:
+    production_dns_addresses: >-
+      {{ production_dns_addresses | default([]) + [item.stdout_lines | map('split') | map('first') | unique | list] }}
+  loop: '{{ production_dns.results }}'
+
+- name: Refuse production cutover without the staged Caddy route
+  ansible.builtin.assert:
+    that:
+      - prior_caddyfile.stat.exists
+      - production_dns_addresses == [[vps_ip], [vps_ip]]
+    fail_msg: 'Production cutover requires an existing verified staging Caddy configuration.'
+
+- name: Back up and activate production Caddy routes
+  block:
+    - name: Create a per-release Caddy recovery directory
+      ansible.builtin.file:
+        path: '{{ caddy_recovery_path }}/includes'
+        state: directory
+        owner: '{{ ansible_user }}'
+        group: '{{ ansible_user }}'
+        mode: '0700'
+
+    - name: Preserve the previous Caddyfile
+      ansible.builtin.copy:
+        src: '{{ active_caddyfile_path }}'
+        dest: '{{ caddy_recovery_path }}/Caddyfile'
+        remote_src: true
+        owner: '{{ ansible_user }}'
+        group: '{{ ansible_user }}'
+        mode: '0600'
+        force: false
+
+    - name: Preserve the previous Caddy includes
+      ansible.builtin.copy:
+        src: '{{ active_caddy_includes_path }}/'
+        dest: '{{ caddy_recovery_path }}/includes/'
+        remote_src: true
+        owner: '{{ ansible_user }}'
+        group: '{{ ansible_user }}'
+        mode: preserve
+        force: false
+
+    - name: Install production Caddyfile
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../docker/caddy/Caddyfile.production'
+        dest: '{{ active_caddyfile_path }}'
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Install production Caddy snippets
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../docker/caddy/{{ item }}'
+        dest: '{{ active_caddy_includes_path }}/{{ item }}'
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - common.caddy
+        - staging-sites.caddy
+        - production-sites.caddy
+
+    - name: Validate production Caddy configuration before activation
+      become: true
+      become_user: '{{ ansible_user }}'
+      ansible.builtin.command:
+        argv:
+          - docker
+          - run
+          - --rm
+          - --network
+          - none
+          - --env
+          - STAGE_BASIC_AUTH_HASH={{ stage_basic_auth_hash }}
+          - --mount
+          - 'type=bind,src={{ active_caddyfile_path }},dst=/etc/caddy/Caddyfile,readonly'
+          - --mount
+          - 'type=bind,src={{ active_caddy_includes_path }},dst=/etc/caddy/includes,readonly'
+          - '{{ caddy_image_ref }}'
+          - caddy
+          - validate
+          - --config
+          - /etc/caddy/Caddyfile
+          - --adapter
+          - caddyfile
+      changed_when: false
+      no_log: true
+
+    - name: Refresh the proxy with production routes
+      become: true
+      become_user: '{{ ansible_user }}'
+      ansible.builtin.command:
+        argv:
+          [
+            docker,
+            compose,
+            --project-name,
+            compose,
+            -f,
+            ops/docker/compose/docker-compose.proxy.yml,
+            -f,
+            ops/docker/compose/docker-compose.staging-proxy.yml,
+            up,
+            -d,
+            caddy,
+          ]
+      args:
+        chdir: '{{ project_dir }}'
+      environment:
+        CADDY_IMAGE_REF: '{{ caddy_image_ref }}'
+        CADDYFILE_PATH: '{{ active_caddyfile_path }}'
+        CADDY_INCLUDES_PATH: '{{ active_caddy_includes_path }}'
+        CADDY_DOMAIN_NAME: '{{ legacy_domain_name }}'
+        STAGE_BASIC_AUTH_HASH: '{{ stage_basic_auth_hash }}'
+      changed_when: true
+      no_log: true
+
+    - name: Reload production Caddy routes
+      become: true
+      become_user: '{{ ansible_user }}'
+      ansible.builtin.command:
+        argv:
+          [
+            docker,
+            exec,
+            vcard-proxy,
+            caddy,
+            reload,
+            --config,
+            /etc/caddy/Caddyfile,
+            --adapter,
+            caddyfile,
+          ]
+      changed_when: true
+      no_log: true
+
+    - name: Record that production routes were activated for health checks
+      ansible.builtin.set_fact:
+        production_caddy_activated: true
+
+  rescue:
+    - name: Restore the previous Caddyfile after activation failure
+      ansible.builtin.copy:
+        src: '{{ caddy_recovery_path }}/Caddyfile'
+        dest: '{{ active_caddyfile_path }}'
+        remote_src: true
+        owner: root
+        group: root
+        mode: '0644'
+      failed_when: false
+
+    - name: Restore the previous Caddy includes after activation failure
+      ansible.builtin.copy:
+        src: '{{ caddy_recovery_path }}/includes/'
+        dest: '{{ active_caddy_includes_path }}/'
+        remote_src: true
+        owner: root
+        group: root
+        mode: preserve
+      failed_when: false
+
+    - name: Recreate the proxy with the previous routes
+      become: true
+      become_user: '{{ ansible_user }}'
+      ansible.builtin.command:
+        argv:
+          [
+            docker,
+            compose,
+            --project-name,
+            compose,
+            -f,
+            ops/docker/compose/docker-compose.proxy.yml,
+            -f,
+            ops/docker/compose/docker-compose.staging-proxy.yml,
+            up,
+            -d,
+            caddy,
+          ]
+      args:
+        chdir: '{{ project_dir }}'
+      environment:
+        CADDY_IMAGE_REF: '{{ caddy_image_ref }}'
+        CADDYFILE_PATH: '{{ active_caddyfile_path }}'
+        CADDY_INCLUDES_PATH: '{{ active_caddy_includes_path }}'
+        CADDY_DOMAIN_NAME: '{{ legacy_domain_name }}'
+        STAGE_BASIC_AUTH_HASH: '{{ stage_basic_auth_hash }}'
+      failed_when: false
+      no_log: true
+
+    - name: Fail after restoring the previous proxy configuration
+      ansible.builtin.fail:
+        msg: 'Production Caddy activation failed; the prior staged route was restored.'

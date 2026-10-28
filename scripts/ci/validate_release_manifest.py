@@ -14,6 +14,7 @@ class ReleaseManifestError(ValueError):
 
 
 EXPECTED_KEYS = {
+    'manifest_version',
     'release_sha',
     'api_image_ref',
     'clinic_web_image_ref',
@@ -37,6 +38,8 @@ def read_manifest(path: Path, expected_repository: str) -> dict[str, str]:
         raise ReleaseManifestError(f'Invalid release manifest fields: {path.name}')
     if any(not isinstance(value, str) for value in manifest.values()):
         raise ReleaseManifestError(f'Release manifest values must be strings: {path.name}')
+    if manifest['manifest_version'] != 'havenhub-production-v1':
+        raise ReleaseManifestError('Rollback target is not a production release from the current contract')
     if not SHA_PATTERN.fullmatch(manifest['release_sha']):
         raise ReleaseManifestError('Invalid release SHA in manifest')
     if not API_REF_PATTERN.fullmatch(manifest['api_image_ref']):

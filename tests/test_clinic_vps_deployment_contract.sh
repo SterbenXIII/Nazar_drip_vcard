@@ -31,10 +31,17 @@ assert_exists_and_trackable() {
 assert_contains .github/workflows/deploy.yml 'vcard-clinic-web'
 assert_not_contains .github/workflows/deploy.yml 'name: 📦 Build and push Web'
 assert_contains ops/docker/compose/docker-compose.yml 'container_name: vcard-clinic-web'
-assert_contains ops/docker/compose/docker-compose.proxy.yml 'DOMAIN_NAME=${DOMAIN_NAME:-localhost}'
+assert_contains ops/docker/compose/docker-compose.proxy.yml 'DOMAIN_NAME=${CADDY_DOMAIN_NAME:-${DOMAIN_NAME:-localhost}}'
+assert_not_contains ops/docker/compose/docker-compose.proxy.yml 'staging-gateway'
+assert_contains ops/docker/compose/docker-compose.staging-proxy.yml 'name: vcard-staging-gateway'
 assert_contains ops/docker/compose/docker-compose.proxy.yml 'STAGE_BASIC_AUTH_HASH=${STAGE_BASIC_AUTH_HASH:-}'
 assert_contains ops/docker/compose/docker-compose.proxy.yml 'CADDY_IMAGE_REF:-docker.io/library/caddy:2-alpine@sha256:'
 assert_contains ops/docker/compose/docker-compose.proxy.yml "$CADDY_IMAGE_REF"
+assert_not_contains ops/docker/compose/docker-compose.proxy.yml 'staging-gateway'
+assert_contains ops/docker/compose/docker-compose.staging-proxy.yml 'name: vcard-staging-gateway'
+assert_contains ops/docker/compose/docker-compose.staging.yml 'internal: true'
+assert_contains ops/docker/compose/docker-compose.staging.yml 'name: compose-staging_api_data'
+assert_contains ops/docker/compose/docker-compose.yml 'name: compose_api_data'
 assert_contains ops/docker/compose/docker-compose.proxy.yml "'443:443'"
 assert_contains ops/docker/caddy/Caddyfile '{$DOMAIN_NAME}, www.{$DOMAIN_NAME}'
 assert_contains ops/docker/caddy/Caddyfile 'Content-Security-Policy "default-src'
@@ -48,6 +55,7 @@ assert_contains ops/docker/caddy/Caddyfile 'handle /api/*'
 assert_not_contains ops/docker/caddy/Caddyfile 'Stage lead submissions are disabled'
 assert_not_contains ops/docker/caddy/Caddyfile 'Strict-Transport-Security'
 assert_contains apps/clinic-web/Dockerfile 'pnpm --filter @vcard/clinic-web build:staging'
+assert_contains ops/docker/compose/docker-compose.production.yml "CLINIC_ALLOW_PRODUCTION_BUILD: 'true'"
 assert_not_contains apps/clinic-web/src/components/Services.astro '../../../../design/'
 assert_exists_and_trackable apps/clinic-web/src/assets/care-formats/consultation.png
 assert_exists_and_trackable apps/clinic-web/src/assets/care-formats/residential.png
@@ -59,7 +67,7 @@ assert_contains ops/ansible/tasks/08_healthcheck.yml 'status_code: 401'
 assert_contains ops/ansible/tasks/08_healthcheck.yml 'status_code: 308'
 assert_contains ops/ansible/tasks/08_healthcheck.yml 'status_code: 400'
 assert_contains ops/ansible/tasks/08_healthcheck.yml 'https://www.{{ domain_name }}'
-assert_contains ops/ansible/tasks/08_healthcheck.yml "url_password: deliberately-invalid-stage-password"
+assert_contains scripts/ci/check_clinic_stage.sh 'deliberately-invalid-stage-password'
 assert_contains ops/ansible/tasks/08_healthcheck.yml "'nofollow' not in"
 assert_contains ops/ansible/tasks/04_environment.yml "src: '{{ playbook_dir }}/../scripts/{{ item }}'"
 assert_contains ops/ansible/tasks/04_environment.yml "dest: '{{ project_dir }}/scripts/{{ item }}'"
@@ -76,7 +84,14 @@ assert_contains ops/ansible/playbook.yml 'Public smoke checks: inspect workflow 
 assert_not_contains ops/ansible/playbook.yml 'docker logs'
 assert_not_contains ops/ansible/playbook.yml 'http://{{ vps_ip }}/api/health'
 assert_contains .github/workflows/deploy.yml 'https://${{ env.STAGING_DOMAIN_NAME }}'
+assert_contains .github/workflows/deploy.yml 'DOMAIN_NAME: ${{ env.STAGING_DOMAIN_NAME }}'
 assert_contains .github/workflows/deploy.yml 'STAGING_DOMAIN_NAME: staging.havenhub.com.ua'
+assert_contains .github/workflows/deploy.yml 'CLINIC_CANONICAL_ORIGIN=https://havenhub.com.ua'
+assert_not_contains .github/workflows/deploy.yml 'TELEGRAM_BOT_TOKEN: ${{ secrets.'
+assert_contains .github/workflows/promote-production.yml 'workflow_dispatch:'
+assert_contains .github/workflows/promote-production.yml 'havenhub-production-v1'
+assert_contains .github/workflows/promote-production.yml 'DOMAIN_NAME: havenhub.com.ua'
+assert_not_contains .github/workflows/promote-production.yml 'run: bash scripts/ci/check_clinic_production.sh'
 assert_contains .github/workflows/deploy.yml 'CADDY_IMAGE_REF: docker.io/library/caddy:2-alpine@sha256:'
 assert_contains .github/workflows/deploy.yml "$CADDY_IMAGE_REF"
 assert_contains .github/workflows/deploy.yml 'caddy hash-password --plaintext "$STAGE_BASIC_AUTH_PASSWORD"'
@@ -85,11 +100,28 @@ assert_contains .github/workflows/deploy.yml 'run: bash scripts/ci/check_clinic_
 assert_not_contains .github/workflows/deploy.yml 'docker logs candidate-api'
 assert_not_contains .github/workflows/deploy.yml 'ssh -vvv'
 assert_contains .github/workflows/rollback.yml 'https://${{ env.DOMAIN_NAME }}'
-assert_contains .github/workflows/rollback.yml 'DOMAIN_NAME: havenhub.tech'
+assert_contains .github/workflows/rollback.yml 'DOMAIN_NAME: havenhub.com.ua'
 assert_contains .github/workflows/rollback.yml 'CADDY_IMAGE_REF: docker.io/library/caddy:2-alpine@sha256:'
 assert_contains .github/workflows/rollback.yml "$CADDY_IMAGE_REF"
 assert_contains .github/workflows/rollback.yml 'STAGE_BASIC_AUTH_PASSWORD: ${{ secrets.STAGE_BASIC_AUTH_PASSWORD }}'
-assert_contains .github/workflows/rollback.yml 'run: bash scripts/ci/check_clinic_stage.sh'
+assert_not_contains .github/workflows/rollback.yml 'run: bash scripts/ci/check_clinic_production.sh'
+assert_contains ops/ansible/playbook.yml 'scripts/ci/check_clinic_production.sh'
+assert_contains ops/ansible/playbook.yml 'delegate_to: localhost'
+assert_contains ops/ansible/playbook.yml 'public_production_smoke.rc == 0'
+assert_contains ops/ansible/playbook.yml 'Public production smoke failed; the previous Caddy configuration will be restored.'
+
+healthcheck_line=$(grep -n -m 1 -F 'include_tasks: tasks/08_healthcheck.yml' ops/ansible/playbook.yml | cut -d: -f1)
+smoke_line=$(grep -n -m 1 -F 'scripts/ci/check_clinic_production.sh' ops/ansible/playbook.yml | cut -d: -f1)
+cutover_line=$(grep -n -m 1 -F 'dest: '\''{{ project_dir }}/releases/domain-cutover.json'\''' ops/ansible/playbook.yml | cut -d: -f1)
+if [[ -n "$healthcheck_line" && -n "$smoke_line" && -n "$cutover_line" ]] && (( smoke_line <= healthcheck_line || smoke_line >= cutover_line )); then
+  echo 'FAIL: public production smoke must run after healthchecks and before cutover is recorded' >&2
+  failures=$((failures + 1))
+fi
+assert_contains scripts/ci/validate_release_manifest.py "havenhub-production-v1"
+assert_contains scripts/ci/validate_staging_release_manifest.py 'staging_clinic_web_image_ref'
+assert_contains ops/ansible/tasks/staging_caddy.yml 'compose-staging_api_data'
+assert_contains ops/ansible/tasks/production_caddy.yml 'production DNS addresses'
+assert_contains ops/ansible/tasks/restore_previous_caddy.yml 'Caddyfile'
 assert_not_contains .github/workflows/rollback.yml 'docker logs'
 assert_contains Makefile 'check-stage-auth'
 assert_contains Makefile 'STAGE_BASIC_AUTH_PASSWORD'
@@ -108,8 +140,7 @@ assert_contains .github/workflows/deploy.yml 'docker network create --internal c
 assert_contains .github/workflows/deploy.yml '--network candidate-network'
 assert_contains .github/workflows/deploy.yml 'docker push "$api_tag"'
 assert_contains .github/workflows/deploy.yml 'api_image_ref=ghcr.io/$repo/vcard-api@$api_digest'
-assert_contains .github/workflows/deploy.yml "Path('staging-release.json').write_text"
-assert_contains .github/workflows/deploy.yml 'scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes staging-release.json'
+assert_not_contains .github/workflows/deploy.yml 'actions/upload-artifact@'
 assert_contains .github/workflows/deploy.yml 'mv -f -- "$pending" "$target"'
 assert_contains ops/ansible/tasks/05_deployment.yml 'chmod 700 "$docker_config"'
 assert_contains ops/ansible/tasks/05_deployment.yml "trap 'rm -rf"

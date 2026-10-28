@@ -20,7 +20,14 @@ read_env_value() {
 TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-$(read_env_value TELEGRAM_BOT_TOKEN)}
 TELEGRAM_MASTER_ID=${TELEGRAM_MASTER_ID:-$(read_env_value TELEGRAM_MASTER_ID)}
 SUPPRESS_TELEGRAM=${SUPPRESS_TELEGRAM:-0}
-CONTAINERS=(vcard-api vcard-clinic-web vcard-proxy)
+CONTAINERS=(vcard-api vcard-proxy)
+if [[ -f "$SCRIPT_DIR/../../releases/domain-cutover.json" ]]; then
+  CONTAINERS+=(vcard-clinic-web-production)
+  DEPLOYMENT_NAME=production
+else
+  CONTAINERS+=(vcard-clinic-web)
+  DEPLOYMENT_NAME=staging
+fi
 FAILED_SERVICES=()
 
 for container in "${CONTAINERS[@]}"; do
@@ -43,7 +50,7 @@ if ! docker exec vcard-api curl --fail --silent --output /dev/null --max-time 5 
 fi
 
 if ((${#FAILED_SERVICES[@]} > 0)); then
-  MESSAGE="Clinic staging health check failed: ${FAILED_SERVICES[*]}"
+  MESSAGE="Clinic $DEPLOYMENT_NAME health check failed: ${FAILED_SERVICES[*]}"
   echo "$MESSAGE"
   if [[ "$SUPPRESS_TELEGRAM" != '1' && -n "$TELEGRAM_BOT_TOKEN" && -n "$TELEGRAM_MASTER_ID" ]]; then
     if ! curl --fail --silent --output /dev/null --max-time 10 \
@@ -56,4 +63,4 @@ if ((${#FAILED_SERVICES[@]} > 0)); then
   exit 1
 fi
 
-echo 'All staging containers are running; API health check passed.'
+echo "All $DEPLOYMENT_NAME containers are running; API health check passed."

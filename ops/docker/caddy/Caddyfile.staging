@@ -1,0 +1,3 @@
+import /etc/caddy/includes/common.caddy
+import /etc/caddy/includes/legacy-sites.caddy
+import /etc/caddy/includes/staging-sites.caddy

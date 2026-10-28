@@ -7,7 +7,7 @@ from check_stage_dns import DNSCheckError, check_stage_dns
 
 VPS_IPV4 = '72.61.138.53'
 VPS_IPV6 = '2001:4860:4860::8888'
-HOSTS = ('havenhub.tech', 'www.havenhub.tech')
+HOSTS = ('staging.havenhub.com.ua', 'www.staging.havenhub.com.ua')
 
 
 def answer(address):

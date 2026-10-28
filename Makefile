@@ -12,6 +12,7 @@ DC_LOCAL       = $(DC_APP) -f ops/docker/compose/docker-compose.proxy.yml -f ops
 DC_LOCAL_ALL   = $(DC_APP) -f ops/docker/compose/docker-compose.n8n.yml -f ops/docker/compose/docker-compose.proxy.yml -f ops/docker/compose/docker-compose.local.yml
 
 LOCAL_CERT_DIR = ./ops/certs/local
+STAGING_DOMAIN_NAME ?= staging.havenhub.com.ua
 NETWORK        = web-gateway
 BACKUP_DIR     = ./backups
 DB_PATH        = ./apps/api/data/leads.db
@@ -224,7 +225,7 @@ verify-deploy:
 	@sleep 15
 	@echo "🌐 Перевірка фронтенду..."
 	@stage_curl_auth="stage:$${STAGE_BASIC_AUTH_PASSWORD}"; \
-	STATUS=$$(curl -s -o /dev/null -w "%{http_code}" --user "$$stage_curl_auth" --max-time 15 "https://$(DOMAIN_NAME)"); \
+	STATUS=$$(curl -s -o /dev/null -w "%{http_code}" --user "$$stage_curl_auth" --max-time 15 "https://$(STAGING_DOMAIN_NAME)"); \
 	if [ "$$STATUS" = "200" ]; then \
 		echo "$(GREEN)✅ Frontend OK ($$STATUS)$(NC)"; \
 	else \
@@ -232,7 +233,7 @@ verify-deploy:
 	fi
 	@echo "🔧 Перевірка API health..."
 	@stage_curl_auth="stage:$${STAGE_BASIC_AUTH_PASSWORD}"; \
-	STATUS=$$(curl -s -o /dev/null -w "%{http_code}" --user "$$stage_curl_auth" --max-time 15 "https://$(DOMAIN_NAME)/api/health"); \
+	STATUS=$$(curl -s -o /dev/null -w "%{http_code}" --user "$$stage_curl_auth" --max-time 15 "https://$(STAGING_DOMAIN_NAME)/api/health"); \
 	if [ "$$STATUS" = "200" ]; then \
 		echo "$(GREEN)✅ API OK ($$STATUS)$(NC)"; \
 	else \
