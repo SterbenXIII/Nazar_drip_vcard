@@ -30,6 +30,7 @@ staging.havenhub.com.ua {
 		handle {
 			reverse_proxy clinic-web-staging:8080 {
 				header_up Host {host}
+				header_down X-Robots-Tag "noindex, nofollow"
 			}
 		}
 	}
