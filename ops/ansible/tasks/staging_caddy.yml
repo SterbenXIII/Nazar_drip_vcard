@@ -221,7 +221,8 @@
           nofollow_meta={{ 'nofollow' in (staging_homepage.content | lower) }},
           canonical_absent={{ 'rel="canonical"' not in (staging_homepage.content | lower) }},
           noindex_header={{ 'noindex' in (staging_homepage.headers['x-robots-tag'] | default('') | lower) }},
-          nofollow_header={{ 'nofollow' in (staging_homepage.headers['x-robots-tag'] | default('') | lower) }}.
+          nofollow_header={{ 'nofollow' in (staging_homepage.headers['x-robots-tag'] | default('') | lower) }},
+          response_header_names={{ staging_homepage.headers.keys() | list | join(',') }}.
 
     - name: Verify staging robots file denies indexing
       ansible.builtin.uri:
