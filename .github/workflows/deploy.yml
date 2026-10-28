@@ -101,7 +101,7 @@ jobs:
           })
           EOF
 
-          docker run -d --name candidate-api --network candidate-network \
+          docker run -d --name candidate-api --network candidate-network --network-alias api \
             --mount "type=bind,src=$RUNNER_TEMP/allowed_chats.json,dst=/app/allowed_chats.json,readonly" \
             --mount "type=bind,src=$RUNNER_TEMP/mock-telegram.mjs,dst=/tmp/mock-telegram.mjs,readonly" \
             -e NODE_ENV=production -e ENABLED_PROVIDERS=TELEGRAM \
