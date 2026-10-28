@@ -123,6 +123,8 @@ if [[ -n "$healthcheck_line" && -n "$smoke_line" && -n "$cutover_line" ]] && (( 
 fi
 assert_contains scripts/ci/validate_release_manifest.py "havenhub-production-v1"
 assert_contains scripts/ci/validate_staging_release_manifest.py 'staging_clinic_web_image_ref'
+assert_contains ops/ansible/tasks/staging_caddy.yml "staging_homepage['x-robots-tag']"
+assert_not_contains ops/ansible/tasks/staging_caddy.yml "staging_homepage.headers['x-robots-tag']"
 assert_contains ops/ansible/tasks/staging_caddy.yml 'compose-staging_api_data'
 assert_contains ops/ansible/tasks/production_caddy.yml 'production DNS addresses'
 assert_contains ops/ansible/tasks/restore_previous_caddy.yml 'Caddyfile'
