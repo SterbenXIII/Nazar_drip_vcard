@@ -203,13 +203,23 @@
         status_code: 200
         timeout: 15
       register: staging_homepage
-      failed_when: >-
-        staging_homepage.status != 200 or
-        'noindex' not in (staging_homepage.content | lower) or
-        'nofollow' not in (staging_homepage.content | lower) or
-        'rel="canonical"' in (staging_homepage.content | lower) or
-        'noindex, nofollow' not in (staging_homepage.headers['x-robots-tag'] | default('') | lower)
       no_log: true
+
+    - name: Validate staging homepage publication policy
+      ansible.builtin.assert:
+        that:
+          - staging_homepage.status == 200
+          - "'noindex' in (staging_homepage.content | lower)"
+          - "'nofollow' in (staging_homepage.content | lower)"
+          - "'rel=\"canonical\"' not in (staging_homepage.content | lower)"
+          - "'noindex, nofollow' in (staging_homepage.headers['x-robots-tag'] | default('') | lower)"
+        fail_msg: >-
+          Staging homepage policy mismatch:
+          status_ok={{ staging_homepage.status == 200 }},
+          noindex_meta={{ 'noindex' in (staging_homepage.content | lower) }},
+          nofollow_meta={{ 'nofollow' in (staging_homepage.content | lower) }},
+          canonical_absent={{ 'rel="canonical"' not in (staging_homepage.content | lower) }},
+          noindex_header={{ 'noindex, nofollow' in (staging_homepage.headers['x-robots-tag'] | default('') | lower) }}.
 
     - name: Verify staging robots file denies indexing
       ansible.builtin.uri:
