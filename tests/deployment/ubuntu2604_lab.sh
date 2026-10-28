@@ -90,6 +90,7 @@ from pathlib import Path
 root = Path(sys.argv[1])
 release_sha, api_ref, clinic_ref = sys.argv[2:]
 manifest = {
+    'manifest_version': 'havenhub-production-v1',
     'release_sha': release_sha,
     'api_image_ref': api_ref,
     'clinic_web_image_ref': clinic_ref,
@@ -271,15 +272,49 @@ EOF
   grep -q '^127\.0\.0\.1[[:space:]].*www\.localhost' /etc/hosts || \
     printf '127.0.0.1 www.localhost\n' >> /etc/hosts
 
+  docker network create web-gateway >/dev/null
+  cat >"$LAB_ROOT/clinic-stage.Caddyfile" <<'CADDY'
+http://localhost, http://www.localhost {
+  redir https://{host}{uri} 308
+}
+
+localhost, www.localhost {
+  basic_auth {
+    stage {$STAGE_BASIC_AUTH_HASH}
+  }
+  header X-Robots-Tag "noindex, nofollow"
+  handle /robots.txt {
+    respond "User-agent: *\nDisallow: /" 200
+  }
+  handle /api/* {
+    reverse_proxy api:5678
+  }
+  handle {
+    reverse_proxy clinic-web:8080
+  }
+}
+CADDY
+  CADDY_IMAGE_REF="$CADDY_IMAGE_REF" \
+    CADDYFILE_PATH="$LAB_ROOT/clinic-stage.Caddyfile" \
+    CADDY_INCLUDES_PATH="$LAB_ROOT/source/ops/docker/caddy" \
+    CADDY_DOMAIN_NAME=localhost \
+    STAGE_BASIC_AUTH_HASH="$STAGE_BASIC_AUTH_HASH" \
+    docker compose --project-name compose \
+      -f "$LAB_ROOT/source/ops/docker/compose/docker-compose.proxy.yml" up -d caddy
+
   build_release_images "$LAB_ROOT/source" "$first_sha" true
   run_deploy "$first_sha" "local/vcard-api:$first_sha" \
     "local/vcard-clinic-web:$first_sha" false "$LAB_ROOT/first-deploy.log"
   assert_release_running "$first_sha"
   bash "$LAB_ROOT/source/scripts/ci/check_clinic_stage.sh"
-  test -f "$LAB_ROOT/project/releases/reconciliation-required.json"
+  test -f "$LAB_ROOT/project/releases/reconciliation-required.json" || \
+    fail 'first deployment did not retain its reconciliation marker'
+  echo 'PASS: initial deployment retained its reconciliation marker.'
   record_manifest "$first_sha" "local/vcard-api:$first_sha" \
     "local/vcard-clinic-web:$first_sha"
+  echo 'PASS: synthetic release manifest recorded.'
   check_control_row >/dev/null 2>&1 && fail 'control row exists before synthetic insertion'
+  echo 'PASS: SQLite started without the synthetic control row.'
   docker exec --workdir /app/apps/api vcard-api node -e '
     const fs = require("node:fs")
     const directory = fs.statSync("/app/data")
@@ -287,6 +322,7 @@ EOF
     console.log(`cwd=${process.cwd()} uid=${process.getuid()} data_uid=${directory.uid} data_mode=${directory.mode.toString(8)}`)
     console.log(`database_uid=${database.uid} database_mode=${database.mode.toString(8)} database_size=${database.size}`)
   '
+  echo 'PASS: SQLite volume is readable by the API runtime user.'
   docker exec --workdir /app/apps/api vcard-api node -e '
     const Database = require("better-sqlite3")
     const db = new Database("/app/data/leads.db")
@@ -294,6 +330,7 @@ EOF
       .run(901, "synthetic clinic CD persistence row", "+37000000000", "lab", "lab test", "synthetic", new Date().toISOString())
     db.close()
   '
+  echo 'PASS: synthetic lead inserted into SQLite.'
 
   local volume_name first_ids
   volume_name=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/app/data"}}{{.Type}} {{.Name}}{{end}}{{end}}' vcard-api)
