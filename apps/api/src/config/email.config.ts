@@ -25,10 +25,12 @@ export const getEmailTransportConfig = (): EmailTransportConfig => {
     }
   }
 
+  const port = ENV.SMTP_PORT ?? 465
+
   return {
     host: ENV.SMTP_HOST,
-    port: ENV.SMTP_PORT ?? 465,
-    secure: true,
+    port,
+    secure: port === 465,
     auth: {
       user: ENV.SMTP_USER,
       pass: ENV.SMTP_PASS,
