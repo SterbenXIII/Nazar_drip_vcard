@@ -1,6 +1,7 @@
 import { logger } from '@/config/logger'
 import type { IDatabaseConfig } from '@/interfaces/database/database-config.interface'
 import type { IDatabaseSchema } from '@/interfaces/database/database-schema.interface'
+import type { IDatabaseTransaction } from '@/interfaces/database/database-transaction.interface'
 import type { IQueryResult } from '@/interfaces/database/query-result.interface'
 
 export abstract class BaseDatabaseProvider {
@@ -43,6 +44,10 @@ export abstract class BaseDatabaseProvider {
    * @returns Масив записів
    */
   public abstract query<T = unknown>(query: string, params?: unknown[]): Promise<T[]>
+
+  public abstract transaction<T>(
+    operation: (tx: IDatabaseTransaction) => T extends PromiseLike<unknown> ? never : T,
+  ): Promise<T>
 
   /**
    * Закриття з'єднання з базою даних

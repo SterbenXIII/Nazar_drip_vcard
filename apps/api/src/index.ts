@@ -5,7 +5,10 @@ import { serve } from '@hono/node-server'
 import app from '@/app'
 import { ENV } from '@/config/env.config'
 import { logger } from '@/config/logger'
+import { NotificationOutboxWorker } from '@/services/coordinators/notification-outbox.worker'
 import { DatabaseService } from '@/services/database.service'
+
+let notificationWorker: NotificationOutboxWorker
 
 const port = ENV.BACKEND_PORT
 
@@ -13,6 +16,8 @@ try {
   logger.info('🔧 Initializing database...')
   await DatabaseService.initializeOnStartup()
   logger.info('✅ Database ready')
+  notificationWorker = new NotificationOutboxWorker()
+  notificationWorker.start()
 } catch (error) {
   logger.error({ msg: '❌ Failed to initialize database', error })
   logger.error('   Server cannot start without database connection')
@@ -33,6 +38,7 @@ const shutdown = async (signal: string) => {
   server.close(async () => {
     logger.info('[Server] HTTP server closed.')
     try {
+      await notificationWorker.stop()
       const db = await DatabaseService.getInstance().getProvider()
       await db.close()
       logger.info('✅ Database connection closed.')

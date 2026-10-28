@@ -4,6 +4,7 @@ import { DATABASE_PATHS, DatabaseType } from '@/constants/database'
 import type { BaseDatabaseProvider } from '@/core/abstracts/base-database.provider'
 import { MigrationService } from '@/services/providers/database/migration.service'
 import { initialMigration } from '@/services/providers/database/migrations/001_initial_leads_table'
+import { notificationOutboxMigration } from '@/services/providers/database/migrations/002_notification_outbox'
 import { SqliteDatabaseProvider } from '@/services/providers/database/sqlite-database.provider'
 
 let dbServiceInstance: DatabaseService | null = null
@@ -35,7 +36,7 @@ export class DatabaseService {
 
     try {
       const migrationService = new MigrationService(service.provider)
-      await migrationService.runMigrations([initialMigration])
+      await migrationService.runMigrations([initialMigration, notificationOutboxMigration])
 
       await service.provider.query('SELECT 1')
       logger.info('[DatabaseService] Startup initialization successful')

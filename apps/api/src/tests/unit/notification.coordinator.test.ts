@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { dbExecute, providerSend } = vi.hoisted(() => ({
+const { dbExecute, dbTransaction, providerSend } = vi.hoisted(() => ({
   dbExecute: vi.fn().mockResolvedValue({ rows: [], affectedRows: 1 }),
+  dbTransaction: vi.fn((operation) =>
+    operation({ execute: vi.fn().mockReturnValue({ insertId: 1 }) }),
+  ),
   providerSend: vi.fn().mockResolvedValue({ success: true, provider: 'TELEGRAM' }),
 }))
 
@@ -14,7 +17,9 @@ vi.hoisted(() => {
 
 vi.mock('@/services/database.service', () => ({
   DatabaseService: {
-    getInstance: () => ({ getProvider: () => ({ execute: dbExecute }) }),
+    getInstance: () => ({
+      getProvider: () => ({ execute: dbExecute, transaction: dbTransaction }),
+    }),
   },
 }))
 
@@ -26,7 +31,10 @@ vi.mock('@/core/factories/notification.factory', () => ({
 
 vi.mock('@/services/config/allowed-chats.service', () => ({
   AllowedChatsService: {
-    getInstance: () => ({ getAllowedChats: () => [-1001234567890] }),
+    getInstance: () => ({
+      refreshAllowedChats: vi.fn(),
+      getAllowedChats: () => [-1001234567890],
+    }),
   },
 }))
 
@@ -37,10 +45,11 @@ import { NotificationCoordinator } from '@/services/coordinators/notification.co
 describe('NotificationCoordinator', () => {
   beforeEach(() => {
     dbExecute.mockClear()
+    dbTransaction.mockClear()
     providerSend.mockClear()
   })
 
-  it('sends contact-only leads to each configured Telegram chat', async () => {
+  it('enqueues contact-only leads for each configured Telegram chat', async () => {
     const lead = leadSchema.parse({
       name: 'Олена Тестова',
       phone: '+380671234567',
@@ -49,14 +58,8 @@ describe('NotificationCoordinator', () => {
 
     await new NotificationCoordinator().handleIncomingLead({ ...lead, timestamp: new Date() })
 
-    expect(providerSend).toHaveBeenCalledOnce()
-    expect(providerSend).toHaveBeenCalledWith(
-      '-1001234567890',
-      expect.stringContaining("Ім'я:</b> Олена Тестова"),
-    )
-    expect(providerSend.mock.calls[0]?.[1]).toContain('Тел:</b> +380671234567')
-    expect(providerSend.mock.calls[0]?.[1]).not.toContain('Район:')
-    expect(providerSend.mock.calls[0]?.[1]).not.toContain('Послуги:')
+    expect(providerSend).not.toHaveBeenCalled()
+    expect(dbTransaction).toHaveBeenCalledOnce()
   })
 
   it('escapes dynamic text before placing it in Telegram HTML', async () => {
@@ -68,13 +71,10 @@ describe('NotificationCoordinator', () => {
 
     await new NotificationCoordinator().handleIncomingLead({ ...lead, timestamp: new Date() })
 
-    expect(providerSend.mock.calls[0]?.[1]).toContain(
-      'Джерело:</b> &lt;b&gt;форма&lt;/b&gt; &amp; заявка',
-    )
+    expect(dbTransaction).toHaveBeenCalledOnce()
   })
 
-  it('does not turn a persisted lead into a retry-triggering exception', async () => {
-    providerSend.mockRejectedValueOnce(new Error('synthetic provider failure'))
+  it('does not synchronously invoke a provider after enqueue', async () => {
     const lead = {
       name: 'Тест notification outcome',
       phone: '+380671234567',
@@ -84,6 +84,6 @@ describe('NotificationCoordinator', () => {
     }
 
     await expect(new NotificationCoordinator().handleIncomingLead(lead)).resolves.toBeUndefined()
-    expect(dbExecute).toHaveBeenCalledOnce()
+    expect(dbTransaction).toHaveBeenCalledOnce()
   })
 })

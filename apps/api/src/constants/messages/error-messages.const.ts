@@ -3,6 +3,7 @@ export const ERROR_MESSAGES = {
   NO_USER_ID: 'No user ID found',
   UNAUTHORIZED_ACCESS: 'Unauthorized access',
   INTERNAL_SERVER_ERROR: 'Internal Server Error',
+  SERVICE_UNAVAILABLE: 'Service Unavailable',
   UNKNOWN_ERROR: 'Unknown error',
 
   // Provider errors

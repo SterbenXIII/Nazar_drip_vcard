@@ -9,6 +9,7 @@ import { BaseDatabaseProvider } from '@/core/abstracts/base-database.provider'
 import { SqlBuilder } from '@/core/utils/sql-builder.util'
 import type { IDatabaseConfig } from '@/interfaces/database/database-config.interface'
 import type { IDatabaseSchema } from '@/interfaces/database/database-schema.interface'
+import type { IDatabaseTransaction } from '@/interfaces/database/database-transaction.interface'
 import type { IQueryResult } from '@/interfaces/database/query-result.interface'
 
 export class SqliteDatabaseProvider extends BaseDatabaseProvider {
@@ -111,6 +112,48 @@ export class SqliteDatabaseProvider extends BaseDatabaseProvider {
       }
     }
     throw new Error('query() failed after retries')
+  }
+
+  public async transaction<T>(
+    operation: (tx: IDatabaseTransaction) => T extends PromiseLike<unknown> ? never : T,
+  ): Promise<T> {
+    await this.ensureInitialized()
+    let active = true
+    const assertActive = (): void => {
+      if (!active) throw new Error('Database transaction has expired')
+    }
+    const tx: IDatabaseTransaction = {
+      execute: <R = unknown>(query: string, params: unknown[] = []): IQueryResult<R> => {
+        assertActive()
+        const info = this.db.prepare(query).run(...params)
+        return { rows: [], affectedRows: info.changes, insertId: info.lastInsertRowid as number }
+      },
+      query: <R = unknown>(query: string, params: unknown[] = []): R[] => {
+        assertActive()
+        const stmt = this.db.prepare(query)
+        return (params.length > 0 ? stmt.all(...params) : stmt.all()) as R[]
+      },
+    }
+
+    try {
+      const run = this.db.transaction(() => {
+        const result = operation(tx)
+        if (this.isThenable(result)) {
+          throw new Error('Database transaction callback must be synchronous')
+        }
+        return result
+      })
+      return run() as T
+    } finally {
+      active = false
+    }
+  }
+
+  private isThenable(value: unknown): boolean {
+    return (
+      ((typeof value === 'object' && value !== null) || typeof value === 'function') &&
+      typeof (value as { then?: unknown }).then === 'function'
+    )
   }
 
   private isTransientError(error: unknown): boolean {
