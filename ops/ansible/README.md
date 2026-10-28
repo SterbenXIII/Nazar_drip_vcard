@@ -85,9 +85,11 @@ configuration and old web container remain available for a manual first-release 
 The Caddy recovery does not restore the API image or roll back SQLite.
 
 If `releases/reconciliation-required.json` remains after a failed production deploy,
-stop further deploys and rollbacks. Compare the marker, running image revisions,
-checkout, SQLite snapshot, and current manifest before reconciling state. Never delete
-the marker or database volume as a shortcut.
+staging deploys preserve the active Caddy configuration. A production workflow may resume
+only when explicitly requested for the same marked SHA and immutable image references;
+Ansible also verifies the previous manifest, SQLite snapshot, and running container images.
+Other deploys and all rollbacks remain blocked. Never delete the marker or database volume
+as a shortcut.
 
 ## Local checks
 

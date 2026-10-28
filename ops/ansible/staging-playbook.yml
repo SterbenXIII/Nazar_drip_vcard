@@ -25,6 +25,7 @@
     active_caddyfile_path: '{{ project_dir }}/ops/docker/caddy/Caddyfile.active'
     active_caddy_includes_path: '{{ project_dir }}/ops/docker/caddy/includes.active'
     domain_cutover_marker: '{{ project_dir }}/releases/domain-cutover.json'
+    reconciliation_marker: '{{ project_dir }}/releases/reconciliation-required.json'
     timezone: 'Europe/Kyiv'
     docker_network: 'web-gateway'
     compose_project_name: 'compose-staging'

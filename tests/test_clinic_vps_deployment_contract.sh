@@ -127,6 +127,10 @@ assert_contains ops/ansible/tasks/staging_caddy.yml 'staging_homepage.x_robots_t
 assert_not_contains ops/ansible/tasks/staging_caddy.yml "staging_homepage['x-robots-tag']"
 assert_contains ops/ansible/tasks/08_healthcheck.yml 'staging_homepage.x_robots_tag'
 assert_not_contains ops/ansible/tasks/08_healthcheck.yml "staging_homepage.headers['x-robots-tag']"
+assert_contains ops/ansible/playbook.yml 'resume_reconciliation'
+assert_contains ops/ansible/playbook.yml 'reconciliation_resume_images'
+assert_contains ops/ansible/tasks/staging_caddy.yml 'reconciliation_marker'
+assert_contains .github/workflows/promote-production.yml 'resume_reconciliation'
 assert_contains ops/ansible/tasks/staging_caddy.yml 'compose-staging_api_data'
 assert_contains ops/ansible/tasks/production_caddy.yml 'production DNS addresses'
 assert_contains ops/ansible/tasks/restore_previous_caddy.yml 'Caddyfile'

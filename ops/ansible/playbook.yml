@@ -28,6 +28,7 @@
     api_image_ref: ''
     clinic_web_image_ref: ''
     rollback_mode: false
+    resume_reconciliation: false
     lab_mode: false
 
     # github_token is used only for GHCR pulls; the repository itself is public.
@@ -110,13 +111,177 @@
       register: reconciliation_state
       tags: [always, deploy, rollback]
 
-    - name: Block deployment until the previous release is reconciled
+    - name: Require explicit resume for a matching interrupted release
       ansible.builtin.assert:
         that:
-          - reconciliation_state.results | selectattr('stat.exists') | list | length == 0
+          - not reconciliation_state.results[1].stat.exists
+          - >-
+            (reconciliation_state.results[0].stat.exists and (resume_reconciliation | bool) and not (rollback_mode | bool)) or
+            (not reconciliation_state.results[0].stat.exists and not (resume_reconciliation | bool))
         fail_msg: >-
-          A release reconciliation marker exists. Compare the running containers, checkout,
-          backup and SQLite schema with the operator report before another deploy or rollback.
+          An unresolved reconciliation state blocks this operation. Only an explicitly requested
+          resume of the same interrupted production release can continue.
+      tags: [always, deploy, rollback]
+
+    - name: Read interrupted release marker for an explicit resume
+      ansible.builtin.slurp:
+        src: '{{ reconciliation_marker }}'
+      register: reconciliation_resume_content
+      when: resume_reconciliation | bool
+      no_log: true
+      tags: [always, deploy]
+
+    - name: Parse interrupted release marker
+      ansible.builtin.set_fact:
+        reconciliation_resume_marker: '{{ reconciliation_resume_content.content | b64decode | from_json }}'
+      when: resume_reconciliation | bool
+      no_log: true
+      tags: [always, deploy]
+
+    - name: Check current successful release manifest before resume
+      ansible.builtin.stat:
+        path: '{{ current_release_manifest }}'
+      register: reconciliation_resume_current_stat
+      when: resume_reconciliation | bool
+      tags: [always, deploy]
+
+    - name: Read current successful release manifest before resume
+      ansible.builtin.slurp:
+        src: '{{ current_release_manifest }}'
+      register: reconciliation_resume_current_content
+      when:
+        - resume_reconciliation | bool
+        - reconciliation_resume_current_stat.stat.exists
+      no_log: true
+      tags: [always, deploy]
+
+    - name: Parse current successful release manifest before resume
+      ansible.builtin.set_fact:
+        reconciliation_resume_current: '{{ reconciliation_resume_current_content.content | b64decode | from_json }}'
+      when:
+        - resume_reconciliation | bool
+        - reconciliation_resume_current_stat.stat.exists
+      no_log: true
+      tags: [always, deploy]
+
+    - name: Validate interrupted release marker and previous manifest
+      ansible.builtin.assert:
+        that:
+          - reconciliation_resume_marker.keys() | sort == ['api_image_ref', 'backup_path', 'candidate_sha', 'clinic_web_image_ref', 'previous_release_sha']
+          - reconciliation_resume_marker.candidate_sha == release_sha
+          - reconciliation_resume_marker.api_image_ref == api_image_ref
+          - reconciliation_resume_marker.clinic_web_image_ref == clinic_web_image_ref
+          - >-
+            (reconciliation_resume_marker.previous_release_sha | default('', true) | string) ==
+            (reconciliation_resume_current.release_sha if reconciliation_resume_current_stat.stat.exists else '')
+          - >-
+            reconciliation_resume_marker.backup_path is none or
+            reconciliation_resume_marker.backup_path | dirname == backup_dir
+        fail_msg: >-
+          The interrupted release marker, selected images, previous manifest, or backup path
+          do not match this resume request.
+      when: resume_reconciliation | bool
+      no_log: true
+      tags: [always, deploy]
+
+    - name: Check marked SQLite snapshot before resume
+      ansible.builtin.stat:
+        path: '{{ reconciliation_resume_marker.backup_path }}'
+      register: reconciliation_resume_backup
+      when:
+        - resume_reconciliation | bool
+        - reconciliation_resume_marker.backup_path is not none
+      tags: [always, deploy]
+
+    - name: Require the marked SQLite snapshot to exist
+      ansible.builtin.assert:
+        that:
+          - reconciliation_resume_marker.backup_path is none or
+            (reconciliation_resume_backup.stat.exists and reconciliation_resume_backup.stat.isreg and reconciliation_resume_backup.stat.size > 0)
+        fail_msg: 'The interrupted release backup is missing or invalid; resume is blocked.'
+      when: resume_reconciliation | bool
+      no_log: true
+      tags: [always, deploy]
+
+    - name: Verify marked SQLite snapshot integrity before resume
+      become: true
+      become_user: '{{ ansible_user }}'
+      ansible.builtin.command:
+        argv:
+          - docker
+          - run
+          - --rm
+          - --network
+          - none
+          - --user
+          - '0:0'
+          - --workdir
+          - /app/apps/api
+          - --mount
+          - 'type=bind,src={{ reconciliation_resume_marker.backup_path }},dst=/tmp/reconciliation.db,readonly'
+          - --entrypoint
+          - node
+          - '{{ reconciliation_resume_marker.api_image_ref }}'
+          - -e
+          - >-
+            const Database = require('better-sqlite3');
+            const db = new Database('/tmp/reconciliation.db', { readonly: true, fileMustExist: true });
+            const result = db.pragma('integrity_check', { simple: true });
+            db.close();
+            if (result !== 'ok') process.exit(1);
+      register: reconciliation_resume_backup_check
+      changed_when: false
+      when:
+        - resume_reconciliation | bool
+        - reconciliation_resume_marker.backup_path is not none
+      no_log: true
+      tags: [always, deploy]
+
+    - name: Verify production containers still run the marked candidate images
+      become: true
+      become_user: '{{ ansible_user }}'
+      ansible.builtin.shell: |
+        set -euo pipefail
+        verify_image() {
+          container="$1"
+          expected_ref="$2"
+          actual_ref=$(docker inspect --format '{% raw %}{{.Config.Image}}{% endraw %}' "$container")
+          test "$actual_ref" = "$expected_ref"
+          image_id=$(docker inspect --format '{% raw %}{{.Image}}{% endraw %}' "$container")
+          revision=$(docker image inspect --format '{% raw %}{{index .Config.Labels "org.opencontainers.image.revision"}}{% endraw %}' "$image_id")
+          test "$revision" = "$RELEASE_SHA"
+        }
+        verify_image vcard-api "$API_IMAGE_REF"
+        verify_image "$DEPLOY_WEB_CONTAINER" "$CLINIC_WEB_IMAGE_REF"
+      args:
+        executable: /bin/bash
+      environment:
+        RELEASE_SHA: '{{ release_sha }}'
+        API_IMAGE_REF: '{{ reconciliation_resume_marker.api_image_ref }}'
+        CLINIC_WEB_IMAGE_REF: '{{ reconciliation_resume_marker.clinic_web_image_ref }}'
+        DEPLOY_WEB_CONTAINER: "{{ 'vcard-clinic-web' if (lab_mode | bool) else 'vcard-clinic-web-production' }}"
+      register: reconciliation_resume_images
+      changed_when: false
+      when: resume_reconciliation | bool
+      no_log: true
+      tags: [always, deploy]
+
+    - name: Report verified interrupted-release resume
+      ansible.builtin.debug:
+        msg: 'Matching release marker, prior manifest, SQLite snapshot, and running image digests verified.'
+      when: resume_reconciliation | bool
+      tags: [always, deploy]
+
+    - name: Block deployments and rollbacks with unresolved reconciliation state
+      ansible.builtin.assert:
+        that:
+          - >-
+            not reconciliation_state.results[0].stat.exists or
+            ((resume_reconciliation | bool) and reconciliation_resume_images is defined and reconciliation_resume_images.rc == 0)
+          - not reconciliation_state.results[1].stat.exists
+        fail_msg: >-
+          A release reconciliation marker exists and its exact candidate state could not be
+          verified. Do not delete the marker or start a different release.
       tags: [always, deploy, rollback]
 
     - name: Validate immutable production release

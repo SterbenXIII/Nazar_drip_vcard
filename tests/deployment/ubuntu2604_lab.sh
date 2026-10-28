@@ -108,14 +108,14 @@ PY
 }
 
 write_vars() {
-  local release_sha="$1" api_ref="$2" clinic_ref="$3" rollback="$4"
-  python3 - "$LAB_ROOT/ansible-vars.json" "$release_sha" "$api_ref" "$clinic_ref" "$rollback" <<'PY'
+  local release_sha="$1" api_ref="$2" clinic_ref="$3" rollback="$4" resume_reconciliation="${5:-false}"
+  python3 - "$LAB_ROOT/ansible-vars.json" "$release_sha" "$api_ref" "$clinic_ref" "$rollback" "$resume_reconciliation" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 target = Path(sys.argv[1])
-release_sha, api_ref, clinic_ref, rollback = sys.argv[2:]
+release_sha, api_ref, clinic_ref, rollback, resume_reconciliation = sys.argv[2:]
 values = {
     'domain_name': 'localhost',
     'deploy_path': '/opt/clinic-cd-lab/project',
@@ -128,6 +128,7 @@ values = {
     'api_image_ref': api_ref,
     'clinic_web_image_ref': clinic_ref,
     'rollback_mode': rollback == 'true',
+    'resume_reconciliation': resume_reconciliation == 'true',
     'lab_mode': True,
 }
 target.write_text(json.dumps(values), encoding='utf-8')
@@ -136,8 +137,8 @@ PY
 }
 
 run_deploy() {
-  local release_sha="$1" api_ref="$2" clinic_ref="$3" rollback="$4" log_path="$5"
-  write_vars "$release_sha" "$api_ref" "$clinic_ref" "$rollback"
+  local release_sha="$1" api_ref="$2" clinic_ref="$3" rollback="$4" log_path="$5" resume_reconciliation="${6:-false}"
+  write_vars "$release_sha" "$api_ref" "$clinic_ref" "$rollback" "$resume_reconciliation"
   (
     cd "$LAB_ROOT/source/ops/ansible"
     /opt/clinic-cd-lab/venv/bin/ansible-playbook \
@@ -452,6 +453,17 @@ PY
   test "$(running_container_ids)" = "$update_ids"
   test "$(git -C "$LAB_ROOT/project" rev-parse HEAD)" = "$update_sha"
   echo 'PASS: post-compose/pre-manifest interruption left a reconciliation gate and did not auto-roll back.'
+
+  expect_playbook_failure 'mismatched reconciliation candidate' "$LAB_ROOT/reconciliation-mismatch.log" \
+    'reconciliation|candidate|marker' \
+    run_deploy "$first_sha" "local/vcard-api:$first_sha" \
+      "local/vcard-clinic-web:$first_sha" false "$LAB_ROOT/reconciliation-mismatch-retry.log" true
+  test "$(running_container_ids)" = "$update_ids"
+
+  run_deploy "$update_sha" "local/vcard-api:$update_sha" \
+    "local/vcard-clinic-web:$update_sha" false "$LAB_ROOT/reconciliation-resume.log" true
+  assert_release_running "$update_sha"
+  echo 'PASS: matching interrupted release resumed only after marker, images, manifest, and backup validation.'
 
   assert_release_running "$update_sha"
   record_manifest "$update_sha" "local/vcard-api:$update_sha" \

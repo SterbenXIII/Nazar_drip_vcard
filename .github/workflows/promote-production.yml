@@ -7,6 +7,11 @@ on:
         description: Full commit SHA already verified on staging
         required: true
         type: string
+      resume_reconciliation:
+        description: Resume only when the VPS marker matches this exact interrupted release
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: deploy-production
@@ -180,6 +185,7 @@ jobs:
           RELEASE_SHA: ${{ inputs.release_sha }}
           API_IMAGE_REF: ${{ steps.validate_stage.outputs.api_image_ref }}
           CLINIC_WEB_IMAGE_REF: ${{ steps.validate_stage.outputs.production_clinic_web_image_ref }}
+          RESUME_RECONCILIATION: ${{ inputs.resume_reconciliation }}
         run: |
           cd ops/ansible
           ansible-playbook playbook.yml -i inventory.ini \
@@ -192,7 +198,8 @@ jobs:
             --extra-vars "github_repository_path=$GITHUB_REPOSITORY.git" \
             --extra-vars "release_sha=$RELEASE_SHA" \
             --extra-vars "api_image_ref=$API_IMAGE_REF" \
-            --extra-vars "clinic_web_image_ref=$CLINIC_WEB_IMAGE_REF"
+            --extra-vars "clinic_web_image_ref=$CLINIC_WEB_IMAGE_REF" \
+            --extra-vars "resume_reconciliation=$RESUME_RECONCILIATION"
 
       - name: Atomically record the successful production release
         env:

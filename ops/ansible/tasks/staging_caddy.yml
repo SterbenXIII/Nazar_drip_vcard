@@ -20,8 +20,15 @@
         path: '{{ domain_cutover_marker }}'
       register: production_domain_active
 
+    - name: Check whether a production release needs reconciliation
+      ansible.builtin.stat:
+        path: '{{ reconciliation_marker }}'
+      register: production_reconciliation_required
+
     - name: Prepare staging-only Caddy configuration
-      when: not production_domain_active.stat.exists
+      when:
+        - not production_domain_active.stat.exists
+        - not production_reconciliation_required.stat.exists
       block:
         - name: Check for an existing persistent Caddy configuration
           ansible.builtin.stat:
@@ -366,8 +373,15 @@
         path: '{{ domain_cutover_marker }}'
       register: production_domain_active
 
+    - name: Check whether a production release needs reconciliation
+      ansible.builtin.stat:
+        path: '{{ reconciliation_marker }}'
+      register: production_reconciliation_required
+
     - name: Restore the prior Caddy configuration after a failed staging deploy
-      when: not production_domain_active.stat.exists
+      when:
+        - not production_domain_active.stat.exists
+        - not production_reconciliation_required.stat.exists
       block:
         - name: Restore the prior Caddyfile when one existed
           ansible.builtin.copy:
