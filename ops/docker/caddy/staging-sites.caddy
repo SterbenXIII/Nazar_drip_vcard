@@ -9,7 +9,7 @@ staging.havenhub.com.ua {
 	basic_auth {
 		stage {$STAGE_BASIC_AUTH_HASH}
 	}
-	header X-Robots-Tag "noindex, nofollow"
+	header >X-Robots-Tag "noindex, nofollow"
 
 	route {
 		@sensitive {

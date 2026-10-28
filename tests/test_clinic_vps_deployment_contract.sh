@@ -56,6 +56,7 @@ assert_contains ops/docker/caddy/Caddyfile 'reverse_proxy api:5678'
 assert_contains ops/docker/caddy/Caddyfile 'handle /api/*'
 assert_not_contains ops/docker/caddy/Caddyfile 'Stage lead submissions are disabled'
 assert_not_contains ops/docker/caddy/Caddyfile 'Strict-Transport-Security'
+assert_contains ops/docker/caddy/staging-sites.caddy 'header >X-Robots-Tag "noindex, nofollow"'
 assert_contains apps/clinic-web/Dockerfile 'pnpm --filter @vcard/clinic-web build:staging'
 assert_contains ops/docker/compose/docker-compose.production.yml "CLINIC_ALLOW_PRODUCTION_BUILD: 'true'"
 assert_not_contains apps/clinic-web/src/components/Services.astro '../../../../design/'
