@@ -162,11 +162,9 @@ jobs:
           api_tag="ghcr.io/$repo/vcard-api:$COMMIT_SHA"
           staging_tag="ghcr.io/$repo/vcard-clinic-web:staging-$COMMIT_SHA"
           production_tag="ghcr.io/$repo/vcard-clinic-web:production-$COMMIT_SHA"
-          for pair in "$api_local:$api_tag" "$staging_local:$staging_tag" "$production_local:$production_tag"; do
-            local_ref=${pair%%:*}
-            tag_ref=${pair#*:}
-            docker tag "$local_ref" "$tag_ref"
-          done
+          docker tag "$api_local" "$api_tag"
+          docker tag "$staging_local" "$staging_tag"
+          docker tag "$production_local" "$production_tag"
           docker push "$api_tag" 2>&1 | tee "$RUNNER_TEMP/api-push.log"
           docker push "$staging_tag" 2>&1 | tee "$RUNNER_TEMP/staging-push.log"
           docker push "$production_tag" 2>&1 | tee "$RUNNER_TEMP/production-push.log"
