@@ -138,6 +138,8 @@ assert_contains .github/workflows/deploy.yml 'ref: ${{ github.event.workflow_run
 assert_contains .github/workflows/deploy.yml 'api_image_ref'
 assert_contains .github/workflows/deploy.yml 'clinic_web_image_ref'
 assert_contains .github/workflows/deploy.yml 'run: bash scripts/ci/check_release_head.sh'
+assert_contains .github/workflows/deploy.yml '"vcard-api-staging:api_image_ref"'
+assert_not_contains .github/workflows/deploy.yml '"vcard-api:api_image_ref"'
 assert_contains scripts/ci/check_release_head.sh 'git ls-remote'
 assert_contains scripts/ci/check_release_head.sh 'deployment_result=superseded'
 assert_contains .github/workflows/deploy.yml 'release.json'

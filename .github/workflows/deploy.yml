@@ -372,7 +372,7 @@ jobs:
               raise SystemExit('Invalid workflow run IDs')
           PY
           test "$(git -C "$DEPLOY_PATH" rev-parse HEAD)" = "$RELEASE_SHA"
-          for pair in "vcard-api:api_image_ref" "vcard-clinic-web-staging:staging_clinic_web_image_ref"; do
+          for pair in "vcard-api-staging:api_image_ref" "vcard-clinic-web-staging:staging_clinic_web_image_ref"; do
             container=${pair%%:*}
             key=${pair#*:}
             expected=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$pending" "$key")
