@@ -35,7 +35,7 @@ assert_not_contains() {
   fi
 }
 
-assert_contains "$deploy" 'group: deploy-production'
+assert_contains "$deploy" 'group: deploy-staging'
 assert_contains "$rollback" 'group: deploy-production'
 assert_contains "$deploy" 'cancel-in-progress: false'
 assert_contains "$rollback" 'cancel-in-progress: false'
@@ -56,7 +56,8 @@ assert_contains "$ansible_readme" 'stage build uses `CLINIC_SITE_MODE=staging`'
 assert_contains "$env_template" 'TELEGRAM_BOT_TOKEN='
 assert_contains "$env_example" 'TELEGRAM_BOT_TOKEN='
 assert_contains "$api_env" 'EMAIL requires SMTP_USER, SMTP_HOST, SMTP_PASS'
-assert_contains "$deploy" "ENABLED_PROVIDERS: 'TELEGRAM'"
+assert_contains "$deploy" '-e NODE_ENV=production -e ENABLED_PROVIDERS=TELEGRAM'
+assert_contains "$deploy" '-e TELEGRAM_BOT_TOKEN=synthetic-token'
 assert_not_contains "$deploy" 'SMTP_USER: ${{ secrets.SMTP_USER }}'
 assert_not_contains "$deploy" 'GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}'
 assert_contains "$caddy" 'header_up X-Forwarded-For {remote_host}'
@@ -111,8 +112,8 @@ assert_contains "$rollback" 'docker pull "$API_IMAGE_REF"'
 assert_contains "$rollback" 'API_IMAGE_REF: ${{ steps.validate_release.outputs.api_image_ref }}'
 assert_contains "$rollback" 'CLINIC_WEB_IMAGE_REF: ${{ steps.validate_release.outputs.clinic_web_image_ref }}'
 assert_contains "$rollback" 'current.json'
-assert_contains "$deploy" 'releases/current.json'
-assert_contains "$deploy" 'reconciliation-required.json'
+assert_contains "$deploy" 'releases/staging'
+assert_contains "$deploy" 'mv -f -- "$current_pending" "$directory/current.json"'
 assert_not_contains "$playbook" 'docker system prune -f --volumes'
 
 system_tasks_line=$(grep -n -m 1 -F 'include_tasks: tasks/01_preflight_system.yml' "$playbook" | cut -d: -f1)
