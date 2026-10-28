@@ -16,7 +16,7 @@ export class NotificationOutboxWorker {
   private timer: ReturnType<typeof setInterval> | undefined
   private processing: Promise<void> | undefined
   private recovery: Promise<void> | undefined
-  private stopped = true
+  private stopped = false
   private readonly inFlight = new Set<Promise<unknown>>()
 
   constructor(
@@ -34,8 +34,8 @@ export class NotificationOutboxWorker {
       .recoverProcessing(RETRY_CONFIG.MAX_RETRIES)
       .then(() => {
         if (this.stopped) return
-        this.timer = setInterval(() => void this.processPending(), POLL_INTERVAL_MS)
-        void this.processPending()
+        this.timer = setInterval(() => this.poll(), POLL_INTERVAL_MS)
+        this.poll()
       })
       .catch((error: unknown) => {
         logger.error({ msg: '[NotificationOutboxWorker] startup recovery failed', error })
@@ -63,9 +63,16 @@ export class NotificationOutboxWorker {
     return this.processing
   }
 
+  private poll(): void {
+    void this.processPending().catch((error: unknown) => {
+      logger.error({ msg: '[NotificationOutboxWorker] polling failed', error })
+    })
+  }
+
   private async processPendingInternal(): Promise<void> {
     const rows = await this.storage.getDueNotifications(Date.now())
     for (const row of rows) {
+      if (this.stopped) return
       if (!(await this.storage.claimNotification(row.id, Date.now()))) continue
       const send = this.deliver({ ...row, attemptCount: row.attemptCount + 1 })
       this.inFlight.add(send)

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { logger } from '@/config/logger'
 import { calculateRetryDelay } from '@/constants/config/retry-config.const'
 import { NotificationProvider } from '@/constants/enums/notification-provider.enum'
 import { NotificationRecipientsService } from '@/services/config/notification-recipients.service'
@@ -255,5 +256,44 @@ describe('NotificationOutboxWorker', () => {
 
     expect(storage.getDueNotifications).not.toHaveBeenCalled()
     await worker.stop()
+  })
+
+  it('logs background polling failures without leaving an unhandled rejection', async () => {
+    const storage = makeStorage([])
+    storage.getDueNotifications.mockRejectedValueOnce(new Error('database unavailable'))
+    const worker = new NotificationOutboxWorker(storage as never, { getFor: vi.fn() } as never)
+
+    worker.start()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(logger.error).toHaveBeenCalledWith({
+      msg: '[NotificationOutboxWorker] polling failed',
+      error: expect.any(Error),
+    })
+    await worker.stop()
+  })
+
+  it('does not claim more rows after shutdown begins during a delivery', async () => {
+    const storage = makeStorage([row({ id: 1 }), row({ id: 2 })])
+    let releaseSend!: (result: { success: boolean; provider: NotificationProvider }) => void
+    providerSend.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releaseSend = resolve
+        }),
+    )
+    const worker = new NotificationOutboxWorker(
+      storage as never,
+      { getFor: vi.fn().mockResolvedValue(['a@example.test']) } as never,
+    )
+
+    worker.start()
+    await vi.waitFor(() => expect(providerSend).toHaveBeenCalledOnce())
+    const stopping = worker.stop()
+    releaseSend({ success: true, provider: NotificationProvider.EMAIL })
+    await stopping
+
+    expect(providerSend).toHaveBeenCalledOnce()
+    expect(storage.claimNotification).toHaveBeenCalledOnce()
   })
 })
