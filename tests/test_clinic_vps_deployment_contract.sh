@@ -41,6 +41,8 @@ assert_not_contains ops/docker/compose/docker-compose.proxy.yml 'staging-gateway
 assert_contains ops/docker/compose/docker-compose.staging-proxy.yml 'name: vcard-staging-gateway'
 assert_contains ops/docker/compose/docker-compose.staging.yml 'internal: true'
 assert_contains ops/docker/compose/docker-compose.staging.yml 'name: compose-staging_api_data'
+assert_contains ops/docker/compose/docker-compose.staging.yml '        aliases:'
+assert_contains ops/docker/compose/docker-compose.staging.yml '          - api'
 assert_contains ops/docker/compose/docker-compose.yml 'name: compose_api_data'
 assert_contains ops/docker/compose/docker-compose.proxy.yml "'443:443'"
 assert_contains ops/docker/caddy/Caddyfile '{$DOMAIN_NAME}, www.{$DOMAIN_NAME}'

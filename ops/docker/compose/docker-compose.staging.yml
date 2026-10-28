@@ -41,7 +41,9 @@ services:
     volumes:
       - staging_api_data:/app/data
     networks:
-      - staging-gateway
+      staging-gateway:
+        aliases:
+          - api
     healthcheck:
       test: ['CMD-SHELL', 'curl -f http://localhost:5678/api/health || exit 1']
       interval: 30s
