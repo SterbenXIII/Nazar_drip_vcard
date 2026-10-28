@@ -6,7 +6,10 @@ import { ENV } from '@/config/env.config'
 import { logger as pinoLogger } from '@/config/logger'
 import { HttpStatus } from '@/constants/http/http-status.enum'
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/constants/messages'
-import { NotificationCoordinator } from '@/services/coordinators/notification.coordinator'
+import {
+  NoNotificationRecipientsError,
+  NotificationCoordinator,
+} from '@/services/coordinators/notification.coordinator'
 import { verifyTurnstileToken } from '@/utils/turnstile.util'
 
 type Variables = {
@@ -47,6 +50,12 @@ leadRoutes.post('/', zValidator('json', leadSchema), async (context) => {
       HttpStatus.CREATED,
     )
   } catch (error: unknown) {
+    if (error instanceof NoNotificationRecipientsError) {
+      return context.json(
+        { success: false, error: ERROR_MESSAGES.SERVICE_UNAVAILABLE },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      )
+    }
     const logger = context.get('pinoLogger') || pinoLogger // Fallback if middleware not set
     logger.error({
       msg: ERROR_MESSAGES.LEAD_PROCESSING_ERROR,

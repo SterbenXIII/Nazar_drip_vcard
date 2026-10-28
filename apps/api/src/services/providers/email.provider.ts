@@ -31,8 +31,8 @@ export class EmailProvider extends BaseNotificationProvider {
       return { success: true, provider: this.name }
     } catch (error: unknown) {
       if (error instanceof Error) {
-        logger.error(this.formatLog(`${LOG_MESSAGES.MESSAGE_SEND_FAILED} ${error.message}`))
-        return { success: false, provider: this.name, error: error.message }
+        logger.error(this.formatLog(LOG_MESSAGES.MESSAGE_SEND_FAILED))
+        return { success: false, provider: this.name, error: ERROR_MESSAGES.EMAIL_SEND_FAILED }
       }
       logger.error(
         this.formatLog(`${LOG_MESSAGES.MESSAGE_SEND_FAILED} ${ERROR_MESSAGES.UNKNOWN_ERROR}`),

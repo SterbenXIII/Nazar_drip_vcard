@@ -32,6 +32,8 @@ export class TelegramMessagingProvider extends BaseMessagingProvider {
   }
 
   public async send(payload: IMessagePayload): Promise<INotificationResult> {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30_000)
     try {
       const url = this.buildRequestUrl(TelegramMethods.SEND_MESSAGE)
 
@@ -39,19 +41,24 @@ export class TelegramMessagingProvider extends BaseMessagingProvider {
         method: HttpMethod.POST,
         headers: { 'Content-Type': ContentType.JSON },
         body: JSON.stringify(this.buildRequestBody(payload)),
+        signal: controller.signal,
       })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`${ERROR_MESSAGES.TELEGRAM_API_ERROR} ${errorText}`)
+        throw new Error(ERROR_MESSAGES.TELEGRAM_API_ERROR)
       }
 
-      logger.info(this.formatLog(`${LOG_MESSAGES.MESSAGE_SENT} ${payload.recipient}`))
+      logger.info(this.formatLog(LOG_MESSAGES.MESSAGE_SENT))
       return { success: true, provider: this.providerName }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR
+      const errorMessage =
+        error instanceof Error && error.name === 'AbortError'
+          ? 'Telegram request timed out'
+          : ERROR_MESSAGES.TELEGRAM_API_ERROR
       logger.error(this.formatLog(`${LOG_MESSAGES.MESSAGE_SEND_FAILED} ${errorMessage}`))
       return { success: false, provider: this.providerName, error: errorMessage }
+    } finally {
+      clearTimeout(timeout)
     }
   }
 }
