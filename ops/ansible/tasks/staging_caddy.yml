@@ -212,16 +212,16 @@
           - "'noindex' in (staging_homepage.content | lower)"
           - "'nofollow' in (staging_homepage.content | lower)"
           - "'rel=\"canonical\"' not in (staging_homepage.content | lower)"
-          - "'noindex' in (staging_homepage['x-robots-tag'] | default('') | lower)"
-          - "'nofollow' in (staging_homepage['x-robots-tag'] | default('') | lower)"
+          - "'noindex' in (staging_homepage.x_robots_tag | default('') | lower)"
+          - "'nofollow' in (staging_homepage.x_robots_tag | default('') | lower)"
         fail_msg: >-
           Staging homepage policy mismatch:
           status_ok={{ staging_homepage.status == 200 }},
           noindex_meta={{ 'noindex' in (staging_homepage.content | lower) }},
           nofollow_meta={{ 'nofollow' in (staging_homepage.content | lower) }},
           canonical_absent={{ 'rel="canonical"' not in (staging_homepage.content | lower) }},
-          noindex_header={{ 'noindex' in (staging_homepage['x-robots-tag'] | default('') | lower) }},
-          nofollow_header={{ 'nofollow' in (staging_homepage['x-robots-tag'] | default('') | lower) }},
+          noindex_header={{ 'noindex' in (staging_homepage.x_robots_tag | default('') | lower) }},
+          nofollow_header={{ 'nofollow' in (staging_homepage.x_robots_tag | default('') | lower) }},
           response_keys={{ staging_homepage.keys() | list | join(',') }}.
 
     - name: Verify staging robots file denies indexing
