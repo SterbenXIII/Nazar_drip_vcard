@@ -1,13 +1,8 @@
 ---
 import type { GetStaticPaths } from 'astro'
 import ServicePage from '../../components/ServicePage.astro'
-import { isPublishableService, services } from '../../content/services'
 
-export const getStaticPaths = (() =>
-  services.filter(isPublishableService).map((service) => ({
-    params: { slug: service.slug },
-    props: { service },
-  }))) satisfies GetStaticPaths
+export const getStaticPaths = (() => []) satisfies GetStaticPaths
 
 const { service } = Astro.props
 ---

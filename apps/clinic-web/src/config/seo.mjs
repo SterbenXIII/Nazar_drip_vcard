@@ -4,9 +4,9 @@ import { URL } from 'node:url'
 
 const modes = ['normal', 'staging', 'production']
 
-export const homepageTitle = 'HAVENHUB — центр допомоги при залежностях, Львівська область'
+export const homepageTitle = 'Центр реабілітації у Львівській області | HAVENHUB'
 export const homepageDescription =
-  'HAVENHUB — центр допомоги людям із залежностями та їхнім близьким у Львівській області. Дізнайтеся про програму й умови. Гаряча лінія 24/7; перша первинна консультація безкоштовна.'
+  'HAVENHUB: реабілітація у с. Ременів, амбулаторна допомога у Львові. Допомога при алкогольній, наркотичній та ігровій залежності. Звернення 24/7.'
 
 export function resolveSeoConfig(environment = process.env) {
   const mode = environment.CLINIC_SITE_MODE ?? 'normal'

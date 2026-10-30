@@ -33,12 +33,11 @@ test('keeps the landing copy within confirmed service and publication boundaries
     'contact',
   ])
   expect(landingSections[0].title).toBe('Допомога людям із залежностями та їхнім близьким')
-  expect(landingSections[0].items[0].title).toBe('Гаряча лінія 24/7')
+  expect(landingSections[0].items[0].title).toBe('Зателефонувати або написати')
   expect(landingSections[0].items[0].description).toEqual([
-    'Перша первинна консультація безкоштовна.',
+    'Першу розмову можна почати телефоном або в Telegram.',
   ])
-  expect(publicCopy).toContain('Гаряча лінія 24/7')
-  expect(publicCopy).toContain('Перша первинна консультація безкоштовна')
+  expect(publicCopy).not.toMatch(/24\/7|безкоштовн/i)
   expect(publicCopy).toContain('Вартість визначають після консультації')
   expect(publicCopy).toContain('Центр розташований у Львівській області')
   expect(publicCopy).toContain('у Львові та Львівській області')
@@ -66,16 +65,106 @@ test('tracks source receipt, service currentness, and production approval separa
     })
   }
 
-  expect(claimRegister.find(({ id }) => id === 'hotline-availability')).toMatchObject({
+  const hotline = claimRegister.find(({ id }) => id === 'hotline-availability')
+  expect(hotline).toMatchObject({
     evidenceReceived: true,
+    status: 'DRAFT_CONFIRMED',
     currentness: 'OWNER_CONFIRMED_FOR_DRAFT',
     productionApproval: 'PENDING',
   })
+  expect(hotline?.exactClaim).not.toMatch(/виїзд|доставлення/i)
+
+  const supersededHomeVisitArea = claimRegister.find(({ id }) => id === 'home-visit-area')
+  expect(supersededHomeVisitArea).toMatchObject({
+    status: 'PENDING_VERIFICATION',
+    currentness: 'UNVERIFIED',
+    publicDraft: null,
+    routes: [],
+    productionApproval: 'PENDING',
+  })
+  expect(supersededHomeVisitArea?.verificationNeeded.join(' ')).toContain(
+    'client-home-visit-service-area-2026-10-29',
+  )
   expect(claimRegister.find(({ id }) => id === 'free-first-consultation')).toMatchObject({
     evidenceReceived: true,
-    currentness: 'OWNER_CONFIRMED_FOR_DRAFT',
+    status: 'PENDING_VERIFICATION',
+    currentness: 'UNVERIFIED',
+    productionApproval: 'PENDING',
+    publicDraft: null,
+  })
+  expect(claimRegister.find(({ id }) => id === 'client-no-coding-2026-10-29')).toMatchObject({
+    status: 'DRAFT_CONFIRMED',
+    publicDraft: null,
     productionApproval: 'PENDING',
   })
+  for (const [id, routes] of [
+    ['client-home-visit-narcologist-2026-10-29', ['/services/narkotychna-zalezhnist/']],
+    [
+      'client-home-visit-availability-2026-10-29',
+      ['/services/alkoholna-zalezhnist/', '/services/narkotychna-zalezhnist/'],
+    ],
+    [
+      'client-minnesota-model-2026-10-29',
+      ['/services/alkoholna-zalezhnist/', '/services/narkotychna-zalezhnist/'],
+    ],
+    [
+      'client-outpatient-program-clarification',
+      ['/napriamy/', '/services/alkoholna-zalezhnist/', '/services/narkotychna-zalezhnist/'],
+    ],
+    ['client-staff-categories-2026-10-29', ['/komanda/']],
+    ['client-full-confidentiality-2026-10-29', ['/']],
+    [
+      'client-detox-description-2026-10-29',
+      ['/services/alkoholna-zalezhnist/', '/services/narkotychna-zalezhnist/'],
+    ],
+    [
+      'client-safety-outcome-copy-2026-10-29',
+      ['/services/alkoholna-zalezhnist/', '/services/narkotychna-zalezhnist/'],
+    ],
+  ] as const) {
+    const claim = claimRegister.find((claim) => claim.id === id)
+    expect(claim).toMatchObject({
+      status: 'DRAFT_CONFIRMED',
+      publicDraft: null,
+      productionApproval: 'PENDING',
+    })
+    expect(claim?.routes).toEqual(routes)
+  }
+
+  for (const id of [
+    'center-location',
+    'client-confirmed-service-locations',
+    'dependency-types',
+    'client-proposed-homepage-statement',
+    'hotline-availability',
+  ]) {
+    expect(claimRegister.find((claim) => claim.id === id)?.routes).toContain('/')
+  }
+
+  for (const [id, routes] of [
+    ['hotline-availability', ['/', '/site/']],
+    [
+      'client-home-visit-service-area-2026-10-29',
+      ['/', '/site/', '/services/alkoholna-zalezhnist/', '/services/narkotychna-zalezhnist/'],
+    ],
+  ] as const) {
+    const claim = claimRegister.find((claim) => claim.id === id)
+    expect(claim).toMatchObject({
+      status: 'DRAFT_CONFIRMED',
+      productionApproval: 'PENDING',
+    })
+    expect(claim?.routes).toEqual(routes)
+  }
+
+  const homeVisitServiceArea = claimRegister.find(
+    ({ id }) => id === 'client-home-visit-service-area-2026-10-29',
+  )
+  const areaOnlyForbiddenClaimWording =
+    /24\/7|годин|час|прибут|приїзд|реагув|відповід|достав|обіця|гарант/i
+  expect(homeVisitServiceArea?.exactClaim).toContain('Львові та Львівській області')
+  expect('Відповідь протягом години').toMatch(areaOnlyForbiddenClaimWording)
+  expect('Відповідь одразу').toMatch(areaOnlyForbiddenClaimWording)
+  expect(homeVisitServiceArea?.exactClaim).not.toMatch(areaOnlyForbiddenClaimWording)
 
   for (const claim of claimRegister.filter(({ status }) => status === 'PENDING_VERIFICATION')) {
     expect(claim.publicDraft).toBeNull()

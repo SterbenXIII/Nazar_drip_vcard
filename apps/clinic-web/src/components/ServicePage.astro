@@ -45,7 +45,7 @@ const { service, preview = false } = Astro.props
         <ul>{service.facts.map((fact) => <li>{fact}</li>)}</ul>
       </section>
       <ServiceProcess steps={service.process} />
-      <ServiceFaq items={service.faq} />
+      {service.faq.length > 0 && <ServiceFaq items={service.faq} />}
       <ServiceContactCta />
     </article>
   </main>
