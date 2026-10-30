@@ -4,12 +4,23 @@ test('the root landing links to the existing main site', async ({ page }) => {
   await page.goto('/')
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    'Підтримка на шляху до нового життя',
+    'HAVENHUB — центр реабілітації у Львівській області',
   )
   await expect(page.locator('.entry-introduction--desktop')).toBeVisible()
+  await expect(page.locator('.entry-introduction--desktop')).toHaveText(
+    'HAVENHUB пропонує допомогу людям з алкогольною, наркотичною та ігровою залежністю, а також підтримку їхніх близьких. Стаціонарний центр розташований у селі Ременів. Амбулаторна допомога доступна у Львові, а виїзд лікаря-нарколога — у Львові та Львівській області.',
+  )
+  await expect(page.locator('.entry-address')).toContainText(
+    'Львівська область, с. Ременів, вул. Галицька, 13.',
+  )
   await expect(page.locator('.entry-introduction--mobile')).toBeHidden()
   await expect(page.locator('.entry-highlights li')).toHaveCount(3)
   await expect(page.locator('.entry-trust')).toBeVisible()
+  await expect(page.locator('.entry-trust li')).toHaveText([
+    'Для себе й близьких',
+    'Звернення 24/7',
+    'Наступний крок — після розмови',
+  ])
   await expect(page.locator('.entry-phone-copy a[href^="tel:"]')).toHaveAttribute(
     'href',
     'tel:+380779742422',
@@ -43,6 +54,24 @@ test('the tablet landing keeps its full content and contact CTA', async ({ page 
   expect(cta!.y + cta!.height).toBeLessThanOrEqual(contact!.y + contact!.height)
 })
 
+test('the approved homepage copy keeps the reference desktop composition compact', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 986 })
+  await page.goto('/')
+  await page.evaluate(() => document.fonts.ready)
+
+  const hero = await page.locator('.entry-hero').boundingBox()
+  expect(hero).not.toBeNull()
+  expect(hero!.height).toBeLessThanOrEqual(986)
+  await expect(page.locator('.entry-introduction--desktop')).toContainText(
+    'алкогольною, наркотичною та ігровою залежністю',
+  )
+  await expect(page.locator('.entry-contact a[href="https://t.me/HavenRehub"]')).toBeVisible()
+  await expect(page.locator('.entry-contact a[href^="https://wa.me/"]')).toBeVisible()
+  await expect(page.locator('.entry-contact a[href^="mailto:"]')).toBeVisible()
+})
+
 test('the compact visiting card keeps its main actions visible on narrow screens', async ({
   page,
 }) => {
@@ -59,8 +88,11 @@ test('the compact visiting card keeps its main actions visible on narrow screens
     await expect(cta).toBeInViewport({ ratio: 1 })
     await expect(page.locator('.entry-site-button--mobile')).toBeVisible()
     await expect(page.locator('.entry-site-button--contact')).toBeHidden()
-    await expect(page.locator('.entry-introduction--mobile')).toHaveText(
-      'Підтримка для вас і близьких. Зателефонуйте або напишіть у Telegram.',
+    await expect(page.locator('.entry-introduction--mobile')).toContainText(
+      'алкогольною, наркотичною та ігровою залежністю',
+    )
+    await expect(page.locator('.entry-introduction--mobile')).toContainText(
+      'Львівська обл., с. Ременів, вул. Галицька, 13.',
     )
     await expect(page.locator('.entry-introduction--desktop')).toBeHidden()
     await expect(page.locator('.entry-values')).toBeHidden()
@@ -210,6 +242,7 @@ test('the landing keeps contact actions reachable at 150% and 200% equivalent vi
   ]) {
     await page.setViewportSize({ width, height })
     await page.goto('/')
+    await page.evaluate(() => document.fonts.ready)
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
     await page.keyboard.press('Tab')
@@ -237,6 +270,23 @@ test('the landing keeps contact actions reachable at 150% and 200% equivalent vi
     for (const link of actionLinks) {
       await page.keyboard.press('Tab')
       await expect(link).toBeFocused()
+      let previousScrollY: number | undefined
+      let stableVisibleSamples = 0
+      await expect
+        .poll(async () => {
+          const { scrollY, visible } = await page.evaluate(() => {
+            const rect = document.activeElement?.getBoundingClientRect()
+            return {
+              scrollY: window.scrollY,
+              visible: Boolean(rect && rect.top >= 0 && rect.bottom <= window.innerHeight),
+            }
+          })
+          stableVisibleSamples =
+            visible && scrollY === previousScrollY ? stableVisibleSamples + 1 : 0
+          previousScrollY = scrollY
+          return stableVisibleSamples
+        })
+        .toBeGreaterThanOrEqual(2)
       await expect(link).toBeInViewport({ ratio: 0.98 })
     }
   }

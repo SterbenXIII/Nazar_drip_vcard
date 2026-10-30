@@ -165,5 +165,5 @@ prompts/
 output/*
 
 design/
-
+.agents
 apps/clinic-web/output

@@ -7,8 +7,14 @@ import TelegramIcon from './TelegramIcon.astro'
 import WhatsAppIcon from './WhatsAppIcon.astro'
 import { landingSections } from '../content/landing'
 
-const hero = { ...landingSections[0], title: 'Підтримка на шляху до нового життя' }
-const mobileIntroduction = 'Підтримка для вас і близьких. Зателефонуйте або напишіть у Telegram.'
+const hero = {
+  ...landingSections[0],
+  title: 'HAVENHUB — центр реабілітації у Львівській області',
+  introduction:
+    'HAVENHUB пропонує допомогу людям з алкогольною, наркотичною та ігровою залежністю, а також підтримку їхніх близьких. Стаціонарний центр розташований у селі Ременів. Амбулаторна допомога доступна у Львові, а виїзд лікаря-нарколога — у Львові та Львівській області.',
+}
+const mobileIntroduction =
+  'HAVENHUB пропонує допомогу людям з алкогольною, наркотичною та ігровою залежністю, а також підтримку їхніх близьких. Стаціонар: Львівська обл., с. Ременів, вул. Галицька, 13. Амбулаторно — у Львові.'
 const audience = landingSections[1].items
 const nextStep = landingSections[5].items[2]
 const highlights = [
@@ -36,6 +42,9 @@ const highlights = [
       </a>
       <p class="entry-introduction entry-introduction--mobile">{mobileIntroduction}</p>
       <p class="entry-introduction entry-introduction--desktop">{hero.introduction}</p>
+      <p class="entry-address">
+        <strong>Стаціонарний центр:</strong> Львівська область, с. Ременів, вул. Галицька, 13.
+      </p>
 
       <ul class="entry-highlights" aria-label="Як можна звернутися по підтримку">
         {
@@ -112,7 +121,7 @@ const highlights = [
             d="M20.8 8.8c0 5-8.8 11-8.8 11s-8.8-6-8.8-11a4.8 4.8 0 0 1 8.8-2.6 4.8 4.8 0 0 1 8.8 2.6Z"
           ></path>
         </svg>
-        Телефон та Telegram
+        Звернення 24/7
       </li>
       <li>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -204,6 +213,12 @@ const highlights = [
 
   .entry-introduction--mobile {
     display: none;
+  }
+
+  .entry-address {
+    margin: 0.75rem 0 0;
+    color: #e5efea;
+    font-size: 0.9375rem;
   }
 
   .entry-highlights {
@@ -442,6 +457,10 @@ const highlights = [
       font-size: clamp(2.125rem, 6vw, 3.75rem);
     }
 
+    .entry-address {
+      font-size: 0.875rem;
+    }
+
     .entry-highlights {
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 0;
@@ -508,7 +527,7 @@ const highlights = [
       min-height: 0;
       grid-template-rows: auto auto auto;
       align-content: start;
-      row-gap: 2rem;
+      row-gap: 1.5rem;
       padding-bottom: 2rem;
     }
 
@@ -522,11 +541,30 @@ const highlights = [
     .entry-content {
       min-height: 0;
       justify-content: flex-start;
-      padding: clamp(10rem, 18vh, 14rem) 2.5rem 2rem clamp(2rem, 8.5vw, 8.125rem);
+      padding: clamp(7rem, 13vh, 10rem) 2.5rem 1rem clamp(2rem, 8.5vw, 8.125rem);
+    }
+
+    .entry-introduction {
+      margin-top: 1rem;
+      font-size: 1.125rem;
+      line-height: 1.45;
+    }
+
+    .entry-highlights {
+      margin-top: 1.5rem;
+    }
+
+    .entry-highlight-title {
+      font-size: 1rem;
+    }
+
+    .entry-highlight-copy {
+      font-size: 0.875rem;
+      line-height: 1.35;
     }
 
     .entry-hero h1 {
-      font-size: clamp(3rem, 3.4vw, 3.25rem);
+      font-size: clamp(2rem, 2.3vw, 2.25rem);
     }
 
     .entry-contact {
@@ -549,11 +587,22 @@ const highlights = [
 
     .entry-phone-copy span,
     .entry-phone-copy a[href^='tel:'] {
+      grid-column: 1 / -1;
       white-space: nowrap;
+    }
+
+    .entry-phone-copy {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.25rem 0.5rem;
     }
 
     .entry-phone-copy a[href^='tel:'] {
       font-size: clamp(1.25rem, 2vw, 1.75rem);
+    }
+
+    .entry-phone-copy .entry-telegram {
+      font-size: 0.875rem;
     }
 
     .entry-site-button {
@@ -604,8 +653,8 @@ const highlights = [
 
   @media (width <= 700px) {
     .entry-hero {
-      gap: 1.25rem;
-      padding-top: 8rem;
+      gap: 1rem;
+      padding-top: 7rem;
     }
 
     .entry-hero h1 {
@@ -614,9 +663,13 @@ const highlights = [
 
     .entry-introduction--mobile {
       display: block;
+      margin-top: 1rem;
+      font-size: 1rem;
+      line-height: 1.45;
     }
 
     .entry-introduction--desktop,
+    .entry-address,
     .entry-site-button--contact,
     .entry-values,
     .entry-highlights {

@@ -63,8 +63,7 @@ test('keeps distinct dependency and care-format lists with sourced boundaries', 
   )
   await expect(page.locator('main table')).toHaveCount(0)
   await expect(page.locator('#conditions')).toContainText('Центр розташований у Львівській області')
-  await expect(page.getByText('Гаряча лінія 24/7')).toBeVisible()
-  await expect(page.getByText('Перша первинна консультація безкоштовна.').first()).toBeVisible()
+  await expect(page.getByText(/24\/7|безкоштовн/i)).toHaveCount(0)
   await expect(page.locator('#process')).toContainText('Вартість визначають після консультації')
   await expect(page.locator('main')).not.toContainText(
     /300[–-]400|гарантоване одужання|повна анонімність/,
@@ -179,7 +178,7 @@ test('shows phone and Telegram actions and only links to built detail routes', a
       staging ? (route === '/rodyni/' ? 2 : route === '/napriamy/' ? 3 : 1) : 0,
     )
   }
-  await expect(page.locator('#contact')).toContainText('Перша первинна консультація безкоштовна')
+  await expect(page.locator('#contact')).not.toContainText(/24\/7|безкоштовн/i)
 })
 
 test('keeps one landmark, usable links, and no critical accessibility violations', async ({

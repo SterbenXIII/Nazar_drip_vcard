@@ -13,11 +13,34 @@ test('renders the demonstration template with accessible links and controls', as
   await page.goto(previewPath)
 
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,nofollow')
+  await expect(page).toHaveTitle('Демонстраційна сторінка послуги — HAVENHUB')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'Демонстраційна сторінка послуги',
   )
+  const breadcrumbs = page.getByRole('navigation', { name: 'Навігаційний ланцюжок' })
+  await expect(breadcrumbs.getByRole('link', { name: 'Головна' })).toHaveAttribute('href', '/')
+  await expect(breadcrumbs.getByText('Демонстраційна сторінка послуги')).toBeVisible()
   await expect(page.getByText('ДЕМО · непогоджений вміст')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Що варто знати' })).toBeVisible()
+  await expect(page.getByText('Демонстраційне поле для перевіреного опису.')).toBeVisible()
   await expect(page.getByRole('main')).toBeVisible()
+  const contact = page.locator('#contact')
+  await expect(contact.getByRole('link', { name: 'Зателефонувати' })).toHaveAttribute(
+    'href',
+    'tel:+380779742422',
+  )
+  await expect(contact.getByRole('link', { name: 'Telegram HAVENHUB' })).toHaveAttribute(
+    'href',
+    'https://t.me/HavenRehub',
+  )
+  await expect(contact.getByRole('link', { name: 'Написати в WhatsApp HAVENHUB' })).toHaveAttribute(
+    'href',
+    'https://wa.me/380779742422',
+  )
+  await expect(contact.getByRole('link', { name: 'Написати на email HAVENHUB' })).toHaveAttribute(
+    'href',
+    'mailto:havenrehub@gmail.com',
+  )
 
   for (const href of await page
     .locator('a[href]')

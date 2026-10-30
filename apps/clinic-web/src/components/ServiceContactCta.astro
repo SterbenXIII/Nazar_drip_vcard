@@ -1,9 +1,18 @@
+---
+import { email, hotline, telegram, whatsapp } from '../content/customer-materials'
+---
+
 <section class="service-cta wrap" id="contact" aria-labelledby="service-contact-title">
   <div>
-    <p class="eyebrow">КОНТАКТ · ПЛЕЙСХОЛДЕР</p>
-    <h2 id="service-contact-title">Контактна інформація після погодження</h2>
+    <p class="eyebrow">КОНТАКТ</p>
+    <h2 id="service-contact-title">Зв’язатися з HAVENHUB</h2>
   </div>
-  <a class="button" href="/#contact">Переглянути стан звернень <span aria-hidden="true">→</span></a>
+  <div class="contact-links">
+    <a class="button" href={hotline.href}>Зателефонувати <span aria-hidden="true">→</span></a>
+    <a href={telegram.href} aria-label={telegram.accessibleName}>{telegram.label}</a>
+    <a href={whatsapp.href} aria-label={whatsapp.accessibleName}>{whatsapp.label}</a>
+    <a href={email.href} aria-label={email.accessibleName}>{email.address}</a>
+  </div>
 </section>
 
 <style>
@@ -21,6 +30,13 @@
   h2 {
     font-size: clamp(2rem, 4vw, 3.4rem);
     margin: 0;
+  }
+
+  .contact-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
   }
 
   .button {

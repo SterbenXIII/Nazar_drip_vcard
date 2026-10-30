@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { readFile, readdir } from 'node:fs/promises'
-import process from 'node:process'
 import { resolve } from 'node:path'
+import process from 'node:process'
 import { test } from 'node:test'
 
 const app = resolve(import.meta.dirname, '..')
