@@ -242,6 +242,7 @@ test('the landing keeps contact actions reachable at 150% and 200% equivalent vi
   ]) {
     await page.setViewportSize({ width, height })
     await page.goto('/')
+    await page.evaluate(() => document.fonts.ready)
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
     await page.keyboard.press('Tab')
@@ -269,6 +270,23 @@ test('the landing keeps contact actions reachable at 150% and 200% equivalent vi
     for (const link of actionLinks) {
       await page.keyboard.press('Tab')
       await expect(link).toBeFocused()
+      let previousScrollY: number | undefined
+      let stableVisibleSamples = 0
+      await expect
+        .poll(async () => {
+          const { scrollY, visible } = await page.evaluate(() => {
+            const rect = document.activeElement?.getBoundingClientRect()
+            return {
+              scrollY: window.scrollY,
+              visible: Boolean(rect && rect.top >= 0 && rect.bottom <= window.innerHeight),
+            }
+          })
+          stableVisibleSamples =
+            visible && scrollY === previousScrollY ? stableVisibleSamples + 1 : 0
+          previousScrollY = scrollY
+          return stableVisibleSamples
+        })
+        .toBeGreaterThanOrEqual(2)
       await expect(link).toBeInViewport({ ratio: 0.98 })
     }
   }
