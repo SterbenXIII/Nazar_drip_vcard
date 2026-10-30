@@ -27,6 +27,14 @@ test('the root landing links to the existing main site', async ({ page }) => {
   )
   await expect(page.locator('.entry-site-button--contact')).toHaveAttribute('href', '/site/')
   await expect(page.locator('.entry-site-button--mobile')).toBeHidden()
+  for (const selector of [
+    'a[href^="tel:"]',
+    'a[href^="https://t.me/"]',
+    'a[href^="https://wa.me/"]',
+    'a[href^="mailto:"]',
+  ]) {
+    await expect(page.locator(`.footer-contacts ${selector} svg`)).toHaveCount(1)
+  }
 
   await page.locator('.entry-site-button--contact').click()
   await expect(page).toHaveURL(/\/site\/$/)
@@ -205,7 +213,7 @@ test('wide landing keeps a clear gap between guidance and contact actions', asyn
   expect(trust).not.toBeNull()
   expect(footer).not.toBeNull()
   expect(hero).not.toBeNull()
-  expect(contact!.y - (highlights!.y + highlights!.height)).toBeGreaterThanOrEqual(52)
+  expect(contact!.y - (highlights!.y + highlights!.height)).toBeGreaterThanOrEqual(68)
   expect(trust!.y - (contact!.y + contact!.height)).toBeGreaterThanOrEqual(32)
   expect(trust!.x + trust!.width).toBeLessThanOrEqual(hero!.x + hero!.width * 0.53)
   expect(footer!.y - (trust!.y + trust!.height)).toBeGreaterThanOrEqual(24)
@@ -227,7 +235,7 @@ test('mid-size tall landing keeps the headline and telephone on clean lines', as
   expect(highlights).not.toBeNull()
   expect(contact).not.toBeNull()
   expect(trust).not.toBeNull()
-  expect(contact!.y - (highlights!.y + highlights!.height)).toBeGreaterThanOrEqual(24)
+  expect(contact!.y - (highlights!.y + highlights!.height)).toBeGreaterThanOrEqual(48)
   expect(trust!.y - (contact!.y + contact!.height)).toBeGreaterThanOrEqual(24)
   await expect(page.locator('.entry-phone-copy span')).toHaveCSS('white-space', 'nowrap')
   await expect(page.locator('.entry-phone-copy a[href^="tel:"]')).toHaveCSS('white-space', 'nowrap')

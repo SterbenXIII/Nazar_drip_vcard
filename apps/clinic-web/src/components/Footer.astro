@@ -1,5 +1,8 @@
 ---
 import { email, hotline, telegram, whatsapp } from '../content/customer-materials'
+import EmailIcon from './EmailIcon.astro'
+import PhoneIcon from './PhoneIcon.astro'
+import TelegramIcon from './TelegramIcon.astro'
 import WhatsAppIcon from './WhatsAppIcon.astro'
 import BrandLogo from './BrandLogo.astro'
 
@@ -51,14 +54,21 @@ const navigation =
     }
     <div class="footer-contacts" aria-label="Контакти HAVENHUB">
       <a href={hotline.href} aria-label={`Зателефонувати на гарячу лінію: ${hotline.display}`}>
+        <PhoneIcon />
         {hotline.display}
       </a>
-      <a href={telegram.href} aria-label={telegram.accessibleName}>{telegram.label}</a>
+      <a href={telegram.href} aria-label={telegram.accessibleName}>
+        <TelegramIcon />
+        {telegram.label}
+      </a>
       <a href={whatsapp.href} aria-label={whatsapp.accessibleName}>
         <WhatsAppIcon />
         {whatsapp.label}
       </a>
-      <a href={email.href} aria-label={email.accessibleName}>{email.address}</a>
+      <a href={email.href} aria-label={email.accessibleName}>
+        <EmailIcon />
+        {email.address}
+      </a>
     </div>
   </div>
 </footer>
