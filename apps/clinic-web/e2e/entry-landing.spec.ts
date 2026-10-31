@@ -106,13 +106,16 @@ test('the compact visiting card keeps its main actions visible on narrow screens
     await expect(page.locator('.entry-values')).toBeHidden()
     await expect(page.locator('.entry-highlights')).toBeHidden()
     await expect(page.locator('.entry-trust')).toBeHidden()
-    const phone = page.locator('.entry-contact a[href^="tel:"]')
+    const phoneIcon = page.locator('.entry-contact a.entry-phone-icon[href^="tel:"]')
+    const phone = page.locator('.entry-phone-copy a[href^="tel:"]')
     const telegram = page.locator('.entry-contact').getByRole('link', { name: 'Telegram HAVENHUB' })
     const footer = await page.locator('.footer').boundingBox()
     expect(footer).not.toBeNull()
     if (viewport.width === 390 && (await page.locator('.footer-navigation').count()) === 0) {
       expect(Math.abs(footer!.y + footer!.height - viewport.height)).toBeLessThanOrEqual(1)
     }
+    await expect(phoneIcon).toBeVisible()
+    await expect(phoneIcon).toHaveAttribute('href', 'tel:+380779742422')
     await expect(phone).toBeVisible()
     await expect(phone).toHaveCSS('min-height', '44px')
     await expect(telegram).toBeVisible()
@@ -267,10 +270,12 @@ test('the landing keeps contact actions reachable at 150% and 200% equivalent vi
       width <= 700
         ? [
             page.locator('.entry-site-button--mobile'),
+            page.locator('.entry-contact a.entry-phone-icon[href^="tel:"]'),
             page.locator('.entry-phone-copy a[href^="tel:"]'),
             ...contactMessagingLinks,
           ]
         : [
+            page.locator('.entry-contact a.entry-phone-icon[href^="tel:"]'),
             page.locator('.entry-phone-copy a[href^="tel:"]'),
             ...contactMessagingLinks,
             page.locator('.entry-site-button--contact'),
