@@ -1,28 +1,6 @@
 name: Legacy web CI
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'apps/web/**'
-      - 'packages/shared/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - 'ops/docker/web/Dockerfile'
-      - '.github/workflows/legacy-web-ci.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'apps/web/**'
-      - 'packages/shared/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - 'ops/docker/web/Dockerfile'
-      - '.github/workflows/legacy-web-ci.yml'
-  schedule:
-    - cron: '0 3 * * *'
   workflow_dispatch:
     inputs:
       e2e_scope:

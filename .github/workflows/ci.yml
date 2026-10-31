@@ -1,12 +1,7 @@
 name: CI
 
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
-  schedule:
-    - cron: '0 3 * * *'
+  # Run manually when needed; deploy.yml depends on this workflow as its release gate.
   workflow_dispatch:
 
 permissions:

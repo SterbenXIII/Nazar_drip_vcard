@@ -48,8 +48,8 @@ jobs.each do |id, definition|
 end
 
 events = ci[true] || ci['on'] || {}
-%w[pull_request push schedule workflow_dispatch].each do |event|
-  abort("CI is missing #{event} trigger") unless events.key?(event)
+unless events.keys == ['workflow_dispatch']
+  abort('CI must be manually dispatched only while local-first mode is active')
 end
 %w[paths paths-ignore].each do |key|
   abort('CI must not use path filters') if events.values.any? { |config| config.is_a?(Hash) && config.key?(key) }
@@ -67,8 +67,8 @@ abort('active-checks must run the audit release gate') unless active_check_text.
 
 legacy = workflow('.github/workflows/legacy-web-ci.yml')
 legacy_events = legacy[true] || legacy['on'] || {}
-%w[pull_request push schedule workflow_dispatch].each do |event|
-  abort("legacy web workflow is missing #{event} trigger") unless legacy_events.key?(event)
+unless legacy_events.keys == ['workflow_dispatch']
+  abort('legacy web CI must be manually dispatched only while local-first mode is active')
 end
 abort('legacy web workflow must have a job') if legacy.fetch('jobs').empty?
 abort('legacy web workflow must not depend on CI') if legacy.fetch('jobs').values.any? { |job| job.key?('needs') }
