@@ -1,0 +1,130 @@
+pre-commit:
+  parallel: false
+  commands:
+    node-version:
+      priority: 1
+      run: |
+        node_version="$(node --version)"
+        if [ "$node_version" != "v24.20.0" ]; then
+          echo 'Use Node.js 24.20.0, matching the CI workflows.'
+          exit 1
+        fi
+    secret-scan:
+      priority: 2
+      run: make secret-scan
+    dependency-audit-tests:
+      priority: 3
+      run: node --test scripts/ci/audit-release.test.mjs
+    dependency-audit:
+      priority: 4
+      run: node scripts/ci/audit-release.mjs
+    build-shared:
+      priority: 5
+      run: pnpm --filter @vcard/shared build
+    lint:
+      priority: 6
+      run: >-
+        pnpm --filter @vcard/api lint &&
+        pnpm --filter @vcard/shared lint &&
+        pnpm --filter @vcard/web lint &&
+        pnpm --filter @vcard/clinic-web lint
+    formatting:
+      priority: 7
+      run: >-
+        pnpm exec prettier --check
+        package.json
+        pnpm-workspace.yaml
+        pnpm-lock.yaml
+        apps/api/package.json
+        apps/clinic-web/package.json
+        apps/clinic-web/lighthouserc.json
+        packages/shared/package.json
+        scripts/ci/audit-release.mjs
+        scripts/ci/audit-release.test.mjs
+        scripts/ci/audit-exceptions.json
+        .github/workflows/ci.yml
+        .github/workflows/clinic-web-ci.yml
+        .github/workflows/legacy-web-ci.yml
+        lefthook.yml
+    markdown:
+      priority: 8
+      run: |
+        pnpm exec markdownlint-cli2 \
+          'docs/Havenhub Codex Stage Prompts.md' \
+          'docs/Havenhub Frontend Implementation Plan.md' &&
+        git ls-files -z -- docs/havenhub-kit \
+          docs/superpowers/specs/2026-10-07-havenhub-landing-seo-design.md \
+          docs/superpowers/plans/2026-10-08-havenhub-landing-seo.md \
+          | xargs -0 pnpm exec markdownlint-cli2
+    clinic-e2e-inventory:
+      priority: 9
+      run: node --test apps/clinic-web/scripts/e2e-inventory.test.mjs
+    typecheck:
+      priority: 10
+      run: >-
+        pnpm --filter @vcard/api exec tsc --noEmit &&
+        pnpm --filter @vcard/shared typecheck &&
+        pnpm --filter @vcard/web exec astro check &&
+        pnpm --filter @vcard/clinic-web exec astro check
+    build:
+      priority: 11
+      run: pnpm build:all
+    api-tests:
+      priority: 12
+      run: pnpm --filter @vcard/api test
+    clinic-acceptance:
+      priority: 13
+      run: pnpm --filter @vcard/clinic-web acceptance
+    clinic-publication:
+      priority: 14
+      run: pnpm --filter @vcard/clinic-web test:publication
+    clinic-production-build:
+      priority: 15
+      run: |
+        restore_normal_build() {
+          pnpm --filter @vcard/clinic-web build:normal >/dev/null
+        }
+        trap restore_normal_build EXIT
+        CLINIC_ALLOW_PRODUCTION_BUILD=true \
+          CLINIC_CANONICAL_ORIGIN=https://havenhub.example \
+          pnpm --filter @vcard/clinic-web build:production
+    runtime-images:
+      priority: 16
+      run: bash scripts/ci/check-runtime-images.sh
+    web-e2e-smoke:
+      priority: 17
+      run: >-
+        pnpm --filter @vcard/web exec playwright test
+        --project=chromium --project=a11y --project=seo
+    web-lighthouse:
+      priority: 18
+      root: apps/web
+      run: pnpx @lhci/cli autorun
+    readme-links:
+      priority: 19
+      run: |
+        python3 - <<'PY'
+        from pathlib import Path
+        import re
+
+        readme = Path('docs/havenhub-kit/README.md')
+        links = [
+            link.split('#', 1)[0]
+            for link in re.findall(r'\]\(([^)]+)\)', readme.read_text())
+            if not re.match(r'^[a-z][a-z0-9+.-]*:', link, re.I)
+        ]
+        missing = [link for link in links if link and not (readme.parent / link).is_file()]
+        if missing:
+            raise SystemExit(f'Missing README targets: {missing}')
+        print(f'Checked {len(links)} local README links')
+        PY
+    deployment-contracts:
+      priority: 20
+      run: >-
+        PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/ci -p 'test_*.py' &&
+        bash tests/test_clinic_ci_contract.sh &&
+        bash tests/test_clinic_vps_deployment_contract.sh &&
+        bash tests/test_phase2_deployment_contract.sh &&
+        bash scripts/ci/test_release_head.sh &&
+        bash tests/test_clinic_monitoring.sh &&
+        bash tests/test_clinic_stage_smoke.sh

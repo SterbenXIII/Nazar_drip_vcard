@@ -110,6 +110,7 @@ gen-lang-client-*.json
 
 
 apps/web/.lighthouseci/
+apps/clinic-web/.lighthouseci/
 
 # Generated Graphify output
 graphify-out/

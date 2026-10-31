@@ -4,6 +4,7 @@ node_modules
 coverage
 playwright-report
 test-results
+**/.lighthouseci
 blob-report
 playwright/.cache
 pnpm-lock.yaml
