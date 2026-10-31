@@ -21,7 +21,7 @@
     "mdlint": "markdownlint-cli2 \"**/*.md\"",
     "mdlint:fix": "markdownlint-cli2 --fix \"**/*.md\"",
     "typecheck": "pnpm --filter \"@vcard/*\" exec tsc --noEmit",
-    "prepare": "husky || true"
+    "prepare": "if [ -x node_modules/.bin/lefthook ] && command -v git >/dev/null 2>&1; then node_modules/.bin/lefthook install; fi"
   },
   "lint-staged": {
     "*.{ts,js,mjs}": [
@@ -57,7 +57,7 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "globals": "^17.3.0",
-    "husky": "^9.1.7",
+    "lefthook": "^2.2.2",
     "lint-staged": "^16.2.7",
     "markdownlint-cli2": "^0.23.3",
     "postcss-html": "^1.8.1",
