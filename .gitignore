@@ -163,7 +163,7 @@ docs/superpowers/reports/*
 prompts/
 .superpowers
 output/*
-
+.playwright-mcp
 design/
 .agents
 apps/clinic-web/output

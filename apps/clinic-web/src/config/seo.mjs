@@ -6,7 +6,7 @@ const modes = ['normal', 'staging', 'production']
 
 export const homepageTitle = 'Центр реабілітації у Львівській області | HAVENHUB'
 export const homepageDescription =
-  'HAVENHUB: реабілітація у с. Ременів, амбулаторна допомога у Львові. Допомога при алкогольній, наркотичній та ігровій залежності. Звернення 24/7.'
+  'HAVENHUB — центр реабілітації у Львівській області. Стаціонар у с. Ременів, амбулаторна допомога у Львові та підтримка близьких. Звернення 24/7.'
 
 export function resolveSeoConfig(environment = process.env) {
   const mode = environment.CLINIC_SITE_MODE ?? 'normal'

@@ -67,6 +67,11 @@ for (const page of pages) {
   if (isIndexable) {
     assert.equal(title, homepageTitle, 'production homepage title drifted')
     assert.equal(description, homepageDescription, 'production homepage description drifted')
+    assert.doesNotMatch(
+      html,
+      /залежн|лікуван|алкогол|наркотич|наркоман|ігров|ігроман/i,
+      'unapproved condition wording on the indexable homepage',
+    )
     assert.ok(html.includes(`<link rel="canonical" href="${canonicalOrigin}">`))
     assert.ok(html.includes(`<meta property="og:url" content="${canonicalOrigin}">`))
     assert.ok(html.includes(`<meta property="og:title" content="${title}">`))
