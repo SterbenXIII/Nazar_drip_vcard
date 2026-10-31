@@ -8,7 +8,7 @@ test('the root landing links to the existing main site', async ({ page }) => {
   )
   await expect(page.locator('.entry-introduction--desktop')).toBeVisible()
   await expect(page.locator('.entry-introduction--desktop')).toHaveText(
-    'HAVENHUB пропонує допомогу людям з алкогольною, наркотичною та ігровою залежністю, а також підтримку їхніх близьких. Стаціонарний центр розташований у селі Ременів. Амбулаторна допомога доступна у Львові, а виїзд лікаря-нарколога — у Львові та Львівській області.',
+    'Підтримка для людей та їхніх близьких. Стаціонарний центр розташований у с. Ременів, амбулаторна допомога доступна у Львові. Зв’яжіться з нами, щоб обговорити наступний крок.',
   )
   await expect(page.locator('.entry-address')).toContainText(
     'Львівська область, с. Ременів, вул. Галицька, 13.',
@@ -62,7 +62,7 @@ test('the tablet landing keeps its full content and contact CTA', async ({ page 
   expect(cta!.y + cta!.height).toBeLessThanOrEqual(contact!.y + contact!.height)
 })
 
-test('the approved homepage copy keeps the reference desktop composition compact', async ({
+test('the neutral homepage copy keeps the reference desktop composition compact', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 986 })
@@ -73,7 +73,7 @@ test('the approved homepage copy keeps the reference desktop composition compact
   expect(hero).not.toBeNull()
   expect(hero!.height).toBeLessThanOrEqual(986)
   await expect(page.locator('.entry-introduction--desktop')).toContainText(
-    'алкогольною, наркотичною та ігровою залежністю',
+    'Стаціонарний центр розташований у с. Ременів',
   )
   await expect(page.locator('.entry-contact a[href="https://t.me/HavenRehub"]')).toBeVisible()
   await expect(page.locator('.entry-contact a[href^="https://wa.me/"]')).toBeVisible()
@@ -97,7 +97,7 @@ test('the compact visiting card keeps its main actions visible on narrow screens
     await expect(page.locator('.entry-site-button--mobile')).toBeVisible()
     await expect(page.locator('.entry-site-button--contact')).toBeHidden()
     await expect(page.locator('.entry-introduction--mobile')).toContainText(
-      'алкогольною, наркотичною та ігровою залежністю',
+      'Підтримка для людей та їхніх близьких',
     )
     await expect(page.locator('.entry-introduction--mobile')).toContainText(
       'Львівська обл., с. Ременів, вул. Галицька, 13.',
